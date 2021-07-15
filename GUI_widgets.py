@@ -13,100 +13,101 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class SmallButton(QtWidgets.QPushButton):
+class DataInterface(QtWidgets.QGroupBox):
 
-    def __init__(self, *args, trigger_func=None):
+    def __init__(self, *args):
         super().__init__(*args)
 
-        if trigger_func:
-            self.clicked.connect(trigger_func)
-        self.setMaximumHeight(20)
-        self.setMaximumWidth(50)
-        self.setMinimumWidth(50)
+        self.setTitle('Data interface')
 
-
-class MediumButton(QtWidgets.QPushButton):
-
-    def __init__(self, *args, trigger_func=None):
-        super().__init__(*args)
-
-        if trigger_func:
-            self.clicked.connect(trigger_func)
-        self.setMaximumHeight(20)
-        self.setMaximumWidth(100)
-        self.setMinimumWidth(100)
-
-
-class ColorButton(QtWidgets.QWidget):
-
-    def __init__(self, *args, r=0, g=0, b=0, a=255, color_title='color', trigger_func=None):
-        super().__init__(*args)
-
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
-
-        self.color_title = color_title
-
-        self.trigger = trigger_func
-
-        self.preview = GUI_subwidgets.ColorPreview(r=self.r, g=self.g, b=self.b, a=self.a)
-        self.btn_change_color = MediumButton(self.color_title, self, trigger_func=self.btn_change_color_trigger)
+        self.btn_new = GUI_subwidgets.MediumButton('New', self, trigger_func=self.btn_new_trigger)
+        self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
+        self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
+        self.btn_clear = GUI_subwidgets.MediumButton('Clear', self, trigger_func=self.btn_clear_trigger)
 
         self.build_layout()
 
     def build_layout(self):
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.btn_change_color)
-        layout.addWidget(self.preview)
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addWidget(self.btn_new)
+        btn_layout.addWidget(self.btn_load)
+        btn_layout.addWidget(self.btn_save)
+        btn_layout.addWidget(self.btn_clear)
+        btn_layout.addStretch()
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(btn_layout)
+        layout.addWidget(GUI_subwidgets.HorSeparator())
         layout.addStretch()
         self.setLayout(layout)
 
-    def btn_change_color_trigger(self):
-        color = QtWidgets.QColorDialog.getColor(
-            self.rgba_to_q(self.r, self.g, self.b, self.a)
-        )
-        color = self.q_to_rgba(color)
-        self.r = color[0]
-        self.g = color[1]
-        self.b = color[2]
-        self.a = color[3]
-        self.preview.set_color(r=self.r, g=self.g, b=self.b, a=self.a)
-        if self.trigger:
-            self.trigger(
-                self.r,
-                self.g,
-                self.b,
-                self.a
-            )
+    def btn_new_trigger(self):
+        pass
 
-    @staticmethod
-    def q_to_rgba(q_color):
-        r = q_color.red()
-        g = q_color.green()
-        b = q_color.blue()
-        a = q_color.alpha()
-        return r, g, b, a
+    def btn_load_trigger(self):
+        pass
 
-    @staticmethod
-    def rgba_to_q(r, g, b, a):
-        return QtGui.QColor(r, g, b, alpha=a)
+    def btn_save_trigger(self):
+        pass
+
+    def btn_clear_trigger(self):
+        pass
 
 
-class HorSeparator(QtWidgets.QFrame):
+class ModelInterface(QtWidgets.QGroupBox):
 
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.setFrameShape(QtWidgets.QFrame.HLine)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.setTitle('Model interface')
+
+        self.btn_new = GUI_subwidgets.MediumButton('New', self, trigger_func=self.btn_new_trigger)
+        self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
+        self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
+        self.btn_clear = GUI_subwidgets.MediumButton('Clear', self, trigger_func=self.btn_clear_trigger)
+
+        self.build_layout()
+
+    def build_layout(self):
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addWidget(self.btn_new)
+        btn_layout.addWidget(self.btn_load)
+        btn_layout.addWidget(self.btn_save)
+        btn_layout.addWidget(self.btn_clear)
+        btn_layout.addStretch()
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(btn_layout)
+        layout.addWidget(GUI_subwidgets.HorSeparator())
+        layout.addStretch()
+        self.setLayout(layout)
+
+    def btn_new_trigger(self):
+        pass
+
+    def btn_load_trigger(self):
+        pass
+
+    def btn_save_trigger(self):
+        pass
+
+    def btn_clear_trigger(self):
+        pass
 
 
-class VerSeparator(QtWidgets.QFrame):
 
-    def __init__(self, *args):
-        super().__init__(*args)
 
-        self.setFrameShape(QtWidgets.QFrame.VLine)
-        self.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+
+
+
+
+
+
+
+
+
+
+

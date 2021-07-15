@@ -22,6 +22,11 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.config = settings_file
 
+        self.data_interface = GUI_widgets.DataInterface()
+        self.model_interface = GUI_widgets.ModelInterface()
+
+        self.central_widget = QtWidgets.QWidget()
+
         self.build_layout()
 
         # Generate elements
@@ -37,7 +42,14 @@ class MainUI(QtWidgets.QMainWindow):
         logger.info('Welcome to MechScan by Haakon Tvedt')
 
     def build_layout(self):
-        pass
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.data_interface)
+        layout.addWidget(self.model_interface)
+
+        self.central_widget.setLayout(layout)
+        self.setCentralWidget(self.central_widget)
+
 
 
 

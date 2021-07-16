@@ -8,6 +8,7 @@ import logging
 from PyQt5 import QtWidgets, QtGui, QtCore
 # Internals
 import GUI_subwidgets
+import TensorFlowAPI as tf
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -62,10 +63,13 @@ class ModelInterface(QtWidgets.QGroupBox):
 
         self.setTitle('Model interface')
 
+        self.model = tf.Model('New')
+
         self.btn_new = GUI_subwidgets.MediumButton('New', self, trigger_func=self.btn_new_trigger)
         self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
         self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
         self.btn_clear = GUI_subwidgets.MediumButton('Clear', self, trigger_func=self.btn_clear_trigger)
+        self.lbl_current = QtWidgets.QLabel('Current model: {}'.format(self.model.name))
 
         self.build_layout()
 
@@ -76,6 +80,7 @@ class ModelInterface(QtWidgets.QGroupBox):
         btn_layout.addWidget(self.btn_load)
         btn_layout.addWidget(self.btn_save)
         btn_layout.addWidget(self.btn_clear)
+        btn_layout.addWidget(self.lbl_current)
         btn_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
@@ -85,7 +90,8 @@ class ModelInterface(QtWidgets.QGroupBox):
         self.setLayout(layout)
 
     def btn_new_trigger(self):
-        pass
+        self.model = tf.Model('New')
+        self.lbl_current.setText('Current model: {}'.format(self.model.name))
 
     def btn_load_trigger(self):
         pass

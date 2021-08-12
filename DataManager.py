@@ -4,6 +4,7 @@
 
 # standard library
 import logging
+import random
 # 3rd party
 import numpy as np
 import h5py
@@ -45,8 +46,9 @@ class TimeSignal:
         """Generate signal from **function** which must be vectorized"""
         self.Y = function(self.X)
 
-    def add(self, function):
-        self.Y += function(self.X)
+    def add_noise_gauss(self, mu, sigma):
+        for k, y in enumerate(self.Y):
+            self.Y[k] += random.gauss(mu, sigma)
 
     def save(self, path_string):
 

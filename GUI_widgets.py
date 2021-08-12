@@ -4,6 +4,7 @@
 
 # standard library
 import logging
+import random
 # 3rd party
 from PyQt5 import QtWidgets, QtGui, QtCore
 import numpy as np
@@ -64,7 +65,8 @@ class DataInterface(QtWidgets.QGroupBox):
 
     def btn_new_trigger(self):
         self.data = DataManager.TimeSignal()
-        self.data.generate(lambda x: 1.0 * np.sin(2 * np.pi * x) + 1.0 * np.sin(2 * np.pi * 2 * x))
+        self.data.generate(lambda x: 1.0 * np.sin(2 * np.pi * x) + 2.0 * np.sin(2 * np.pi * 2 * x))
+        self.data.add_noise_gauss(0, 2)
         self.time_graph.plot(self.data.X, self.data.Y)
         Omega, F = Signals.FFT(self.data.Y, self.data.T)
         self.frequency_graph.plot(Omega, F + 10000)
@@ -82,7 +84,7 @@ class DataInterface(QtWidgets.QGroupBox):
         if filename[0]:
             self.data.load(filename[0])
             self.time_graph.plot(self.data.X, self.data.Y)
-            Omega, F = Signals.FFT(self.data.Y)
+            Omega, F = Signals.FFT(self.data.Y, self.data.T)
             self.frequency_graph.plot(Omega, F)
 
     def btn_clear_trigger(self):

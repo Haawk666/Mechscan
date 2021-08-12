@@ -6,9 +6,11 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets, QtGui, QtCore
+import pyqtgraph as pg
 # Internals
 import GUI_subwidgets
 import TensorFlowAPI as tf
+import DataManager
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -21,10 +23,15 @@ class DataInterface(QtWidgets.QGroupBox):
 
         self.setTitle('Data interface')
 
+        self.data = None
+
         self.btn_new = GUI_subwidgets.MediumButton('New', self, trigger_func=self.btn_new_trigger)
         self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
         self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
         self.btn_clear = GUI_subwidgets.MediumButton('Clear', self, trigger_func=self.btn_clear_trigger)
+        self.lbl_current = QtWidgets.QLabel('Current data: {}'.format(None))
+
+        self.graph_1 = pg.PlotWidget()
 
         self.build_layout()
 
@@ -40,6 +47,7 @@ class DataInterface(QtWidgets.QGroupBox):
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(btn_layout)
         layout.addWidget(GUI_subwidgets.HorSeparator())
+        layout.addWidget(self.graph_1)
         layout.addStretch()
         self.setLayout(layout)
 
@@ -47,10 +55,11 @@ class DataInterface(QtWidgets.QGroupBox):
         pass
 
     def btn_load_trigger(self):
-        pass
+        self.data = DataManager.TimeSignal()
+        self.graph_1.plot(self.data.X, self.data.Y)
 
     def btn_save_trigger(self):
-        pass
+        self.data.save()
 
     def btn_clear_trigger(self):
         pass

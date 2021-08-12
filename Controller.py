@@ -13,4 +13,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class Controller:
 
+    def __init__(self, gui_obj):
+
+        self.GUI = gui_obj
+        self.data = None
+
+    def load_data(self, path_string):
+        pass

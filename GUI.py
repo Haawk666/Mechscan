@@ -8,7 +8,7 @@ import logging
 from PyQt5 import QtWidgets, QtGui, QtCore
 # Internals
 import GUI_widgets
-import GUI_dialogs
+import Controller
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -21,6 +21,8 @@ class MainUI(QtWidgets.QMainWindow):
         super().__init__(*args)
 
         self.config = settings_file
+
+        self.controller = Controller.Controller(self)
 
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()

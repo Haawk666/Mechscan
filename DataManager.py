@@ -45,54 +45,36 @@ class TimeSignal:
         """Generate signal from **function** which must be vectorized"""
         self.Y = function(self.X)
 
-    def save(self):
+    def add(self, function):
+        self.Y += function(self.X)
+
+    def save(self, path_string):
+
         print(self)
 
+        with h5py.File(path_string, 'w') as f:
+
+            f.create_dataset('X', data=self.X)
+            f.create_dataset('Y', data=self.Y)
+
+            f.attrs['f_a'] = self.f_a
+            f.attrs['t_start'] = self.t_start
+            f.attrs['t_end'] = self.t_end
+            f.attrs['T'] = self.T
+            f.attrs['omega_a'] = self.omega_a
+            f.attrs['n'] = self.n
+
     def load(self, path_string):
-        # h5py.get_config().track_order = True
-        #
-        # with h5py.File(path_string, 'w') as f:
-        #
-        #     f.create_dataset('X', data=self.X)
-        #
-        #
-        #     f.attrs['subtitle'] = self.subtitle
-        #     f.attrs['speaker'] = self.speaker
-        #     f.attrs['speaker_address'] = self.speaker_address
-        #     f.attrs['date'] = self.date
-        #     f.attrs['event'] = self.event
-        #     f.attrs['use_parts'] = self.use_parts
-        #
-        #     f.create_group('structure/parts')
-        #     for part in self.parts:
-        #         f.create_group('structure/parts/{}'.format(part.title))
-        #         for section in part.sections:
-        #             f.create_group('structure/parts/{}/{}'.format(part.title, section.title))
-        #             for subsection in section.subsections:
-        #                 f.create_group('structure/parts/{}/{}/{}'.format(part.title, section.title, subsection))
-        #
-        #     f.create_group('structure/sections')
-        #     for section in self.sections:
-        #         f.create_group('structure/sections/{}'.format(section.title))
-        #         for subsection in section.subsections:
-        #             f.create_group('structure/sections/{}/{}'.format(section.title, subsection))
-        #
-        #     f.create_group('logos')
-        #     for i, logo in enumerate(self.logos):
-        #         print(logo['fname'])
-        #         f['logos'].attrs['logo {}'.format(i)] = logo['fname']
-        #
-        #     f.create_group('colors/col_background')
-        #     f['colors/col_background'].attrs['r'] = self.col_background[0]
-        #     f['colors/col_background'].attrs['g'] = self.col_background[1]
-        #     f['colors/col_background'].attrs['b'] = self.col_background[2]
-        #     f.create_group('colors/col_highlight')
-        #     f['colors/col_highlight'].attrs['r'] = self.col_highlight[0]
-        #     f['colors/col_highlight'].attrs['g'] = self.col_highlight[1]
-        #     f['colors/col_highlight'].attrs['b'] = self.col_highlight[2]
-        #     f.create_group('colors/col_tertiary')
-        #     f['colors/col_tertiary'].attrs['r'] = self.col_tertiary[0]
-        #     f['colors/col_tertiary'].attrs['g'] = self.col_tertiary[1]
-        #     f['colors/col_tertiary'].attrs['b'] = self.col_tertiary[2]
-        pass
+
+        with h5py.File(path_string, 'r') as f:
+
+            self.X = f['X'][()]
+            self.Y = f['Y'][()]
+
+            self.f_a = f.attrs['f_a']
+            self.t_start = f.attrs['t_start']
+            self.t_end = f.attrs['t_end']
+            self.T = f.attrs['T']
+            self.omega_a = f.attrs['omega_a']
+            self.n = f.attrs['n']
 

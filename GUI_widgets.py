@@ -65,11 +65,15 @@ class DataInterface(QtWidgets.QGroupBox):
 
     def btn_new_trigger(self):
         self.data = DataManager.TimeSignal()
-        self.data.generate(lambda x: 1.0 * np.sin(2 * np.pi * x) + 2.0 * np.sin(2 * np.pi * 2 * x))
-        self.data.add_noise_gauss(0, 2)
+        a_1 = 1.0
+        f_1 = 1.0
+        a_2 = 2.0
+        f_2 = 3.5
+        self.data.generate(lambda x: a_1 * np.sin(2 * np.pi * f_1 * x) + a_2 * np.sin(2 * np.pi * f_2 * x))
+        self.data.add_noise_gauss(0, 0.1)
         self.time_graph.plot(self.data.X, self.data.Y)
-        Omega, F = Signals.FFT(self.data.Y, self.data.T)
-        self.frequency_graph.plot(Omega, F + 10000)
+        Omega, F = Signals.FFT(self.data.Y, self.data.n, self.data.f_a, self.data.T)
+        self.frequency_graph.plot(Omega, F)
 
     def btn_save_trigger(self):
         if self.data:

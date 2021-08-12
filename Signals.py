@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def FFT(Y, T):
+def FFT(Y, n, f_a, T):
     """Recover the **Fast Fourier Transform** (FFT) of the signal **Y** on the time domain **T**."""
-    Omega = scipy.fft.fftfreq(Y.shape[0], T)
-    return Omega, np.absolute(scipy.fft.fft(Y))
+    Omega = scipy.fft.fftfreq(Y.shape[0], T)[n//2:]
+    return Omega, np.absolute(scipy.fft.fft(Y))[n//2:]
 

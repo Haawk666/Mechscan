@@ -68,10 +68,14 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         self.box_const.setValue(1.0)
 
         self.box_amp = QtWidgets.QDoubleSpinBox()
+        self.box_amp.setMaximum(10000.0)
+        self.box_amp.setMinimum(0.0)
         self.box_amp.setDecimals(3)
         self.box_amp.setValue(1.0)
 
         self.box_freq = QtWidgets.QDoubleSpinBox()
+        self.box_freq.setMaximum(44100.0)
+        self.box_freq.setMinimum(0.0)
         self.box_freq.setDecimals(1)
         self.box_freq.setValue(2.0)
 

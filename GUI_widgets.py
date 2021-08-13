@@ -74,29 +74,28 @@ class SignalInterface(QtWidgets.QWidget):
         info_layout.addWidget(QtWidgets.QLabel('Bits: '), 1, 0)
         info_layout.addWidget(QtWidgets.QLabel('Start time t_start, (s): '), 2, 0)
         info_layout.addWidget(QtWidgets.QLabel('End time t_end, (s): '), 3, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Sample interval T, (s): '), 4, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Angular sampling frequency omega_a, (Hz): \t'), 5, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Number of samples n, (#): '), 6, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Signal length (s): '), 7, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Sample interval T, (s): '), 0, 3)
+        info_layout.addWidget(QtWidgets.QLabel('Angular sampling frequency omega_a, (Hz): \t'), 1, 3)
+        info_layout.addWidget(QtWidgets.QLabel('Number of samples n, (#): '), 2, 3)
+        info_layout.addWidget(QtWidgets.QLabel('Signal length (s): '), 3, 3)
         info_layout.addWidget(self.lbl_f_a, 0, 1)
         info_layout.addWidget(self.lbl_bits, 1, 1)
         info_layout.addWidget(self.lbl_t_start, 2, 1)
         info_layout.addWidget(self.lbl_t_end, 3, 1)
-        info_layout.addWidget(self.lbl_T, 4, 1)
-        info_layout.addWidget(self.lbl_omega_a, 5, 1)
-        info_layout.addWidget(self.lbl_n, 6, 1)
-        info_layout.addWidget(self.lbl_length, 7, 1)
+        info_layout.addWidget(self.lbl_T, 0, 4)
+        info_layout.addWidget(self.lbl_omega_a, 1, 4)
+        info_layout.addWidget(self.lbl_n, 2, 4)
+        info_layout.addWidget(self.lbl_length, 3, 4)
 
         outer_info_layout = QtWidgets.QHBoxLayout()
         outer_info_layout.addLayout(info_layout)
-        outer_info_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(btn_layout)
         layout.addWidget(GUI_subwidgets.HorSeparator())
-        layout.addLayout(outer_info_layout)
         layout.addWidget(self.time_graph)
         layout.addWidget(self.frequency_graph)
+        layout.addLayout(outer_info_layout)
         layout.addStretch()
         self.setLayout(layout)
 
@@ -155,12 +154,21 @@ class SignalInterface(QtWidgets.QWidget):
             self.time_graph.plotItem.clear()
             self.frequency_graph.plotItem.clear()
             self.lbl_f_a.setText('')
+            self.lbl_bits.setText('')
             self.lbl_t_start.setText('')
             self.lbl_t_end.setText('')
             self.lbl_T.setText('')
             self.lbl_omega_a.setText('')
             self.lbl_n.setText('')
             self.lbl_length.setText('')
+
+
+class SystemInterface(QtWidgets.QWidget):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.signals = []
 
 
 class DataInterface(QtWidgets.QWidget):

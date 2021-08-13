@@ -22,11 +22,13 @@ class MainUI(QtWidgets.QMainWindow):
         self.config = settings_file
 
         self.signal_interface = GUI_widgets.SignalInterface()
+        self.system_interface = GUI_widgets.SystemInterface()
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.signal_interface, 'Signals')
+        self.tabs.addTab(self.system_interface, 'Systems')
         self.tabs.addTab(self.data_interface, 'Data')
         self.tabs.addTab(self.model_interface, 'Models')
 

@@ -100,6 +100,8 @@ class TimeSignal:
         result = TimeSignal(t_start=0.0, t_end=t_end, sampling_rate=f_a, bits=bitsize)
         if nchan > 1:
             result.Y = data[:, 0] // 2 + data[:, 1] // 2
+        else:
+            result.Y = data[:, 0]
         return result
 
     def export_wav_signal(self, file_path):
@@ -108,5 +110,5 @@ class TimeSignal:
         wav.setsampwidth(self.bits // 8)
         wav.setframerate(self.f_a)
         wav.setnframes(self.n)
-        wav.writeframes(self.Y)
+        wav.writeframes(self.Y.astype('<h').tobytes())
 

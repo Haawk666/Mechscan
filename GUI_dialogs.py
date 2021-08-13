@@ -36,6 +36,9 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         self.box_f_a.setMinimum(1.0)
         self.box_f_a.setDecimals(1)
 
+        self.cmb_bits = QtWidgets.QComboBox()
+        self.cmb_bits.addItems(['8', '16'])
+
         self.box_t_start = QtWidgets.QDoubleSpinBox()
         self.box_t_start.setDecimals(3)
 
@@ -97,13 +100,15 @@ class GenerateTimeSignal(QtWidgets.QDialog):
 
         base_grid = QtWidgets.QGridLayout()
         base_grid.addWidget(QtWidgets.QLabel('Sample rate f_a (Hz)'), 0, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Start time (s)'), 1, 0)
-        base_grid.addWidget(QtWidgets.QLabel('End time (s)'), 2, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Type'), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Bits'), 1, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Start time (s)'), 2, 0)
+        base_grid.addWidget(QtWidgets.QLabel('End time (s)'), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Type'), 4, 0)
         base_grid.addWidget(self.box_f_a, 0, 1)
-        base_grid.addWidget(self.box_t_start, 1, 1)
-        base_grid.addWidget(self.box_t_end, 2, 1)
-        base_grid.addWidget(self.cmb_type, 3, 1)
+        base_grid.addWidget(self.cmb_bits, 1, 1)
+        base_grid.addWidget(self.box_t_start, 2, 1)
+        base_grid.addWidget(self.box_t_end, 3, 1)
+        base_grid.addWidget(self.cmb_type, 4, 1)
         base_widget = QtWidgets.QWidget()
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
@@ -174,14 +179,15 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         self.ui_obj.signal = DataManager.TimeSignal(
             t_start=self.box_t_start.value(),
             t_end=self.box_t_end.value(),
-            sampling_rate=self.box_f_a.value()
+            sampling_rate=self.box_f_a.value(),
+            bits=int(self.cmb_bits.currentText())
         )
 
         type_text = self.cmb_type.currentText()
         if type_text == 'Constant':
             const = self.box_const.value()
             for k, y in enumerate(self.ui_obj.signal.X):
-                self.ui_obj.signal.Y[k] = const
+                self.ui_obj.signal.Y[k] = int(const)
         elif type_text == 'Sine':
             amp = self.box_amp.value()
             freq = self.box_freq.value()
@@ -254,6 +260,58 @@ class ImportTimeSignal(QtWidgets.QDialog):
         if filename[0]:
             if self.cmb_type.currentText() == 'Wav':
                 self.ui_obj.signal = DataManager.TimeSignal.import_wav_signal(filename[0])
+
+
+class ExportTimeSignal(QtWidgets.QDialog):
+
+    def __init__(self, *args, ui_object=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Export signal')
+
+        self.ui_obj = ui_object
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Export')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.cmb_type = QtWidgets.QComboBox()
+        self.cmb_type.addItems([
+            'Wav'
+        ])
+
+        self.build_layout()
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        content_layout = QtWidgets.QHBoxLayout()
+        content_layout.addStretch()
+        content_layout.addWidget(self.cmb_type)
+        content_layout.addStretch()
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(content_layout)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        if self.ui_obj.signal is not None:
+            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Export signal", '', "")
+            if filename[0]:
+                if self.cmb_type.currentText() == 'Wav':
+                    self.ui_obj.signal.export_wav_signal(filename[0])
+        self.close()
 
 
 

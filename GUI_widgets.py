@@ -29,12 +29,14 @@ class SignalInterface(QtWidgets.QWidget):
 
         self.btn_generate = GUI_subwidgets.MediumButton('Generate', self, trigger_func=self.btn_generate_trigger)
         self.btn_import = GUI_subwidgets.MediumButton('Import', self, trigger_func=self.btn_import_trigger)
+        self.btn_export = GUI_subwidgets.MediumButton('Export', self, trigger_func=self.btn_export_trigger)
         self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
         self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
         self.btn_clear = GUI_subwidgets.MediumButton('Clear', self, trigger_func=self.btn_clear_trigger)
         self.lbl_current = QtWidgets.QLabel('Current signal: {}'.format(None))
 
         self.lbl_f_a = QtWidgets.QLabel('')
+        self.lbl_bits = QtWidgets.QLabel('')
         self.lbl_t_start = QtWidgets.QLabel('')
         self.lbl_t_end = QtWidgets.QLabel('')
         self.lbl_T = QtWidgets.QLabel('')
@@ -60,6 +62,7 @@ class SignalInterface(QtWidgets.QWidget):
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(self.btn_generate)
         btn_layout.addWidget(self.btn_import)
+        btn_layout.addWidget(self.btn_export)
         btn_layout.addWidget(self.btn_save)
         btn_layout.addWidget(self.btn_load)
         btn_layout.addWidget(self.btn_clear)
@@ -68,19 +71,21 @@ class SignalInterface(QtWidgets.QWidget):
 
         info_layout = QtWidgets.QGridLayout()
         info_layout.addWidget(QtWidgets.QLabel('Sampling frequency f_a, (Hz): '), 0, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Start time t_start, (s): '), 1, 0)
-        info_layout.addWidget(QtWidgets.QLabel('End time t_end, (s): '), 2, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Sample interval T, (s): '), 3, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Angular sampling frequency omega_a, (Hz): \t'), 4, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Number of samples n, (#): '), 5, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Signal length (s): '), 6, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Bits: '), 1, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Start time t_start, (s): '), 2, 0)
+        info_layout.addWidget(QtWidgets.QLabel('End time t_end, (s): '), 3, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Sample interval T, (s): '), 4, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Angular sampling frequency omega_a, (Hz): \t'), 5, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Number of samples n, (#): '), 6, 0)
+        info_layout.addWidget(QtWidgets.QLabel('Signal length (s): '), 7, 0)
         info_layout.addWidget(self.lbl_f_a, 0, 1)
-        info_layout.addWidget(self.lbl_t_start, 1, 1)
-        info_layout.addWidget(self.lbl_t_end, 2, 1)
-        info_layout.addWidget(self.lbl_T, 3, 1)
-        info_layout.addWidget(self.lbl_omega_a, 4, 1)
-        info_layout.addWidget(self.lbl_n, 5, 1)
-        info_layout.addWidget(self.lbl_length, 6, 1)
+        info_layout.addWidget(self.lbl_bits, 1, 1)
+        info_layout.addWidget(self.lbl_t_start, 2, 1)
+        info_layout.addWidget(self.lbl_t_end, 3, 1)
+        info_layout.addWidget(self.lbl_T, 4, 1)
+        info_layout.addWidget(self.lbl_omega_a, 5, 1)
+        info_layout.addWidget(self.lbl_n, 6, 1)
+        info_layout.addWidget(self.lbl_length, 7, 1)
 
         outer_info_layout = QtWidgets.QHBoxLayout()
         outer_info_layout.addLayout(info_layout)
@@ -102,6 +107,9 @@ class SignalInterface(QtWidgets.QWidget):
     def btn_import_trigger(self):
         GUI_dialogs.ImportTimeSignal(ui_object=self)
         self.update_info()
+
+    def btn_export_trigger(self):
+        GUI_dialogs.ExportTimeSignal(ui_object=self)
 
     def btn_save_trigger(self):
         if self.signal:
@@ -136,6 +144,7 @@ class SignalInterface(QtWidgets.QWidget):
             self.plot_signal()
             self.plot_power_spectrum()
             self.lbl_f_a.setText('{}'.format(self.signal.f_a))
+            self.lbl_bits.setText('{}'.format(self.signal.bits))
             self.lbl_t_start.setText('{}'.format(self.signal.t_start))
             self.lbl_t_end.setText('{}'.format(self.signal.t_end))
             self.lbl_T.setText('{}'.format(self.signal.T))

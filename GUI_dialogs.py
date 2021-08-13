@@ -202,6 +202,58 @@ class GenerateTimeSignal(QtWidgets.QDialog):
             self.ui_obj.signal.add_noise_gauss(mu, sigma)
 
 
+class ImportTimeSignal(QtWidgets.QDialog):
+
+    def __init__(self, *args, ui_object=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Import signal')
+
+        self.ui_obj = ui_object
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Import')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.cmb_type = QtWidgets.QComboBox()
+        self.cmb_type.addItems([
+            'Wav'
+        ])
+
+        self.build_layout()
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        content_layout = QtWidgets.QHBoxLayout()
+        content_layout.addStretch()
+        content_layout.addWidget(self.cmb_type)
+        content_layout.addStretch()
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(content_layout)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        self.gen_signal()
+        self.close()
+
+    def gen_signal(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal from wav", '', "")
+        if filename[0]:
+            if self.cmb_type.currentText() == 'Wav':
+                self.ui_obj.signal = DataManager.TimeSignal.import_wav_signal(filename[0])
 
 
 

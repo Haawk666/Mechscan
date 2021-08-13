@@ -7,6 +7,7 @@ import logging
 import random
 # 3rd party
 import numpy as np
+import wave
 import h5py
 # Internals
 
@@ -80,14 +81,27 @@ class TimeSignal:
             self.omega_a = f.attrs['omega_a']
             self.n = f.attrs['n']
 
-    def DTFT(self):
-        X_f = np.linspace(0, 2 * np.pi, num=self.n)
-        Y_f = np.zeros((self.n, ), dtype=np.complex)
-        for i, x_f in enumerate(X_f):
-            for k, y in enumerate(self.Y):
-                Y_f[i] += y * np.exp(- np.complex(0, 1) * k * x_f)
-        return X_f, Y_f
+    @staticmethod
+    def import_wav_signal(file_path):
+        wav = wave.open(file_path, mode='rb')
+        f_a = wav.getframerate()
+        T = 1 / f_a
+        t_start = 0.0
+        n = wav.getnframes()
+        t_end = T * (n + 1)
+        nchan = wav.getnchannels()
 
+        dstr = wav.readframes(n * nchan)
+        data = np.fromstring(dstr, np.int16)
+        data = np.reshape(data, (-1, nchan))
+        print(data.shape)
 
+        result = TimeSignal(t_start=t_start, t_end=t_end, sampling_rate=f_a)
+        for k, y in enumerate(result.Y):
+            result.Y[k] = data[k, 0] + data[k, 1]
+
+        print(result)
+
+        return result
 
 

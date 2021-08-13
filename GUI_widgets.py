@@ -100,7 +100,8 @@ class SignalInterface(QtWidgets.QWidget):
         self.update_info()
 
     def btn_import_trigger(self):
-        pass
+        GUI_dialogs.ImportTimeSignal(ui_object=self)
+        self.update_info()
 
     def btn_save_trigger(self):
         if self.signal:

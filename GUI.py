@@ -21,10 +21,14 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.config = settings_file
 
+        self.signal_interface = GUI_widgets.SignalInterface()
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()
 
-        self.central_widget = QtWidgets.QWidget()
+        self.tabs = QtWidgets.QTabWidget()
+        self.tabs.addTab(self.signal_interface, 'Signals')
+        self.tabs.addTab(self.data_interface, 'Data')
+        self.tabs.addTab(self.model_interface, 'Models')
 
         self.build_layout()
 
@@ -42,12 +46,7 @@ class MainUI(QtWidgets.QMainWindow):
 
     def build_layout(self):
 
-        layout = QtWidgets.QHBoxLayout()
-        layout.addWidget(self.data_interface)
-        layout.addWidget(self.model_interface)
-
-        self.central_widget.setLayout(layout)
-        self.setCentralWidget(self.central_widget)
+        self.setCentralWidget(self.tabs)
 
 
 

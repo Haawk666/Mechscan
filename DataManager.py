@@ -80,3 +80,14 @@ class TimeSignal:
             self.omega_a = f.attrs['omega_a']
             self.n = f.attrs['n']
 
+    def DTFT(self):
+        X_f = np.linspace(0, 2 * np.pi, num=self.n)
+        Y_f = np.zeros((self.n, ), dtype=np.complex)
+        for i, x_f in enumerate(X_f):
+            for k, y in enumerate(self.Y):
+                Y_f[i] += y * np.exp(- np.complex(0, 1) * k * x_f)
+        return X_f, Y_f
+
+
+
+

@@ -18,32 +18,42 @@ logger.setLevel(logging.DEBUG)
 
 class TimeSignal:
 
-    def __init__(self, t_start=0.0, t_end=10.0, sampling_rate=44000.0, bits=16):
+    def __init__(self, t_start=0.0, t_end=10.0, sampling_rate=44100.0, bit_depth=16):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
-        self.f_a = sampling_rate  # Sampling rate
-        self.bits = bits  # Bitrate
-        self.t_start = t_start  # Timestamp signal start
-        self.t_end = t_end  # Timestamp signal end
+        self.f_a = sampling_rate  # Sampling rate (Hz)
+        self.bit_depth = bit_depth  # Bits (bits / sample)
+        self.bit_rate = self.f_a * self.bit_depth  # Bitrate (bits / s)
+        self.t_start = t_start  # Timestamp signal start (s)
+        self.t_end = t_end  # Timestamp signal end (s)
 
-        self.T = 1 / self.f_a  # Sampling interval
-        self.omega_a = 2 * np.pi / self.T  # Angular sampling frequency
-        self.n = int(((self.t_end - self.t_start) / self.T) - 1.0)  # Number of samples
+        self.T = 1 / self.f_a  # Sampling interval (s)
+        self.omega_a = 2 * np.pi / self.T  # Angular sampling frequency (Hz)
+        self.n = int(((self.t_end - self.t_start) / self.T) - 1.0)  # Number of samples (#)
 
-        self.X = np.linspace(self.t_start, self.t_end, num=self.n)  # Discrete time
-        self.Y = np.zeros((self.n, ), dtype=eval('np.int{}'.format(bits)))  # Signal amplitude
+        self.X = np.linspace(self.t_start, self.t_end, num=self.n)  # Discrete time (s)
+        self.Y = np.zeros((self.n, ), dtype=eval('np.int{}'.format(bit_depth)))  # Signal amplitude ()
 
     def __str__(self):
         info_string = 'Time signal:\n--------------------\n'
         info_string += 'Start time: {}\n'.format(self.t_start)
         info_string += 'End time: {}\n'.format(self.t_end)
         info_string += 'Sampling rate: {}\n'.format(self.f_a)
-        info_string += 'Bitrate: {}\n'.format(self.bits)
+        info_string += 'Bit depth: {}\n'.format(self.bit_depth)
+        info_string += 'Bitrate: {}\n'.format(self.bit_rate)
         info_string += 'Sampling interval: {}\n'.format(self.T)
         info_string += 'Angular sampling frequency: {}\n'.format(self.omega_a)
         info_string += 'Number of samples: {}\n'.format(self.n)
         info_string += 'X shape: {}\n'.format(self.X.shape)
         info_string += 'Y shape: {}\n'.format(self.Y.shape)
         return info_string
+
+    def check(self, fix=False):
+        """Check that all attributes are correct and makes sense. If fix=True, will try to fix problems (might be
+        very buggy). Returns True if all attributes are coherent, false if not."""
+        print('(t_start + T * (n + 1) | t_end) = ({} | {})'.format(self.t_start + self.T * (self.n + 1), self.t_end))
+        print('(n | X.shape[0]) = ({} | {})'.format(self.n, self.X.shape[0]))
+        print('(Y.dtype | bit depth) = {} | {})'.format(self.Y.dtype, self.bit_depth))
+        print('(8 * Y.dtype.itemsize | bit depth) = ({} | {})'.format(8 * self.Y.dtype.itemsize, self.bit_depth))
 
     def generate(self, function):
         """Generate signal from **function** which must be vectorized"""
@@ -63,7 +73,8 @@ class TimeSignal:
             f.create_dataset('Y', data=self.Y)
 
             f.attrs['f_a'] = self.f_a
-            f.attrs['bits'] = self.bits
+            f.attrs['bit_depth'] = self.bit_depth
+            f.attrs['bit_rate'] = self.bit_rate
             f.attrs['t_start'] = self.t_start
             f.attrs['t_end'] = self.t_end
             f.attrs['T'] = self.T
@@ -78,7 +89,8 @@ class TimeSignal:
             self.Y = f['Y'][()]
 
             self.f_a = f.attrs['f_a']
-            self.bits = f.attrs['bits']
+            self.bit_depth = f.attrs['bit_depth']
+            self.bit_rate = f.attrs['bit_rate']
             self.t_start = f.attrs['t_start']
             self.t_end = f.attrs['t_end']
             self.T = f.attrs['T']
@@ -86,7 +98,23 @@ class TimeSignal:
             self.n = f.attrs['n']
 
     @staticmethod
-    def import_wav_signal(file_path):
+    def from_data(X, Y):
+        if not X.shape == Y.shape:
+            raise ValueError
+
+        t_start = X[0]
+        t_end = X[-1]
+        n = X.shape[0]
+        T = (t_end - t_start) / (n + 1.0)
+        f_a = 1 / T
+        bit_depth = 8 * Y.dtype.itemsize
+        new_signal = TimeSignal(t_start=t_start, t_end=t_end, sampling_rate=f_a, bit_depth=bit_depth)
+        new_signal.Y = Y
+
+        return new_signal
+
+    @staticmethod
+    def from_wav(file_path):
         wav = wave.open(file_path, mode='rb')
         f_a = wav.getframerate()
         T = 1 / f_a
@@ -97,7 +125,7 @@ class TimeSignal:
         dstr = wav.readframes(n * nchan)
         data = np.fromstring(dstr, eval('np.int{}'.format(bitsize)))
         data = np.reshape(data, (-1, nchan))
-        result = TimeSignal(t_start=0.0, t_end=t_end, sampling_rate=f_a, bits=bitsize)
+        result = TimeSignal(t_start=0.0, t_end=t_end, sampling_rate=f_a, bit_depth=bitsize)
         if nchan > 1:
             result.Y = data[:, 0] // 2 + data[:, 1] // 2
         else:
@@ -107,7 +135,7 @@ class TimeSignal:
     def export_wav_signal(self, file_path):
         wav = wave.open(file_path, mode='wb')
         wav.setnchannels(1)
-        wav.setsampwidth(self.bits // 8)
+        wav.setsampwidth(self.bit_depth // 8)
         wav.setframerate(self.f_a)
         wav.setnframes(self.n)
         wav.writeframes(self.Y.astype('<h').tobytes())

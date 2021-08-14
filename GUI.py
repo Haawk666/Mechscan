@@ -5,9 +5,10 @@
 # standard library
 import logging
 # 3rd party
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets
 # Internals
 import GUI_widgets
+import SignalInterface
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -21,7 +22,7 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.config = settings_file
 
-        self.signal_interface = GUI_widgets.SignalInterface()
+        self.signal_interface = SignalInterface.SignalInterface()
         self.system_interface = GUI_widgets.SystemInterface()
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()

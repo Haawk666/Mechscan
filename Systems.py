@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Module docstring"""
+"""Signals and systems"""
 
 # standard library
 import logging
@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class System:
+
+    def __init__(self):
+
+        self.input_signals = []
+        self.output_signals = []
 
 
 

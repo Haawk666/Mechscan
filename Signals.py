@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Module docstring"""
+"""Signals and systems"""
 
 # standard library
 import logging

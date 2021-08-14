@@ -10,12 +10,101 @@ import numpy as np
 import pyqtgraph as pg
 # Internals
 import GUI_subwidgets
-import GUI_dialogs
-import SignalSystem as ss
+import Signals as ss
 import SignalProcessing as sp
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class SignalsInterface(QtWidgets.QWidget):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.signals = []
+        self.signal_interfaces = []
+
+        self.tabs = QtWidgets.QTabWidget()
+
+        self.btn_generate = GUI_subwidgets.MediumButton('Generate', self, trigger_func=self.btn_generate_trigger)
+        self.btn_import = GUI_subwidgets.MediumButton('Import', self, trigger_func=self.btn_import_trigger)
+        self.btn_export = GUI_subwidgets.MediumButton('Export', self, trigger_func=self.btn_export_trigger)
+        self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
+        self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
+        self.btn_clear = GUI_subwidgets.MediumButton('Close', self, trigger_func=self.btn_clear_trigger)
+
+        self.build_layout()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addWidget(self.btn_generate)
+        btn_layout.addWidget(self.btn_import)
+        btn_layout.addWidget(self.btn_export)
+        btn_layout.addWidget(self.btn_save)
+        btn_layout.addWidget(self.btn_load)
+        btn_layout.addWidget(self.btn_clear)
+        btn_layout.addStretch()
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(btn_layout)
+        layout.addWidget(GUI_subwidgets.HorSeparator())
+        layout.addWidget(self.tabs)
+
+        self.setLayout(layout)
+
+    def btn_generate_trigger(self):
+        signal_interface = SignalInterface()
+        GenerateTimeSignal(ui_object=signal_interface)
+        self.signals.append(signal_interface.signal)
+        self.tabs.addTab(signal_interface, '{}'.format(signal_interface.file_path))
+        self.signal_interfaces.append(signal_interface)
+        signal_interface.update_info()
+        self.tabs.setCurrentIndex(len(self.tabs) - 1)
+
+    def btn_import_trigger(self):
+        signal_interface = SignalInterface()
+        ImportTimeSignal(ui_object=signal_interface)
+        self.signals.append(signal_interface.signal)
+        self.tabs.addTab(signal_interface, '{}'.format(signal_interface.file_path))
+        self.signal_interfaces.append(signal_interface)
+        signal_interface.update_info()
+        self.tabs.setCurrentIndex(len(self.tabs) - 1)
+
+    def btn_export_trigger(self):
+        index = self.tabs.currentIndex()
+        interface = self.signal_interfaces[index]
+        ExportTimeSignal(ui_object=interface)
+
+    def btn_save_trigger(self):
+        index = self.tabs.currentIndex()
+        interface = self.signal_interfaces[index]
+        if interface.signal:
+            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save signal", '', "")
+            if filename[0]:
+                interface.file_path = filename[0]
+                interface.signal.save(filename[0])
+                self.tabs.setTabText(index, interface.file_path)
+
+    def btn_load_trigger(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
+        if filename[0]:
+            signal = ss.TimeSignal()
+            signal_interface = SignalInterface()
+            signal_interface.signal = ss.TimeSignal()
+            signal_interface.signal.load(filename[0])
+            self.signals.append(signal_interface.signal)
+            self.signal_interfaces.append(signal_interface)
+            signal_interface.file_path = filename[0]
+            self.tabs.addTab(signal_interface, '{}'.format(signal_interface.file_path))
+            signal_interface.update_info()
+            self.tabs.setCurrentIndex(len(self.tabs) - 1)
+
+    def btn_clear_trigger(self):
+        index = self.tabs.currentIndex()
+        interface = self.signal_interfaces.pop(index)
+        signal = self.signals.pop(index)
+        self.tabs.removeTab(index)
 
 
 class SignalInterface(QtWidgets.QWidget):
@@ -24,13 +113,8 @@ class SignalInterface(QtWidgets.QWidget):
         super().__init__(*args)
 
         self.signal = None
+        self.file_path = None
 
-        self.btn_generate = GUI_subwidgets.MediumButton('Generate', self, trigger_func=self.btn_generate_trigger)
-        self.btn_import = GUI_subwidgets.MediumButton('Import', self, trigger_func=self.btn_import_trigger)
-        self.btn_export = GUI_subwidgets.MediumButton('Export', self, trigger_func=self.btn_export_trigger)
-        self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
-        self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
-        self.btn_clear = GUI_subwidgets.MediumButton('Clear', self, trigger_func=self.btn_clear_trigger)
         self.lbl_current = QtWidgets.QLabel('Current signal: {}'.format(None))
 
         self.lbl_f_a = QtWidgets.QLabel('')
@@ -57,16 +141,6 @@ class SignalInterface(QtWidgets.QWidget):
 
     def build_layout(self):
 
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btn_generate)
-        btn_layout.addWidget(self.btn_import)
-        btn_layout.addWidget(self.btn_export)
-        btn_layout.addWidget(self.btn_save)
-        btn_layout.addWidget(self.btn_load)
-        btn_layout.addWidget(self.btn_clear)
-        btn_layout.addWidget(self.lbl_current)
-        btn_layout.addStretch()
-
         info_layout = QtWidgets.QGridLayout()
         info_layout.addWidget(QtWidgets.QLabel('Sampling frequency f_a, (Hz): '), 0, 0)
         info_layout.addWidget(QtWidgets.QLabel('Bits: '), 1, 0)
@@ -89,42 +163,11 @@ class SignalInterface(QtWidgets.QWidget):
         outer_info_layout.addLayout(info_layout)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(btn_layout)
-        layout.addWidget(GUI_subwidgets.HorSeparator())
         layout.addWidget(self.time_graph)
         layout.addWidget(self.frequency_graph)
         layout.addLayout(outer_info_layout)
         layout.addStretch()
         self.setLayout(layout)
-
-    def btn_generate_trigger(self):
-        GenerateTimeSignal(ui_object=self)
-        self.update_info()
-
-    def btn_import_trigger(self):
-        ImportTimeSignal(ui_object=self)
-        self.update_info()
-
-    def btn_export_trigger(self):
-        ExportTimeSignal(ui_object=self)
-
-    def btn_save_trigger(self):
-        if self.signal:
-            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save signal", '', "")
-            if filename[0]:
-                self.signal.save(filename[0])
-
-    def btn_load_trigger(self):
-        if not self.signal:
-            self.signal = ss.TimeSignal()
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
-        if filename[0]:
-            self.signal.load(filename[0])
-            self.update_info()
-
-    def btn_clear_trigger(self):
-        self.signal = None
-        self.update_info()
 
     def plot_signal(self):
         self.time_graph.plotItem.clear()

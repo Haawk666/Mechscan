@@ -17,14 +17,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class SystemInterface(QtWidgets.QWidget):
-
-    def __init__(self, *args):
-        super().__init__(*args)
-
-        self.signals = []
-
-
 class DataInterface(QtWidgets.QWidget):
 
     def __init__(self, *args):

@@ -6,7 +6,7 @@
 import logging
 import random
 # 3rd party
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 import numpy as np
 import wave
 import h5py
@@ -135,6 +135,7 @@ class SystemInterface(QtWidgets.QWidget):
         output_layout.addLayout(output_btns_layout)
 
         output_widget = QtWidgets.QWidget()
+        output_widget.setLayout(output_layout)
 
         info_layout = QtWidgets.QGridLayout()
 
@@ -147,11 +148,24 @@ class SystemInterface(QtWidgets.QWidget):
         panel_layout.addLayout(info_layout)
         panel_layout.addLayout(btn_layout)
 
+        panel_widget = QtWidgets.QWidget()
+        panel_widget.setLayout(panel_layout)
+
         split_1 = QtWidgets.QSplitter(self)
+        split_1.setOrientation(QtCore.Qt.Vertical)
         split_2 = QtWidgets.QSplitter(self)
         split_3 = QtWidgets.QSplitter(self)
+        split_3.setOrientation(QtCore.Qt.Vertical)
 
-        split_
+        split_3.addWidget(input_widget)
+        split_3.addWidget(output_widget)
+        split_2.addWidget(panel_widget)
+        split_2.addWidget(split_3)
+        split_1.addWidget(self.view)
+        split_1.addWidget(split_2)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(split_1)
 
         self.setLayout(layout)
 

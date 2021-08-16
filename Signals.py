@@ -5,6 +5,7 @@
 # standard library
 import logging
 import random
+import pathlib
 # 3rd party
 import numpy as np
 import wave
@@ -18,9 +19,10 @@ logger.setLevel(logging.DEBUG)
 
 class TimeSignal:
 
-    def __init__(self, t_start=0.0, t_end=10.0, sampling_rate=44100.0, bit_depth=16):
+    def __init__(self, t_start=0.0, t_end=10.0, sampling_rate=44100.0, bit_depth=16, codomain='int'):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
         self.f_a = sampling_rate  # Sampling rate (Hz)
+        self.codomain = codomain
         self.bit_depth = bit_depth  # Bits (bits / sample)
         self.bit_rate = self.f_a * self.bit_depth  # Bitrate (bits / s)
         self.t_start = t_start  # Timestamp signal start (s)
@@ -28,10 +30,12 @@ class TimeSignal:
 
         self.T = 1 / self.f_a  # Sampling interval (s)
         self.omega_a = 2 * np.pi / self.T  # Angular sampling frequency (Hz)
-        self.n = int(((self.t_end - self.t_start) / self.T) - 1.0)  # Number of samples (#)
+        self.n = int(np.round(((self.t_end - self.t_start) / self.T) - 1.0, decimals=0))  # Number of samples (#)
 
-        self.X = np.linspace(self.t_start, self.t_end, num=self.n)  # Discrete time (s)
-        self.Y = np.zeros((self.n, ), dtype=eval('np.int{}'.format(bit_depth)))  # Signal amplitude ()
+        self.X = np.linspace(self.t_start, self.t_end, num=self.n, dtype=np.float64)  # Discrete time (s)
+        self.Y = np.zeros((self.n, ), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))  # Signal amplitude
+
+        self.path = None
 
     def __str__(self):
         info_string = 'Time signal:\n--------------------\n'
@@ -40,12 +44,19 @@ class TimeSignal:
         info_string += 'Sampling rate: {}\n'.format(self.f_a)
         info_string += 'Bit depth: {}\n'.format(self.bit_depth)
         info_string += 'Bitrate: {}\n'.format(self.bit_rate)
+        info_string += 'Codomain type: {}\n'.format(self.codomain)
         info_string += 'Sampling interval: {}\n'.format(self.T)
         info_string += 'Angular sampling frequency: {}\n'.format(self.omega_a)
         info_string += 'Number of samples: {}\n'.format(self.n)
         info_string += 'X shape: {}\n'.format(self.X.shape)
         info_string += 'Y shape: {}\n'.format(self.Y.shape)
         return info_string
+
+    def name(self):
+        if self.path is None:
+            return 'New'
+        else:
+            return self.path.name
 
     def check(self, fix=False):
         """Check that all attributes are correct and makes sense. If fix=True, will try to fix problems (might be
@@ -59,13 +70,9 @@ class TimeSignal:
         """Generate signal from **function** which must be vectorized"""
         self.Y = function(self.X)
 
-    def add_noise_gauss(self, mu, sigma):
-        for k, y in enumerate(self.Y):
-            self.Y[k] += random.gauss(mu, sigma)
-
     def save(self, path_string):
 
-        print(self)
+        self.path = pathlib.Path(path_string)
 
         with h5py.File(path_string, 'w') as f:
 
@@ -83,6 +90,8 @@ class TimeSignal:
 
     def load(self, path_string):
 
+        self.path = pathlib.Path(path_string)
+
         with h5py.File(path_string, 'r') as f:
 
             self.X = f['X'][()]
@@ -98,6 +107,12 @@ class TimeSignal:
             self.n = f.attrs['n']
 
     @staticmethod
+    def static_load(path_string):
+        signal = TimeSignal()
+        signal.load(path_string)
+        return signal
+
+    @staticmethod
     def from_data(X, Y):
         if not X.shape == Y.shape:
             raise ValueError
@@ -108,13 +123,15 @@ class TimeSignal:
         T = (t_end - t_start) / (n + 1.0)
         f_a = 1 / T
         bit_depth = 8 * Y.dtype.itemsize
-        new_signal = TimeSignal(t_start=t_start, t_end=t_end, sampling_rate=f_a, bit_depth=bit_depth)
+        codomain = Y.dtype.name.replace(str(bit_depth), '')
+        new_signal = TimeSignal(t_start=t_start, t_end=t_end, sampling_rate=f_a, bit_depth=bit_depth, codomain=codomain)
         new_signal.Y = Y
 
         return new_signal
 
     @staticmethod
     def from_wav(file_path):
+        """Does not yet support 24 bit wav."""
         wav = wave.open(file_path, mode='rb')
         f_a = wav.getframerate()
         T = 1 / f_a
@@ -139,4 +156,59 @@ class TimeSignal:
         wav.setframerate(self.f_a)
         wav.setnframes(self.n)
         wav.writeframes(self.Y.astype('<h').tobytes())
+
+
+class FrequencySignal:
+
+    def __init__(self, f_start=0.0, f_end=22050.0, sampling_rate=44100.0, bit_depth=64, codomain='complex'):
+        """Init a signal with a given **sampling rate** and start and end timestamps."""
+        self.f_a = sampling_rate  # Sampling rate (Hz)
+        self.codomain = codomain  # Value domain type of the signal
+        self.bit_depth = bit_depth  # Bits (bits / sample)
+        self.bit_rate = self.f_a * self.bit_depth  # Bitrate (bits / s)
+        self.f_start = f_start  # Timestamp signal start (s)
+        self.f_end = f_end  # Timestamp signal end (s)
+
+        self.T = 1 / self.f_a  # Sampling interval (s)
+        self.omega_a = 2 * np.pi / self.T  # Angular sampling frequency (Hz)
+        self.n = int(((self.f_end - self.f_start) / self.T) - 1.0)  # Number of samples (#)
+
+        self.X = np.linspace(self.f_start, self.f_end, num=self.n, dtype=np.float64)  # Discrete time (s)
+        self.Y = np.zeros((self.n,), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))  # Signal amplitude
+
+        self.path = None
+
+
+class SystemLTI:
+
+    def __init__(self):
+
+        self.input_signals = []
+        self.output_signals = []
+
+        self.path = None
+
+    def __str__(self):
+        return 'LTI system'
+
+    def name(self):
+        if self.path is None:
+            return 'New'
+        else:
+            return self.path.name
+
+    def simulate(self):
+        pass
+
+    def save(self, path_string):
+        pass
+
+    def load(self, path_string):
+        pass
+
+    @staticmethod
+    def static_load(path_string):
+        pass
+
+
 

@@ -35,4 +35,10 @@ def add_gaussian_noise(signal, mu, sigma):
         signal.Y[k] += random.gauss(mu, sigma)
 
 
+def gabor_transform(signal, mu, sigma):
+    pass
+
+
+
+
 

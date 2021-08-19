@@ -222,7 +222,7 @@ class SignalInterface(QtWidgets.QWidget):
             self.lbl_codomain.setText('{}'.format(self.signal.codomain))
             self.lbl_t_start.setText('{}'.format(self.signal.t_start))
             self.lbl_t_end.setText('{}'.format(self.signal.t_end))
-            self.lbl_T.setText('{}'.format(self.signal.T))
+            self.lbl_T.setText('{}'.format(self.signal.delta_t))
             self.lbl_omega_a.setText('{}'.format(self.signal.omega_a))
             self.lbl_n.setText('{}'.format(self.signal.n))
             self.lbl_length.setText('{}'.format(self.signal.t_end - self.signal.t_start))

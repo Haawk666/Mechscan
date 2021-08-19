@@ -4,7 +4,6 @@
 
 # standard library
 import logging
-import random
 import pathlib
 # 3rd party
 import numpy as np
@@ -19,21 +18,25 @@ logger.setLevel(logging.DEBUG)
 
 class TimeSignal:
 
-    def __init__(self, t_start=0.0, t_end=10.0, sampling_rate=44100.0, bit_depth=16, codomain='int'):
+    def __init__(self, t_start=0.0, t_end=10.0, sampling_rate=44100.0, bit_depth=16, codomain='int', channels=1):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
         self.f_a = sampling_rate  # Sampling rate (Hz)
         self.codomain = codomain
+        self.channels = channels
         self.bit_depth = bit_depth  # Bits (bits / sample)
-        self.bit_rate = self.f_a * self.bit_depth  # Bitrate (bits / s)
+        self.bit_rate = self.channels * self.f_a * self.bit_depth  # Bitrate (bits / s)
         self.t_start = t_start  # Timestamp signal start (s)
         self.t_end = t_end  # Timestamp signal end (s)
 
-        self.T = 1 / self.f_a  # Sampling interval (s)
-        self.omega_a = 2 * np.pi / self.T  # Angular sampling frequency (Hz)
-        self.n = int(np.round(((self.t_end - self.t_start) / self.T) - 1.0, decimals=0))  # Number of samples (#)
+        self.delta_t = 1 / self.f_a  # Sampling interval (s)
+        self.omega_a = 2 * np.pi / self.delta_t  # Angular sampling frequency (Hz)
+        self.n = int(np.round(((self.t_end - self.t_start) / self.delta_t) - 1.0, decimals=0))  # Number of samples (#)
 
         self.X = np.linspace(self.t_start, self.t_end, num=self.n, dtype=np.float64)  # Discrete time (s)
-        self.Y = np.zeros((self.n, ), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))  # Signal amplitude
+        if self.channels == 1:
+            self.Y = np.zeros((self.n, ), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))  # Signal amplitude
+        else:
+            self.Y = np.zeros((self.n, self.channels), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))
 
         self.path = None
 
@@ -45,7 +48,7 @@ class TimeSignal:
         info_string += 'Bit depth: {}\n'.format(self.bit_depth)
         info_string += 'Bitrate: {}\n'.format(self.bit_rate)
         info_string += 'Codomain type: {}\n'.format(self.codomain)
-        info_string += 'Sampling interval: {}\n'.format(self.T)
+        info_string += 'Sampling interval: {}\n'.format(self.delta_t)
         info_string += 'Angular sampling frequency: {}\n'.format(self.omega_a)
         info_string += 'Number of samples: {}\n'.format(self.n)
         info_string += 'X shape: {}\n'.format(self.X.shape)
@@ -61,14 +64,17 @@ class TimeSignal:
     def check(self, fix=False):
         """Check that all attributes are correct and makes sense. If fix=True, will try to fix problems (might be
         very buggy). Returns True if all attributes are coherent, false if not."""
-        print('(t_start + T * (n + 1) | t_end) = ({} | {})'.format(self.t_start + self.T * (self.n + 1), self.t_end))
+        print('(t_start + T * (n + 1) | t_end) = ({} | {})'.format(self.t_start + self.delta_t * (self.n + 1), self.t_end))
         print('(n | X.shape[0]) = ({} | {})'.format(self.n, self.X.shape[0]))
         print('(Y.dtype | bit depth) = {} | {})'.format(self.Y.dtype, self.bit_depth))
         print('(8 * Y.dtype.itemsize | bit depth) = ({} | {})'.format(8 * self.Y.dtype.itemsize, self.bit_depth))
 
     def generate(self, function):
-        """Generate signal from **function** which must be vectorized"""
-        self.Y = function(self.X)
+        for k, x in enumerate(self.X):
+            self.Y[k] = function(x)
+
+    def generate_spectrum(self, function):
+        pass
 
     def save(self, path_string):
 
@@ -84,7 +90,7 @@ class TimeSignal:
             f.attrs['bit_rate'] = self.bit_rate
             f.attrs['t_start'] = self.t_start
             f.attrs['t_end'] = self.t_end
-            f.attrs['T'] = self.T
+            f.attrs['T'] = self.delta_t
             f.attrs['omega_a'] = self.omega_a
             f.attrs['n'] = self.n
 
@@ -102,7 +108,7 @@ class TimeSignal:
             self.bit_rate = f.attrs['bit_rate']
             self.t_start = f.attrs['t_start']
             self.t_end = f.attrs['t_end']
-            self.T = f.attrs['T']
+            self.delta_t = f.attrs['T']
             self.omega_a = f.attrs['omega_a']
             self.n = f.attrs['n']
 
@@ -160,24 +166,53 @@ class TimeSignal:
 
 class FrequencySignal:
 
-    def __init__(self, f_start=0.0, f_end=22050.0, sampling_rate=44100.0, bit_depth=64, codomain='complex'):
-        """Init a signal with a given **sampling rate** and start and end timestamps."""
-        self.f_a = sampling_rate  # Sampling rate (Hz)
-        self.codomain = codomain  # Value domain type of the signal
-        self.bit_depth = bit_depth  # Bits (bits / sample)
-        self.bit_rate = self.f_a * self.bit_depth  # Bitrate (bits / s)
-        self.f_start = f_start  # Timestamp signal start (s)
-        self.f_end = f_end  # Timestamp signal end (s)
+    def __init__(self, time_signal):
 
-        self.T = 1 / self.f_a  # Sampling interval (s)
-        self.omega_a = 2 * np.pi / self.T  # Angular sampling frequency (Hz)
-        self.n = int(((self.f_end - self.f_start) / self.T) - 1.0)  # Number of samples (#)
+        self.Y = np.fft.fft(time_signal.Y)[:time_signal.n // 2]
+        self.X = np.fft.fftfreq(n=time_signal.n, d=1 / time_signal.f_a)[:time_signal.n // 2]
 
-        self.X = np.linspace(self.f_start, self.f_end, num=self.n, dtype=np.float64)  # Discrete time (s)
-        self.Y = np.zeros((self.n,), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))  # Signal amplitude
+        self.f_start = self.X[0]
+        self.f_end = self.X[-1]
+        self.n = self.X.shape[0]
+        self.delta_f = (self.f_end - self.f_start) / (self.n + 1.0)
+        self.f_a = 1 / self.F
+        self.bit_depth = 8 * self.Y.dtype.itemsize
+        self.codomain = self.Y.dtype.name.replace(str(self.bit_depth), '')
+        self.channels = self.Y.shape[1]
+        self.bit_rate = self.channels * self.f_a * self.bit_depth
+        self.omega_a = 2 * np.pi / self.F
 
-        self.path = None
+    def __str__(self):
+        return 'TODO'
 
+    def generate(self, real_function, im_function):
+        for k, x in enumerate(self.X):
+            self.Y[k][0] = real_function(x)
+            self.Y[k][1] = im_function(x)
+
+    @staticmethod
+    def static_load(path_string):
+        return FrequencySignal(TimeSignal.static_load(path_string))
+
+    def magnitude(self):
+        return np.absolute(self.Y)
+
+
+class TimeFrequencySignal:
+
+    def __init__(self, time_signal, sigma):
+
+        self.sigma = sigma
+
+        self.t_start = time_signal.X[0]
+        self.t_end = time_signal.X[-1]
+
+    def __str__(self):
+        return 'TODO'
+
+    @staticmethod
+    def static_load(path_string, sigma):
+        return TimeFrequencySignal(TimeSignal.static_load(path_string), sigma)
 
 
 

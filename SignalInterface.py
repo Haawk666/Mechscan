@@ -19,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 class SignalsInterface(QtWidgets.QWidget):
 
-    def __init__(self, *args):
+    def __init__(self, *args, menu=None):
         super().__init__(*args)
 
         self.signal_interfaces = []
@@ -27,56 +27,77 @@ class SignalsInterface(QtWidgets.QWidget):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
 
-        self.btn_generate = GUI_subwidgets.MediumButton('Generate', self, trigger_func=self.btn_generate_trigger)
-        self.btn_import = GUI_subwidgets.MediumButton('Import', self, trigger_func=self.btn_import_trigger)
-        self.btn_export = GUI_subwidgets.MediumButton('Export', self, trigger_func=self.btn_export_trigger)
-        self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
-        self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
-        self.btn_clear = GUI_subwidgets.MediumButton('Close', self, trigger_func=self.btn_clear_trigger)
+        self.menu = menu.addMenu('Signal')
+        self.populate_menu()
 
         self.build_layout()
 
+    def populate_menu(self):
+
+        menu_generate = QtWidgets.QAction('Generate', self)
+        menu_generate.triggered.connect(self.menu_generate_trigger)
+        self.menu.addAction(menu_generate)
+
+        menu_new = QtWidgets.QAction('New', self)
+        menu_new.triggered.connect(self.menu_new_trigger)
+        self.menu.addAction(menu_new)
+
+        menu_save = QtWidgets.QAction('Save', self)
+        menu_save.triggered.connect(self.menu_save_trigger)
+        self.menu.addAction(menu_save)
+
+        menu_load = QtWidgets.QAction('Load', self)
+        menu_load.triggered.connect(self.menu_load_trigger)
+        self.menu.addAction(menu_load)
+
+        menu_close = QtWidgets.QAction('Close', self)
+        menu_close.triggered.connect(self.menu_close_trigger)
+        self.menu.addAction(menu_close)
+
+        self.menu.addSeparator()
+
+        menu_import = QtWidgets.QAction('Import', self)
+        menu_import.triggered.connect(self.menu_import_trigger)
+        self.menu.addAction(menu_import)
+
+        menu_export = QtWidgets.QAction('Export', self)
+        menu_export.triggered.connect(self.menu_export_trigger)
+        self.menu.addAction(menu_export)
+
+        self.menu.addSeparator()
+
     def build_layout(self):
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btn_generate)
-        btn_layout.addWidget(self.btn_import)
-        btn_layout.addWidget(self.btn_load)
-        btn_layout.addWidget(self.btn_save)
-        btn_layout.addWidget(self.btn_export)
-        btn_layout.addWidget(self.btn_clear)
-        btn_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(btn_layout)
-        layout.addWidget(GUI_subwidgets.HorSeparator())
         layout.addWidget(self.tabs)
 
         self.setLayout(layout)
 
-    def btn_generate_trigger(self):
+    def add_interface(self, interface):
+        if interface.signal:
+            self.tabs.addTab(interface, '{}'.format(interface.signal.name()))
+        else:
+            self.tabs.addTab(interface, 'Empty')
+        self.signal_interfaces.append(interface)
+        self.tabs.setCurrentIndex(len(self.tabs) - 1)
+
+    def add_signal(self, signal):
+        interface = SignalInterface()
+        interface.signal = signal
+        interface.update_info()
+        self.add_interface(interface)
+
+    def menu_new_trigger(self):
+        self.add_signal(ss.TimeSignal())
+
+    def menu_generate_trigger(self):
         signal_interface = SignalInterface()
         wizard = GenerateTimeSignal(ui_object=signal_interface)
         if wizard.complete:
-            self.tabs.addTab(signal_interface, '{}'.format(signal_interface.signal.name()))
-            self.signal_interfaces.append(signal_interface)
             signal_interface.update_info()
-            self.tabs.setCurrentIndex(len(self.tabs) - 1)
+            self.add_interface(signal_interface)
 
-    def btn_import_trigger(self):
-        signal_interface = SignalInterface()
-        wizard = ImportTimeSignal(ui_object=signal_interface)
-        if wizard.complete:
-            self.tabs.addTab(signal_interface, '{}'.format(signal_interface.signal.name()))
-            self.signal_interfaces.append(signal_interface)
-            signal_interface.update_info()
-            self.tabs.setCurrentIndex(len(self.tabs) - 1)
-
-    def btn_export_trigger(self):
-        index = self.tabs.currentIndex()
-        interface = self.signal_interfaces[index]
-        ExportTimeSignal(ui_object=interface)
-
-    def btn_save_trigger(self):
+    def menu_save_trigger(self):
         index = self.tabs.currentIndex()
         signal_interface = self.signal_interfaces[index]
         if signal_interface.signal:
@@ -85,20 +106,33 @@ class SignalsInterface(QtWidgets.QWidget):
                 signal_interface.signal.save(filename[0])
                 self.tabs.setTabText(index, signal_interface.signal.name())
 
-    def btn_load_trigger(self):
+    def menu_load_trigger(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
         if filename[0]:
             signal_interface = SignalInterface()
             signal_interface.signal = ss.TimeSignal.static_load(filename[0])
-            self.signal_interfaces.append(signal_interface)
+            signal_interface.update_info()
+            self.add_interface(signal_interface)
+
+    def menu_close_trigger(self):
+        if len(self.tabs) > 0:
+            index = self.tabs.currentIndex()
+            self.signal_interfaces.pop(index)
+            self.tabs.removeTab(index)
+
+    def menu_import_trigger(self):
+        signal_interface = SignalInterface()
+        wizard = ImportTimeSignal(ui_object=signal_interface)
+        if wizard.complete:
             self.tabs.addTab(signal_interface, '{}'.format(signal_interface.signal.name()))
+            self.signal_interfaces.append(signal_interface)
             signal_interface.update_info()
             self.tabs.setCurrentIndex(len(self.tabs) - 1)
 
-    def btn_clear_trigger(self):
+    def menu_export_trigger(self):
         index = self.tabs.currentIndex()
-        self.signal_interfaces.pop(index)
-        self.tabs.removeTab(index)
+        interface = self.signal_interfaces[index]
+        ExportTimeSignal(ui_object=interface)
 
 
 class SignalInterface(QtWidgets.QWidget):
@@ -114,21 +148,10 @@ class SignalInterface(QtWidgets.QWidget):
         self.btn_noise = GUI_subwidgets.MediumButton('Add noise', self, trigger_func=self.btn_noise_trigger)
         self.btn_print = GUI_subwidgets.MediumButton('Print', self, trigger_func=self.btn_print_trigger)
 
-        self.lbl_f_a = QtWidgets.QLabel('')
-        self.lbl_bit_depth = QtWidgets.QLabel('')
-        self.lbl_bit_rate = QtWidgets.QLabel('')
-        self.lbl_codomain = QtWidgets.QLabel('')
-        self.lbl_t_start = QtWidgets.QLabel('')
-        self.lbl_t_end = QtWidgets.QLabel('')
-        self.lbl_T = QtWidgets.QLabel('')
-        self.lbl_omega_a = QtWidgets.QLabel('')
-        self.lbl_n = QtWidgets.QLabel('')
-        self.lbl_length = QtWidgets.QLabel('')
+        self.lbl_info_1 = QtWidgets.QLabel('')
+        self.lbl_info_2 = QtWidgets.QLabel('')
 
         self.time_graph = pg.PlotWidget()
-        self.time_graph.setTitle('Time domain signal')
-        self.time_graph.setLabel('bottom', 'Time t, (s)')
-        self.time_graph.setLabel('left', 'Amplitude')
         self.time_graph.showGrid(x=True, y=True)
 
         self.build_layout()
@@ -136,27 +159,9 @@ class SignalInterface(QtWidgets.QWidget):
 
     def build_layout(self):
 
-        info_layout = QtWidgets.QGridLayout()
-        info_layout.addWidget(QtWidgets.QLabel('Sampling frequency f_a, (Hz): '), 0, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Bit depth: '), 1, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Bitrate: '), 2, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Codomain type: '), 3, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Start time t_start, (s): '), 4, 0)
-        info_layout.addWidget(QtWidgets.QLabel('End time t_end, (s): '), 5, 0)
-        info_layout.addWidget(QtWidgets.QLabel('Sample interval T, (s): '), 0, 2)
-        info_layout.addWidget(QtWidgets.QLabel('Angular sampling frequency omega_a, (Hz): '), 1, 2)
-        info_layout.addWidget(QtWidgets.QLabel('Number of samples n, (#): '), 2, 2)
-        info_layout.addWidget(QtWidgets.QLabel('Signal length (s): '), 3, 2)
-        info_layout.addWidget(self.lbl_f_a, 0, 1)
-        info_layout.addWidget(self.lbl_bit_depth, 1, 1)
-        info_layout.addWidget(self.lbl_bit_rate, 2, 1)
-        info_layout.addWidget(self.lbl_codomain, 3, 1)
-        info_layout.addWidget(self.lbl_t_start, 4, 1)
-        info_layout.addWidget(self.lbl_t_end, 5, 1)
-        info_layout.addWidget(self.lbl_T, 0, 3)
-        info_layout.addWidget(self.lbl_omega_a, 1, 3)
-        info_layout.addWidget(self.lbl_n, 2, 3)
-        info_layout.addWidget(self.lbl_length, 3, 3)
+        info_layout = QtWidgets.QHBoxLayout()
+        info_layout.addWidget(self.lbl_info_1)
+        info_layout.addWidget(self.lbl_info_2)
 
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(self.btn_crop)
@@ -168,13 +173,12 @@ class SignalInterface(QtWidgets.QWidget):
 
         panel_layout = QtWidgets.QVBoxLayout()
         panel_layout.addLayout(info_layout)
+        panel_layout.addStretch()
         panel_layout.addLayout(btn_layout)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.time_graph)
-        layout.addWidget(self.frequency_graph)
         layout.addLayout(panel_layout)
-        layout.addStretch()
         self.setLayout(layout)
 
     def btn_transform_trigger(self):
@@ -197,42 +201,33 @@ class SignalInterface(QtWidgets.QWidget):
 
     def plot_signal(self):
         self.time_graph.plotItem.clear()
-        plot_line = self.time_graph.plot(self.signal.X, self.signal.Y)
-        plot_line.setAlpha(0.65, False)
-
-    def plot_power_spectrum(self):
-        self.frequency_graph.plotItem.clear()
-        F_signal = sp.MagnitudeFFT(self.signal)
-        plot_line = self.frequency_graph.plot(F_signal.X, F_signal.Y)
-        plot_line.setAlpha(0.65, False)
+        if self.signal is not None:
+            for j in range(0, self.signal.channels):
+                plot_line = self.time_graph.plot(self.signal.X, self.signal.Y[:, j])
+                plot_line.setAlpha(0.65, False)
+            if self.signal.signal_type == 'time':
+                self.time_graph.setTitle('Time domain signal')
+                self.time_graph.setLabel('bottom', 'Time t, (s)')
+                self.time_graph.setLabel('left', 'Amplitude')
+            elif self.signal.signal_type == 'frequency':
+                self.time_graph.setTitle('Power density spectrum')
+                self.time_graph.setLabel('bottom', 'Frequency f, (Hz)')
+                self.time_graph.setLabel('left', 'Magnitude')
+            else:
+                self.time_graph.setTitle('Generic signal')
+                self.time_graph.setLabel('bottom', 'Independent variable')
+                self.time_graph.setLabel('left', 'Signal')
 
     def update_info(self):
         if self.signal:
             self.plot_signal()
-            self.plot_power_spectrum()
-            self.lbl_f_a.setText('{}'.format(self.signal.f_a))
-            self.lbl_bit_depth.setText('{}'.format(self.signal.bit_depth))
-            self.lbl_bit_rate.setText('{}'.format(self.signal.bit_rate))
-            self.lbl_codomain.setText('{}'.format(self.signal.codomain))
-            self.lbl_t_start.setText('{}'.format(self.signal.t_start))
-            self.lbl_t_end.setText('{}'.format(self.signal.t_end))
-            self.lbl_T.setText('{}'.format(self.signal.delta_t))
-            self.lbl_omega_a.setText('{}'.format(self.signal.omega_a))
-            self.lbl_n.setText('{}'.format(self.signal.n))
-            self.lbl_length.setText('{}'.format(self.signal.t_end - self.signal.t_start))
+            info_1, info_2 = self.signal.info()
+            self.lbl_info_1.setText(info_1)
+            self.lbl_info_2.setText(info_2)
         else:
             self.time_graph.plotItem.clear()
-            self.frequency_graph.plotItem.clear()
-            self.lbl_f_a.setText('')
-            self.lbl_bit_depth.setText('')
-            self.lbl_bit_rate.setText('')
-            self.lbl_codomain.setText('')
-            self.lbl_t_start.setText('')
-            self.lbl_t_end.setText('')
-            self.lbl_T.setText('')
-            self.lbl_omega_a.setText('')
-            self.lbl_n.setText('')
-            self.lbl_length.setText('')
+            self.lbl_info_1.setText('')
+            self.lbl_info_2.setText('')
 
 
 class GenerateTimeSignal(QtWidgets.QDialog):

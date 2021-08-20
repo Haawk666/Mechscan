@@ -33,33 +33,37 @@ class TimeSignal:
         self.n = int(np.round(((self.t_end - self.t_start) / self.delta_t) - 1.0, decimals=0))  # Number of samples (#)
 
         self.X = np.linspace(self.t_start, self.t_end, num=self.n, dtype=np.float64)  # Discrete time (s)
-        if self.channels == 1:
-            self.Y = np.zeros((self.n, ), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))  # Signal amplitude
-        else:
-            self.Y = np.zeros((self.n, self.channels), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))
+        self.Y = np.zeros((self.n, self.channels), dtype=eval('np.{}{}'.format(self.codomain, str(self.bit_depth))))
 
         self.path = None
+        self.signal_type = 'time'
 
     def __str__(self):
-        info_string = 'Time signal:\n--------------------\n'
-        info_string += 'Start time: {}\n'.format(self.t_start)
-        info_string += 'End time: {}\n'.format(self.t_end)
-        info_string += 'Sampling rate: {}\n'.format(self.f_a)
-        info_string += 'Bit depth: {}\n'.format(self.bit_depth)
-        info_string += 'Bitrate: {}\n'.format(self.bit_rate)
-        info_string += 'Codomain type: {}\n'.format(self.codomain)
-        info_string += 'Sampling interval: {}\n'.format(self.delta_t)
-        info_string += 'Angular sampling frequency: {}\n'.format(self.omega_a)
-        info_string += 'Number of samples: {}\n'.format(self.n)
-        info_string += 'X shape: {}\n'.format(self.X.shape)
-        info_string += 'Y shape: {}\n'.format(self.Y.shape)
-        return info_string
+        info_1, info_2 = self.info()
+        return info_1 + info_2
 
     def name(self):
         if self.path is None:
             return 'New'
         else:
             return self.path.name
+
+    def info(self):
+        info_string_1 = 'Start time: {}\n'.format(self.t_start)
+        info_string_1 += 'End time: {}\n'.format(self.t_end)
+        info_string_1 += 'Sampling rate: {}\n'.format(self.f_a)
+        info_string_1 += 'Bit depth: {}\n'.format(self.bit_depth)
+        info_string_1 += 'Bitrate: {}\n'.format(self.bit_rate)
+        info_string_1 += 'Codomain type: {}\n'.format(self.codomain)
+        info_string_1 += 'Signal type: {}\n'.format(self.signal_type)
+
+        info_string_2 = 'Sampling interval: {}\n'.format(self.delta_t)
+        info_string_2 += 'Angular sampling frequency: {}\n'.format(self.omega_a)
+        info_string_2 += 'Number of samples: {}\n'.format(self.n)
+        info_string_2 += 'Number of channels: {}\n'.format(self.channels)
+        info_string_2 += 'X shape: {}\n'.format(self.X.shape)
+        info_string_2 += 'Y shape: {}\n'.format(self.Y.shape)
+        return info_string_1, info_string_2
 
     def check(self, fix=False):
         """Check that all attributes are correct and makes sense. If fix=True, will try to fix problems (might be
@@ -148,11 +152,8 @@ class TimeSignal:
         dstr = wav.readframes(n * nchan)
         data = np.fromstring(dstr, eval('np.int{}'.format(bitsize)))
         data = np.reshape(data, (-1, nchan))
-        result = TimeSignal(t_start=0.0, t_end=t_end, sampling_rate=f_a, bit_depth=bitsize)
-        if nchan > 1:
-            result.Y = data[:, 0] // 2 + data[:, 1] // 2
-        else:
-            result.Y = data[:, 0]
+        result = TimeSignal(t_start=0.0, t_end=t_end, sampling_rate=f_a, bit_depth=bitsize, codomain='int', channels=nchan)
+        result.Y = data
         return result
 
     def export_wav_signal(self, file_path):
@@ -180,7 +181,9 @@ class FrequencySignal:
         self.codomain = self.Y.dtype.name.replace(str(self.bit_depth), '')
         self.channels = self.Y.shape[1]
         self.bit_rate = self.channels * self.f_a * self.bit_depth
-        self.omega_a = 2 * np.pi / self.F
+        self.omega_a = 2 * np.pi / self.delta_f
+
+        self.signal_type = 'frequency'
 
     def __str__(self):
         return 'TODO'

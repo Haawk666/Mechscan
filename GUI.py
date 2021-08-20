@@ -23,7 +23,17 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.config = settings_file
 
-        self.signals_interface = SignalInterface.SignalsInterface()
+        self.menu = self.menuBar()
+        self.menu.setStyleSheet("""
+                                    QMenu::separator {
+                                        height: 1px;
+                                        background: grey;
+                                        margin-left: 10px;
+                                        margin-right: 5px;
+                                    }
+                                """)
+
+        self.signals_interface = SignalInterface.SignalsInterface(menu=self.menu)
         self.systems_interface = SystemInterface.SystemsInterface()
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()

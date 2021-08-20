@@ -196,7 +196,6 @@ class SignalInterface(QtWidgets.QWidget):
         self.update_info()
 
     def btn_print_trigger(self):
-        self.signal.check()
         print(self.signal)
 
     def plot_signal(self):

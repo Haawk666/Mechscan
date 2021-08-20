@@ -171,6 +171,7 @@ class FrequencySignal:
 
         self.Y = np.fft.fftn(time_signal.Y)[:time_signal.n // 2]
         self.X = np.fft.fftfreq(n=time_signal.n, d=1 / time_signal.f_a)[:time_signal.n // 2]
+        self.Y_norm = np.absolute(self.Y)
 
         self.f_start = self.X[0]
         self.f_end = self.X[-1]
@@ -192,10 +193,4 @@ class FrequencySignal:
         for k, x in enumerate(self.X):
             self.Y[k][0] = real_function(x)
             self.Y[k][1] = im_function(x)
-
-    def magnitude(self):
-        return np.absolute(self.Y)
-
-
-
 

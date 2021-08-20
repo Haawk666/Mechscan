@@ -168,14 +168,14 @@ class FrequencySignal:
 
     def __init__(self, time_signal):
 
-        self.Y = np.fft.fft(time_signal.Y)[:time_signal.n // 2]
+        self.Y = np.fft.fftn(time_signal.Y)[:time_signal.n // 2]
         self.X = np.fft.fftfreq(n=time_signal.n, d=1 / time_signal.f_a)[:time_signal.n // 2]
 
         self.f_start = self.X[0]
         self.f_end = self.X[-1]
         self.n = self.X.shape[0]
         self.delta_f = (self.f_end - self.f_start) / (self.n + 1.0)
-        self.f_a = 1 / self.F
+        self.f_a = 1 / self.delta_f
         self.bit_depth = 8 * self.Y.dtype.itemsize
         self.codomain = self.Y.dtype.name.replace(str(self.bit_depth), '')
         self.channels = self.Y.shape[1]
@@ -190,29 +190,9 @@ class FrequencySignal:
             self.Y[k][0] = real_function(x)
             self.Y[k][1] = im_function(x)
 
-    @staticmethod
-    def static_load(path_string):
-        return FrequencySignal(TimeSignal.static_load(path_string))
-
     def magnitude(self):
         return np.absolute(self.Y)
 
-
-class TimeFrequencySignal:
-
-    def __init__(self, time_signal, sigma):
-
-        self.sigma = sigma
-
-        self.t_start = time_signal.X[0]
-        self.t_end = time_signal.X[-1]
-
-    def __str__(self):
-        return 'TODO'
-
-    @staticmethod
-    def static_load(path_string, sigma):
-        return TimeFrequencySignal(TimeSignal.static_load(path_string), sigma)
 
 
 

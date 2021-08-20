@@ -131,12 +131,6 @@ class SignalInterface(QtWidgets.QWidget):
         self.time_graph.setLabel('left', 'Amplitude')
         self.time_graph.showGrid(x=True, y=True)
 
-        self.frequency_graph = pg.PlotWidget()
-        self.frequency_graph.setTitle('Frequency domain magnitude spectrum')
-        self.frequency_graph.setLabel('bottom', 'Frequency f, (Hz)')
-        self.frequency_graph.setLabel('left', 'Magnitude')
-        self.frequency_graph.showGrid(x=True, y=True)
-
         self.build_layout()
         self.update_info()
 

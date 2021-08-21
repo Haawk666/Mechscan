@@ -124,7 +124,7 @@ class TimeSignal:
 
     @staticmethod
     def from_data(X, Y):
-        if not X.shape == Y.shape:
+        if not X.shape[0] == Y.shape[0]:
             raise ValueError
 
         t_start = X[0]
@@ -136,6 +136,18 @@ class TimeSignal:
         codomain = Y.dtype.name.replace(str(bit_depth), '')
         new_signal = TimeSignal(t_start=t_start, t_end=t_end, sampling_rate=f_a, bit_depth=bit_depth, codomain=codomain)
         new_signal.Y = Y
+
+        return new_signal
+
+    @staticmethod
+    def from_frequency(frequency_signal):
+        t_start = frequency_signal.old_X[0]
+        t_end = frequency_signal.old_x[-1]
+        n = frequency_signal.old_X.shape[0]
+        delta_t = (t_end - t_start) / (n + 1.0)
+        f_a = 1 / delta_t
+
+        new_signal = TimeSignal(t_start=t_start, t_end=t_end, sampling_rate=f_a, bit_depth=bit_depth, codomain=codomain)
 
         return new_signal
 
@@ -169,6 +181,7 @@ class FrequencySignal:
 
     def __init__(self, time_signal):
 
+        self.old_X = time_signal.X
         self.Y_complex = np.fft.fftn(time_signal.Y)[:time_signal.n // 2]
         self.X = np.fft.fftfreq(n=time_signal.n, d=1 / time_signal.f_a)[:time_signal.n // 2]
         self.Y = np.absolute(self.Y_complex)

@@ -68,7 +68,7 @@ class SignalsInterface(QtWidgets.QWidget):
 
         transforms = self.menu.addMenu('Transforms')
 
-        menu_FFT = QtWidgets.QAction('FFT', self)
+        menu_FFT = QtWidgets.QAction('FFT/IFFT', self)
         menu_FFT.triggered.connect(self.menu_FFT_trigger)
         transforms.addAction(menu_FFT)
 
@@ -141,9 +141,15 @@ class SignalsInterface(QtWidgets.QWidget):
         ExportTimeSignal(ui_object=interface)
 
     def menu_FFT_trigger(self):
+
         index = self.tabs.currentIndex()
-        signal = ss.FrequencySignal(self.signal_interfaces[index].signal)
-        self.add_signal(signal)
+        if index > 0:
+            if self.signal_interfaces[index].signal is not None:
+                if self.signal_interfaces[index].signal.signal_type == 'time':
+                    signal = ss.FrequencySignal(self.signal_interfaces[index].signal)
+                    self.add_signal(signal)
+                elif self.signal_interfaces[index].signal.signal_type == 'frequency':
+                    pass
 
 
 class SignalInterface(QtWidgets.QWidget):

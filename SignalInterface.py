@@ -94,7 +94,7 @@ class SignalsInterface(QtWidgets.QWidget):
         self.add_interface(interface)
 
     def menu_new_trigger(self):
-        self.add_signal(ss.TimeSignal())
+        self.add_signal(ss.Signal())
 
     def menu_generate_trigger(self):
         signal_interface = SignalInterface()
@@ -143,11 +143,10 @@ class SignalsInterface(QtWidgets.QWidget):
     def menu_FFT_trigger(self):
 
         index = self.tabs.currentIndex()
-        if index > 0:
+        if index >= 0:
             if self.signal_interfaces[index].signal is not None:
                 if self.signal_interfaces[index].signal.signal_type == 'time':
-                    signal = ss.FrequencySignal(self.signal_interfaces[index].signal)
-                    self.add_signal(signal)
+                    pass
                 elif self.signal_interfaces[index].signal.signal_type == 'frequency':
                     pass
 
@@ -448,7 +447,7 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         elif type_text == 'Gaussian noise':
             mu = self.box_mu.value()
             sigma = self.box_sigma.value()
-            self.ui_obj.signal.add_noise_gauss(mu, sigma)
+            sp.add_gaussian_noise(self.ui_obj.signal, mu, sigma)
 
 
 class ImportTimeSignal(QtWidgets.QDialog):

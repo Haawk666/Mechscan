@@ -169,9 +169,9 @@ class FrequencySignal:
 
     def __init__(self, time_signal):
 
-        self.Y = np.fft.fftn(time_signal.Y)[:time_signal.n // 2]
+        self.Y_complex = np.fft.fftn(time_signal.Y)[:time_signal.n // 2]
         self.X = np.fft.fftfreq(n=time_signal.n, d=1 / time_signal.f_a)[:time_signal.n // 2]
-        self.Y_norm = np.absolute(self.Y)
+        self.Y = np.absolute(self.Y_complex)
 
         self.f_start = self.X[0]
         self.f_end = self.X[-1]
@@ -186,8 +186,33 @@ class FrequencySignal:
 
         self.signal_type = 'frequency'
 
+        self.path = None
+
     def __str__(self):
         return 'TODO'
+
+    def info(self):
+        info_string_1 = 'Start frequency: {}\n'.format(self.f_start)
+        info_string_1 += 'End frequency: {}\n'.format(self.f_end)
+        info_string_1 += 'Sampling rate: {}\n'.format(self.f_a)
+        info_string_1 += 'Bit depth: {}\n'.format(self.bit_depth)
+        info_string_1 += 'Bitrate: {}\n'.format(self.bit_rate)
+        info_string_1 += 'Codomain type: {}\n'.format(self.codomain)
+        info_string_1 += 'Signal type: {}\n'.format(self.signal_type)
+
+        info_string_2 = 'Sampling interval: {}\n'.format(self.delta_f)
+        info_string_2 += 'Angular sampling frequency: {}\n'.format(self.omega_a)
+        info_string_2 += 'Number of samples: {}\n'.format(self.n)
+        info_string_2 += 'Number of channels: {}\n'.format(self.channels)
+        info_string_2 += 'X shape: {}\n'.format(self.X.shape)
+        info_string_2 += 'Y shape: {}\n'.format(self.Y.shape)
+        return info_string_1, info_string_2
+
+    def name(self):
+        if self.path is None:
+            return 'New'
+        else:
+            return self.path.name
 
     def generate(self, real_function, im_function):
         for k, x in enumerate(self.X):

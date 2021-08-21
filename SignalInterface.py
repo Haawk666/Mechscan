@@ -66,6 +66,12 @@ class SignalsInterface(QtWidgets.QWidget):
 
         self.menu.addSeparator()
 
+        transforms = self.menu.addMenu('Transforms')
+
+        menu_FFT = QtWidgets.QAction('FFT', self)
+        menu_FFT.triggered.connect(self.menu_FFT_trigger)
+        transforms.addAction(menu_FFT)
+
     def build_layout(self):
 
         layout = QtWidgets.QVBoxLayout()
@@ -133,6 +139,11 @@ class SignalsInterface(QtWidgets.QWidget):
         index = self.tabs.currentIndex()
         interface = self.signal_interfaces[index]
         ExportTimeSignal(ui_object=interface)
+
+    def menu_FFT_trigger(self):
+        index = self.tabs.currentIndex()
+        signal = ss.FrequencySignal(self.signal_interfaces[index].signal)
+        self.add_signal(signal)
 
 
 class SignalInterface(QtWidgets.QWidget):

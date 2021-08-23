@@ -66,6 +66,10 @@ class SignalsInterface(QtWidgets.QWidget):
         menu_close.triggered.connect(self.menu_close_trigger)
         self.menu.addAction(menu_close)
 
+        menu_close_all = QtWidgets.QAction('Close all', self)
+        menu_close_all.triggered.connect(self.menu_close_all_trigger)
+        self.menu.addAction(menu_close_all)
+
         self.menu.addSeparator()
 
         menu_import = QtWidgets.QAction('Import', self)
@@ -80,19 +84,47 @@ class SignalsInterface(QtWidgets.QWidget):
 
         transforms = self.menu.addMenu('Transforms')
 
-        menu_FFT = QtWidgets.QAction('FFT/IFFT', self)
+        menu_FFT = QtWidgets.QAction('FFT', self)
         menu_FFT.triggered.connect(self.menu_FFT_trigger)
         transforms.addAction(menu_FFT)
 
-        menu_FFTIFFT = QtWidgets.QAction('FFTIFFT', self)
-        menu_FFTIFFT.triggered.connect(self.menu_FFTIFFT_trigger)
-        transforms.addAction(menu_FFTIFFT)
+        menu_gabor = QtWidgets.QAction('Gabor transform', self)
+        menu_gabor.triggered.connect(self.menu_gabor_trigger)
+        transforms.addAction(menu_gabor)
 
-        filters = self.menu.addMenu('Filters')
+        menu_wavelet = QtWidgets.QAction('Wavelet transform', self)
+        menu_wavelet.triggered.connect(self.menu_wavelet_trigger)
+        transforms.addAction(menu_wavelet)
+
+        menu_z = QtWidgets.QAction('Z-transform', self)
+        menu_z.triggered.connect(self.menu_z_trigger)
+        transforms.addAction(menu_z)
+
+        filters = self.menu.addMenu('Filters/effects')
+
+        menu_low_pass = QtWidgets.QAction('Low pass', self)
+        menu_low_pass.triggered.connect(self.menu_low_pass_trigger)
+        filters.addAction(menu_low_pass)
+
+        menu_high_pass = QtWidgets.QAction('High pass', self)
+        menu_high_pass.triggered.connect(self.menu_high_pass_trigger)
+        filters.addAction(menu_high_pass)
+
+        menu_band_pass = QtWidgets.QAction('Band pass', self)
+        menu_band_pass.triggered.connect(self.menu_band_pass_trigger)
+        filters.addAction(menu_band_pass)
+
+        menu_cut = QtWidgets.QAction('Cut-off', self)
+        menu_cut.triggered.connect(self.menu_cut_trigger)
+        filters.addAction(menu_cut)
 
         menu_compression = QtWidgets.QAction('Compression', self)
         menu_compression.triggered.connect(self.menu_compression_trigger)
         filters.addAction(menu_compression)
+
+        menu_noise = QtWidgets.QAction('Noise', self)
+        menu_noise.triggered.connect(self.menu_noise_trigger)
+        filters.addAction(menu_noise)
 
         edit = self.menu.addMenu('Edit')
 
@@ -107,6 +139,10 @@ class SignalsInterface(QtWidgets.QWidget):
         menu_crop = QtWidgets.QAction('Crop', self)
         menu_crop.triggered.connect(self.menu_crop_trigger)
         edit.addAction(menu_crop)
+
+        menu_resample = QtWidgets.QAction('Resample', self)
+        menu_resample.triggered.connect(self.menu_resample_trigger)
+        edit.addAction(menu_resample)
 
     def build_layout(self):
 
@@ -168,6 +204,10 @@ class SignalsInterface(QtWidgets.QWidget):
             self.signal_interfaces.pop(index)
             self.tabs.removeTab(index)
 
+    def menu_close_all_trigger(self):
+        self.signal_interfaces = []
+        self.tabs.clear()
+
     def menu_import_trigger(self):
         signal_interface = SignalInterface()
         wizard = ImportTimeSignal(ui_object=signal_interface)
@@ -192,15 +232,32 @@ class SignalsInterface(QtWidgets.QWidget):
                 elif signal.signal_type == 'frequency':
                     self.add_signal(ss.TimeSignal.from_frequency(signal))
 
-    def menu_FFTIFFT_trigger(self):
-        index = self.tabs.currentIndex()
-        if index >= 0:
-            signal = self.signal_interfaces[index].signal
-            if signal is not None:
-                if signal.signal_type == 'time':
-                    new_signal = ss.TimeSignal(x_start=signal.x_start, x_end=signal.x_end, delta_x=signal.delta_x, bit_depth=signal.bit_depth, channels=signal.channels)
-                    new_signal.Y = np.fft.ifft(np.fft.fft(signal.Y)).real
-                    self.add_signal(new_signal)
+    def menu_gabor_trigger(self):
+        pass
+
+    def menu_wavelet_trigger(self):
+        pass
+
+    def menu_z_trigger(self):
+        pass
+
+    def menu_low_pass_trigger(self):
+        pass
+
+    def menu_high_pass_trigger(self):
+        pass
+
+    def menu_band_pass_trigger(self):
+        pass
+
+    def menu_cut_trigger(self):
+        pass
+
+    def menu_compression_trigger(self):
+        pass
+
+    def menu_noise_trigger(self):
+        pass
 
     def menu_scale_trigger(self):
         pass
@@ -219,7 +276,7 @@ class SignalsInterface(QtWidgets.QWidget):
                 interface.update_info()
                 self.add_interface(interface)
 
-    def menu_compression_trigger(self):
+    def menu_resample_trigger(self):
         pass
 
 
@@ -230,8 +287,6 @@ class SignalInterface(QtWidgets.QWidget):
 
         self.signal = None
 
-        self.btn_filter = GUI_subwidgets.MediumButton('Filter', self, trigger_func=self.btn_filter_trigger)
-        self.btn_noise = GUI_subwidgets.MediumButton('Add noise', self, trigger_func=self.btn_noise_trigger)
         self.btn_print = GUI_subwidgets.MediumButton('Print', self, trigger_func=self.btn_print_trigger)
 
         self.lbl_info_1 = QtWidgets.QLabel('')
@@ -250,8 +305,6 @@ class SignalInterface(QtWidgets.QWidget):
         info_layout.addWidget(self.lbl_info_2)
 
         btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btn_filter)
-        btn_layout.addWidget(self.btn_noise)
         btn_layout.addWidget(self.btn_print)
         btn_layout.addStretch()
 
@@ -264,13 +317,6 @@ class SignalInterface(QtWidgets.QWidget):
         layout.addWidget(self.graph)
         layout.addLayout(panel_layout)
         self.setLayout(layout)
-
-    def btn_filter_trigger(self):
-        pass
-
-    def btn_noise_trigger(self):
-        AddNoiseSignal(ui_object=self)
-        self.update_info()
 
     def btn_print_trigger(self):
         print(self.signal)

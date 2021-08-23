@@ -387,7 +387,7 @@ class TimeSignal(Signal):
 
 class FrequencySignal(Signal):
 
-    def __init__(self, x_start=0.0, x_end=22050.0, delta_x=0.1, bit_depth=128, codomain='complex', channels=1):
+    def __init__(self, x_start=-22050.0, x_end=22050.0, delta_x=0.1, bit_depth=128, codomain='complex', channels=1):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
         super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels)
         self.time_signal = None

@@ -13,6 +13,15 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class Action(QtWidgets.QAction):
+
+    def __init__(self, *args, trigger_func=None):
+        super().__init__(*args)
+
+        if trigger_func:
+            self.triggered.connect(trigger_func)
+
+
 class SmallButton(QtWidgets.QPushButton):
 
     def __init__(self, *args, trigger_func=None):

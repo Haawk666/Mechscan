@@ -6,6 +6,7 @@
 import logging
 import pathlib
 from abc import ABC
+import random
 # 3rd party
 import numpy as np
 import wave
@@ -90,6 +91,9 @@ class Signal(ABC):
         else:
             return self.path.name
 
+    def length(self):
+        return self.x_end - self.x_start
+
     def save(self, path_string):
 
         self.path = pathlib.Path(path_string)
@@ -138,6 +142,65 @@ class Signal(ABC):
         signal = Signal()
         signal.load(path_string)
         return signal
+
+    def generate_function(self, function, channels=None):
+        if channels is None:
+            channels = range(self.channels)
+        for channel in channels:
+            if 0 <= channel <= self.Y.shape[-1]:
+                for k, x in enumerate(self.X):
+                    self.Y[k, channel] = function(x)
+
+    def add_function(self, function, channels=None):
+        if channels is None:
+            channels = range(self.channels)
+        for channel in channels:
+            if 0 <= channel <= self.Y.shape[-1]:
+                for k, x in enumerate(self.X):
+                    self.Y[k, channel] += function(x)
+
+    def subtract_function(self, function, channels=None):
+        if channels is None:
+            channels = range(self.channels)
+        for channel in channels:
+            if 0 <= channel <= self.Y.shape[-1]:
+                for k, x in enumerate(self.X):
+                    self.Y[k, channel] -= function(x)
+
+    def multiply_function(self, function, channels=None):
+        if channels is None:
+            channels = range(self.channels)
+        for channel in channels:
+            if 0 <= channel <= self.Y.shape[-1]:
+                for k, x in enumerate(self.X):
+                    self.Y[k, channel] *= function(x)
+
+    def convolve_function(self, function, channel=None):
+        pass
+
+    def noise(self, mu, sigma, channels=None, operation='add'):
+        if channels is None:
+            channels = range(self.channels)
+        for channel in channels:
+            if 0 <= channel <= self.Y.shape[-1]:
+                if operation == 'overwrite':
+                    for k, y in enumerate(self.Y[:, channel]):
+                        self.Y[k, channel] = random.gauss(mu, sigma)
+                elif operation == 'add':
+                    for k, y in enumerate(self.Y[:, channel]):
+                        self.Y[k, channel] += random.gauss(mu, sigma)
+                elif operation == 'subtract':
+                    for k, y in enumerate(self.Y[:, channel]):
+                        self.Y[k, channel] -= random.gauss(mu, sigma)
+                elif operation == 'multiply':
+                    for k, y in enumerate(self.Y[:, channel]):
+                        self.Y[k, channel] *= random.gauss(mu, sigma)
+                elif operation == 'convolve':
+                    for k, y in enumerate(self.Y[:, channel]):
+                        pass
+                else:
+                    logger.info('error')
+                    print('error')
 
 
 class MultiSignal(ABC):
@@ -313,13 +376,6 @@ class TimeSignal(Signal):
         print('(Y.dtype | bit depth) = {} | {})'.format(self.Y.dtype, self.bit_depth))
         print('(8 * Y.dtype.itemsize | bit depth) = ({} | {})'.format(8 * self.Y.dtype.itemsize, self.bit_depth))
 
-    def generate(self, function):
-        for k, x in enumerate(self.X):
-            self.Y[k, 0] = function(x)
-
-    def generate_spectrum(self, function):
-        pass
-
     @staticmethod
     def static_load(path_string):
         time_signal = TimeSignal()
@@ -352,7 +408,7 @@ class TimeSignal(Signal):
             x_end = frequency_signal.time_signal.X[-1]
         else:
             x_start = 0.0
-            x_end = delta_x * (2 * frequency_signal.n + 1) + x_start
+            x_end = delta_x * (frequency_signal.n - 1)
         Y = np.fft.ifft(np.fft.ifftshift(frequency_signal.Y), axis=0).real
         bit_depth = 8 * Y.dtype.itemsize
         time_signal = TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain='int', channels=frequency_signal.channels)

@@ -182,7 +182,7 @@ class SignalsInterface(QtWidgets.QWidget):
                 if signal.signal_type == 'time':
                     self.add_signal(ss.FrequencySignal.from_time_signal(signal))
                 elif signal.signal_type == 'frequency':
-                    pass
+                    self.add_signal(ss.TimeSignal.from_frequency(signal))
 
     def menu_scale_trigger(self):
         pass

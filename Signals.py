@@ -352,8 +352,11 @@ class TimeSignal(Signal):
         else:
             x_start = 0.0
         x_end = delta_x * (2 * frequency_signal.n + 1) + x_start
-        Y = np.fft.ifft(np.concatenate((frequency_signal.Y, frequency_signal.Y[1::, :].flip()), axis=0), axis=0)
-        time_signal = TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x)
+        Y = np.fft.ifft(np.concatenate((frequency_signal.Y, np.flip(frequency_signal.Y[1::, :], axis=0)), axis=0), axis=0)
+        bit_depth = 8 * Y.dtype.itemsize
+        time_signal = TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain='int', channels=frequency_signal.channels)
+        time_signal.Y = np.absolute(Y)
+        return time_signal
 
     @staticmethod
     def from_wav(file_path):

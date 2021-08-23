@@ -51,7 +51,7 @@ class Signal(ABC):
 
         self.f_s = 1.0 / self.delta_x
 
-        self.n = int(np.round(((self.x_end - self.x_start) / self.delta_x) - 1.0, decimals=0))
+        self.n = int(np.round(((self.x_end - self.x_start) / self.delta_x) + 1.0, decimals=0))
         self.X = np.linspace(self.x_start, self.x_end, num=self.n, dtype=np.float64)
         self.N = self.n
 
@@ -202,7 +202,7 @@ class MultiSignal(ABC):
         self.n = []
         self.X = []
         for start, end, delta in zip(self.x_start, self.x_end, self.delta_x):
-            self.n.append(int(np.round(((end - start) / delta) - 1.0, decimals=0)))
+            self.n.append(int(np.round(((end - start) / delta) + 1.0, decimals=0)))
             self.X.append(np.linspace(start, end, num=self.n[-1], dtype=np.float64))
         self.N = sum(self.n)
 
@@ -345,17 +345,18 @@ class TimeSignal(Signal):
 
     @staticmethod
     def from_frequency(frequency_signal):
-        f_s = 2 * frequency_signal.X[-1]
-        delta_x = 1 / f_s
+        f_s = 2.0 * (frequency_signal.X[-1])
+        delta_x = 1.0 / f_s
         if frequency_signal.time_signal is not None:
             x_start = frequency_signal.time_signal.X[0]
+            x_end = frequency_signal.time_signal.X[-1]
         else:
             x_start = 0.0
-        x_end = delta_x * (2 * frequency_signal.n + 1) + x_start
-        Y = np.fft.ifft(np.concatenate((frequency_signal.Y, np.flip(frequency_signal.Y[1::, :], axis=0)), axis=0), axis=0)
+            x_end = delta_x * (2 * frequency_signal.n + 1) + x_start
+        Y = np.fft.ifft(np.fft.ifftshift(frequency_signal.Y), axis=0).real
         bit_depth = 8 * Y.dtype.itemsize
         time_signal = TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain='int', channels=frequency_signal.channels)
-        time_signal.Y = np.absolute(Y)
+        time_signal.Y = Y
         return time_signal
 
     @staticmethod
@@ -405,7 +406,7 @@ class FrequencySignal(Signal):
         x_start = X[0]
         x_end = X[-1]
         n = X.shape[0]
-        delta_x = (x_end - x_start) / (n + 1.0)
+        delta_x = (x_end - x_start) / (n - 1.0)
         bit_depth = 8 * Y.dtype.itemsize
         codomain = Y.dtype.name.replace(str(bit_depth), '')
         channels = Y.shape[-1]
@@ -416,8 +417,8 @@ class FrequencySignal(Signal):
 
     @staticmethod
     def from_time_signal(time_signal):
-        Y_f = np.fft.fft(time_signal.Y, axis=0)[:time_signal.n // 2]
-        X_f = np.fft.fftfreq(n=time_signal.n, d=1 / time_signal.f_s)[:time_signal.n // 2]
+        Y_f = np.fft.fftshift(np.fft.fft(time_signal.Y, axis=0))
+        X_f = np.linspace(-time_signal.f_s / 2, time_signal.f_s / 2, num=Y_f.shape[0], dtype=np.float64)
         frequency_signal = FrequencySignal.from_data(X_f, Y_f)
         frequency_signal.time_signal = time_signal
         return frequency_signal

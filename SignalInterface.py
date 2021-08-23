@@ -84,6 +84,10 @@ class SignalsInterface(QtWidgets.QWidget):
         menu_FFT.triggered.connect(self.menu_FFT_trigger)
         transforms.addAction(menu_FFT)
 
+        menu_FFTIFFT = QtWidgets.QAction('FFTIFFT', self)
+        menu_FFTIFFT.triggered.connect(self.menu_FFTIFFT_trigger)
+        transforms.addAction(menu_FFTIFFT)
+
         filters = self.menu.addMenu('Filters')
 
         menu_compression = QtWidgets.QAction('Compression', self)
@@ -99,6 +103,10 @@ class SignalsInterface(QtWidgets.QWidget):
         menu_shift = QtWidgets.QAction('Shift', self)
         menu_shift.triggered.connect(self.menu_shift_trigger)
         edit.addAction(menu_shift)
+
+        menu_crop = QtWidgets.QAction('Crop', self)
+        menu_crop.triggered.connect(self.menu_crop_trigger)
+        edit.addAction(menu_crop)
 
     def build_layout(self):
 
@@ -184,11 +192,32 @@ class SignalsInterface(QtWidgets.QWidget):
                 elif signal.signal_type == 'frequency':
                     self.add_signal(ss.TimeSignal.from_frequency(signal))
 
+    def menu_FFTIFFT_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            signal = self.signal_interfaces[index].signal
+            if signal is not None:
+                if signal.signal_type == 'time':
+                    new_signal = ss.TimeSignal(x_start=signal.x_start, x_end=signal.x_end, delta_x=signal.delta_x, bit_depth=signal.bit_depth, channels=signal.channels)
+                    new_signal.Y = np.fft.ifft(np.fft.fft(signal.Y)).real
+                    self.add_signal(new_signal)
+
     def menu_scale_trigger(self):
         pass
 
     def menu_shift_trigger(self):
         pass
+
+    def menu_crop_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            signal = self.signal_interfaces[index].signal
+            if signal is not None:
+                interface = SignalInterface()
+                interface.signal = signal
+                CropSignal(ui_object=interface)
+                interface.update_info()
+                self.add_interface(interface)
 
     def menu_compression_trigger(self):
         pass
@@ -201,9 +230,7 @@ class SignalInterface(QtWidgets.QWidget):
 
         self.signal = None
 
-        self.btn_transform = GUI_subwidgets.MediumButton('Transform', self, trigger_func=self.btn_transform_trigger)
         self.btn_filter = GUI_subwidgets.MediumButton('Filter', self, trigger_func=self.btn_filter_trigger)
-        self.btn_crop = GUI_subwidgets.MediumButton('Crop', self, trigger_func=self.btn_crop_trigger)
         self.btn_noise = GUI_subwidgets.MediumButton('Add noise', self, trigger_func=self.btn_noise_trigger)
         self.btn_print = GUI_subwidgets.MediumButton('Print', self, trigger_func=self.btn_print_trigger)
 
@@ -223,9 +250,7 @@ class SignalInterface(QtWidgets.QWidget):
         info_layout.addWidget(self.lbl_info_2)
 
         btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btn_crop)
         btn_layout.addWidget(self.btn_filter)
-        btn_layout.addWidget(self.btn_transform)
         btn_layout.addWidget(self.btn_noise)
         btn_layout.addWidget(self.btn_print)
         btn_layout.addStretch()
@@ -240,15 +265,8 @@ class SignalInterface(QtWidgets.QWidget):
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
-    def btn_transform_trigger(self):
-        pass
-
     def btn_filter_trigger(self):
         pass
-
-    def btn_crop_trigger(self):
-        CropSignal(ui_object=self)
-        self.update_info()
 
     def btn_noise_trigger(self):
         AddNoiseSignal(ui_object=self)
@@ -632,16 +650,16 @@ class CropSignal(QtWidgets.QDialog):
         self.box_from = QtWidgets.QDoubleSpinBox()
         self.box_from.setDecimals(3)
         self.box_from.setSingleStep(1.0)
-        self.box_from.setMinimum(self.ui_obj.signal.t_start)
-        self.box_from.setMaximum(self.ui_obj.signal.t_end)
-        self.box_from.setValue(self.ui_obj.signal.t_start)
+        self.box_from.setMinimum(self.ui_obj.signal.x_start)
+        self.box_from.setMaximum(self.ui_obj.signal.x_end)
+        self.box_from.setValue(self.ui_obj.signal.x_start)
 
         self.box_to = QtWidgets.QDoubleSpinBox()
         self.box_to.setDecimals(3)
         self.box_to.setSingleStep(1.0)
-        self.box_to.setMinimum(self.ui_obj.signal.t_start)
-        self.box_to.setMaximum(self.ui_obj.signal.t_end)
-        self.box_to.setValue(self.ui_obj.signal.t_end)
+        self.box_to.setMinimum(self.ui_obj.signal.x_start)
+        self.box_to.setMaximum(self.ui_obj.signal.x_end)
+        self.box_to.setValue(self.ui_obj.signal.x_end)
 
         self.build_layout()
         self.exec_()
@@ -688,7 +706,14 @@ class CropSignal(QtWidgets.QDialog):
                     break
             new_X = self.ui_obj.signal.X[start_index:end_index]
             new_Y = self.ui_obj.signal.Y[start_index:end_index]
-            self.ui_obj.signal = ss.TimeSignal.from_data(new_X, new_Y)
+
+            if self.ui_obj.signal.signal_type == 'time':
+                self.ui_obj.signal = ss.TimeSignal.from_data(new_X, new_Y)
+            elif self.ui_obj.signal.signal_type == 'frequency':
+                self.ui_obj.signal = ss.FrequencySignal.from_data(new_X, new_Y)
+            else:
+                logger.info('error')
+                print('error')
             self.close()
 
 

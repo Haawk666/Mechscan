@@ -34,13 +34,25 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def populate_menu(self):
 
-        menu_generate = QtWidgets.QAction('Generate', self)
-        menu_generate.triggered.connect(self.menu_generate_trigger)
-        self.menu.addAction(menu_generate)
+        generate = self.menu.addMenu('Generate')
 
-        menu_new = QtWidgets.QAction('New', self)
-        menu_new.triggered.connect(self.menu_new_trigger)
-        self.menu.addAction(menu_new)
+        menu_generate_time = QtWidgets.QAction('Time domain', self)
+        menu_generate_time.triggered.connect(self.menu_generate_time_trigger)
+        generate.addAction(menu_generate_time)
+
+        menu_generate_frequency = QtWidgets.QAction('Frequency domain', self)
+        menu_generate_frequency.triggered.connect(self.menu_generate_frequency_trigger)
+        generate.addAction(menu_generate_frequency)
+
+        new = self.menu.addMenu('New')
+
+        menu_new_time = QtWidgets.QAction('Time domain', self)
+        menu_new_time.triggered.connect(self.menu_new_time_trigger)
+        new.addAction(menu_new_time)
+
+        menu_new_frequency = QtWidgets.QAction('Frequency domain', self)
+        menu_new_frequency.triggered.connect(self.menu_new_frequency_trigger)
+        new.addAction(menu_new_frequency)
 
         menu_save = QtWidgets.QAction('Save', self)
         menu_save.triggered.connect(self.menu_save_trigger)
@@ -72,6 +84,22 @@ class SignalsInterface(QtWidgets.QWidget):
         menu_FFT.triggered.connect(self.menu_FFT_trigger)
         transforms.addAction(menu_FFT)
 
+        filters = self.menu.addMenu('Filters')
+
+        menu_compression = QtWidgets.QAction('Compression', self)
+        menu_compression.triggered.connect(self.menu_compression_trigger)
+        filters.addAction(menu_compression)
+
+        edit = self.menu.addMenu('Edit')
+
+        menu_scale = QtWidgets.QAction('Scale', self)
+        menu_scale.triggered.connect(self.menu_scale_trigger)
+        edit.addAction(menu_scale)
+
+        menu_shift = QtWidgets.QAction('Shift', self)
+        menu_shift.triggered.connect(self.menu_shift_trigger)
+        edit.addAction(menu_shift)
+
     def build_layout(self):
 
         layout = QtWidgets.QVBoxLayout()
@@ -93,15 +121,21 @@ class SignalsInterface(QtWidgets.QWidget):
         interface.update_info()
         self.add_interface(interface)
 
-    def menu_new_trigger(self):
-        self.add_signal(ss.Signal())
-
-    def menu_generate_trigger(self):
+    def menu_generate_time_trigger(self):
         signal_interface = SignalInterface()
         wizard = GenerateTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             signal_interface.update_info()
             self.add_interface(signal_interface)
+
+    def menu_generate_frequency_trigger(self):
+        pass
+
+    def menu_new_time_trigger(self):
+        self.add_signal(ss.TimeSignal())
+
+    def menu_new_frequency_trigger(self):
+        self.add_signal(ss.FrequencySignal())
 
     def menu_save_trigger(self):
         index = self.tabs.currentIndex()
@@ -141,14 +175,23 @@ class SignalsInterface(QtWidgets.QWidget):
         ExportTimeSignal(ui_object=interface)
 
     def menu_FFT_trigger(self):
-
         index = self.tabs.currentIndex()
         if index >= 0:
-            if self.signal_interfaces[index].signal is not None:
-                if self.signal_interfaces[index].signal.signal_type == 'time':
+            signal = self.signal_interfaces[index].signal
+            if signal is not None:
+                if signal.signal_type == 'time':
+                    self.add_signal(ss.FrequencySignal.from_time_signal(signal))
+                elif signal.signal_type == 'frequency':
                     pass
-                elif self.signal_interfaces[index].signal.signal_type == 'frequency':
-                    pass
+
+    def menu_scale_trigger(self):
+        pass
+
+    def menu_shift_trigger(self):
+        pass
+
+    def menu_compression_trigger(self):
+        pass
 
 
 class SignalInterface(QtWidgets.QWidget):
@@ -167,8 +210,8 @@ class SignalInterface(QtWidgets.QWidget):
         self.lbl_info_1 = QtWidgets.QLabel('')
         self.lbl_info_2 = QtWidgets.QLabel('')
 
-        self.time_graph = pg.PlotWidget()
-        self.time_graph.showGrid(x=True, y=True)
+        self.graph = pg.PlotWidget()
+        self.graph.showGrid(x=True, y=True)
 
         self.build_layout()
         self.update_info()
@@ -193,7 +236,7 @@ class SignalInterface(QtWidgets.QWidget):
         panel_layout.addLayout(btn_layout)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.time_graph)
+        layout.addWidget(self.graph)
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
@@ -215,23 +258,26 @@ class SignalInterface(QtWidgets.QWidget):
         print(self.signal)
 
     def plot_signal(self):
-        self.time_graph.plotItem.clear()
+        self.graph.plotItem.clear()
         if self.signal is not None:
-            for j in range(0, self.signal.channels):
-                plot_line = self.time_graph.plot(self.signal.X, self.signal.Y[:, j])
-                plot_line.setAlpha(0.65, False)
             if self.signal.signal_type == 'time':
-                self.time_graph.setTitle('Time domain signal')
-                self.time_graph.setLabel('bottom', 'Time t, (s)')
-                self.time_graph.setLabel('left', 'Amplitude')
+                self.graph.setTitle('Time domain signal')
+                self.graph.setLabel('bottom', 'Time t, (s)')
+                self.graph.setLabel('left', 'Amplitude')
+                for j in range(self.signal.channels):
+                    plot_line = self.graph.plot(self.signal.X, self.signal.Y[:, j])
+                    plot_line.setAlpha(0.65, False)
             elif self.signal.signal_type == 'frequency':
-                self.time_graph.setTitle('Power density spectrum')
-                self.time_graph.setLabel('bottom', 'Frequency f, (Hz)')
-                self.time_graph.setLabel('left', 'Magnitude')
+                self.graph.setTitle('Power density spectrum')
+                self.graph.setLabel('bottom', 'Frequency f, (Hz)')
+                self.graph.setLabel('left', 'Magnitude')
+                for j in range(self.signal.channels):
+                    plot_line = self.graph.plot(self.signal.X, np.absolute(self.signal.Y[:, j]))
+                    plot_line.setAlpha(0.65, False)
             else:
-                self.time_graph.setTitle('Generic signal')
-                self.time_graph.setLabel('bottom', 'Independent variable')
-                self.time_graph.setLabel('left', 'Signal')
+                self.graph.setTitle('Generic signal')
+                self.graph.setLabel('bottom', 'Independent variable')
+                self.graph.setLabel('left', 'Signal')
 
     def update_info(self):
         if self.signal:
@@ -240,7 +286,7 @@ class SignalInterface(QtWidgets.QWidget):
             self.lbl_info_1.setText(info_1)
             self.lbl_info_2.setText(info_2)
         else:
-            self.time_graph.plotItem.clear()
+            self.graph.plotItem.clear()
             self.lbl_info_1.setText('')
             self.lbl_info_2.setText('')
 
@@ -271,7 +317,7 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         self.box_f_a.setSingleStep(100.0)
 
         self.cmb_bits = QtWidgets.QComboBox()
-        self.cmb_bits.addItems(['8', '16'])
+        self.cmb_bits.addItems(['8', '16', '32', '64'])
         self.cmb_bits.setCurrentIndex(1)
 
         self.box_t_start = QtWidgets.QDoubleSpinBox()
@@ -280,14 +326,21 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         self.box_t_end = QtWidgets.QDoubleSpinBox()
         self.box_t_end.setDecimals(3)
 
+        self.box_channels = QtWidgets.QSpinBox()
+        self.box_channels.setMaximum(10)
+        self.box_channels.setMinimum(1)
+        self.box_channels.setSingleStep(1)
+
         if self.ui_obj.signal is not None:
             self.box_f_a.setValue(self.ui_obj.signal.f_a)
             self.box_t_start.setValue(self.ui_obj.signal.t_start)
             self.box_t_end.setValue(self.ui_obj.signal.t_end)
+            self.box_channels.setValue(self.ui_obj.signal.channels)
         else:
             self.box_f_a.setValue(44100.0)
             self.box_t_start.setValue(0.0)
             self.box_t_end.setValue(5.0)
+            self.box_channels.setValue(1)
 
         self.cmb_type = QtWidgets.QComboBox()
         self.cmb_type.addItems([
@@ -345,11 +398,13 @@ class GenerateTimeSignal(QtWidgets.QDialog):
         base_grid.addWidget(QtWidgets.QLabel('Start time (s)'), 2, 0)
         base_grid.addWidget(QtWidgets.QLabel('End time (s)'), 3, 0)
         base_grid.addWidget(QtWidgets.QLabel('Type'), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Channels'), 5, 0)
         base_grid.addWidget(self.box_f_a, 0, 1)
         base_grid.addWidget(self.cmb_bits, 1, 1)
         base_grid.addWidget(self.box_t_start, 2, 1)
         base_grid.addWidget(self.box_t_end, 3, 1)
         base_grid.addWidget(self.cmb_type, 4, 1)
+        base_grid.addWidget(self.box_channels, 5, 1)
         base_widget = QtWidgets.QWidget()
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
@@ -419,10 +474,11 @@ class GenerateTimeSignal(QtWidgets.QDialog):
 
     def gen_signal(self):
         self.ui_obj.signal = ss.TimeSignal(
-            t_start=self.box_t_start.value(),
-            t_end=self.box_t_end.value(),
-            sampling_rate=self.box_f_a.value(),
-            bit_depth=int(self.cmb_bits.currentText())
+            x_start=self.box_t_start.value(),
+            x_end=self.box_t_end.value(),
+            delta_x=1/self.box_f_a.value(),
+            bit_depth=int(self.cmb_bits.currentText()),
+            channels=int(self.box_channels.value())
         )
 
         type_text = self.cmb_type.currentText()

@@ -219,7 +219,12 @@ class SignalsInterface(QtWidgets.QWidget):
             if signal is not None:
                 interface = SignalInterface()
                 interface.signal = signal
-                wizard = FunctionSignal1DReal(ui_object=interface)
+                if signal.signal_type == 'time':
+                    wizard = FunctionSignal1DReal(ui_object=interface)
+                elif signal.signal_type == 'frequency':
+                    wizard = FunctionSignal1DComplex(ui_object=interface)
+                else:
+                    wizard = FunctionSignal1DReal(ui_object=interface)
                 if wizard.complete:
                     interface.update_info()
                     self.add_interface(interface)
@@ -1272,7 +1277,7 @@ class FunctionSignal1DComplex(QtWidgets.QDialog):
             type_text = self.cmb_function.currentText()
             if type_text == 'Constant':
                 next_index = 1
-            elif type_text == 'Sine' or type_text == 'Cosine':
+            elif type_text == 'Hyperbolic':
                 next_index = 2
             elif type_text == 'Pulse':
                 next_index = 3

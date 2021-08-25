@@ -226,7 +226,7 @@ class MultiSignal(ABC):
         'np.bool_'
     ]
 
-    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=16, codomain='int', channels=1):
+    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1):
 
         if 'np.{}{}'.format(codomain, bit_depth) in self.valid_types:
             self.type_id = self.valid_types.index('np.{}{}'.format(codomain, bit_depth))
@@ -239,10 +239,10 @@ class MultiSignal(ABC):
             raise TypeError
 
         if x_start is None and x_end is None and delta_x is None:
-            self.x_start = [0.0]
-            self.x_end = [10.0]
-            self.delta_x = [1.0 / 44100.0]
-            self.dimensions = 1
+            self.x_start = [0.0, 0.0]
+            self.x_end = [10.0, 44100.0 / 2]
+            self.delta_x = [1.0 / 44100.0, 1.0]
+            self.dimensions = 2
         elif x_start is not None and x_end is not None and delta_x is not None:
             if len(x_start) == len(x_end) and len(x_start) == len(delta_x):
                 self.x_start = x_start
@@ -275,7 +275,9 @@ class MultiSignal(ABC):
         for start, end, delta in zip(self.x_start, self.x_end, self.delta_x):
             self.n.append(int(np.round(((end - start) / delta) + 1.0, decimals=0)))
             self.X.append(np.linspace(start, end, num=self.n[-1], dtype=np.float64))
-        self.N = sum(self.n)
+        self.N = 1
+        for n in self.n:
+            self.N *= n
 
         self.channels = channels
         self.bit_depth = bit_depth
@@ -286,25 +288,33 @@ class MultiSignal(ABC):
         self.signal_type = 'generic_nD'
 
     def __str__(self):
-        info_str_1, info_str_2 = self.info()
-        return info_str_1 + info_str_2
+        meta_data = self.info()
+        info_string = ''
+        for key, value in meta_data.items():
+            info_string += '{}: {}\n'.format(key, value)
+        return info_string
 
     def info(self):
-        info_str_1 = 'dimensions: \t{}\n'.format(self.dimensions)
-        info_str_1 += 'x_start: \t{}\n'.format(self.x_start)
-        info_str_1 += 'x_end: \t{}\n'.format(self.x_end)
-        info_str_1 += 'f_s: \t{}\n'.format(self.f_s)
-        info_str_1 += 'delta_x: \t{}\n'.format(self.delta_x)
-        info_str_1 += 'n: \t{}\n'.format(self.n)
-        info_str_1 += 'N: \t{}\n'.format(self.N)
 
-        info_str_2 = 'type: \t{}\n'.format(self.valid_types[self.type_id])
-        info_str_2 += 'type id: \t{}\n'.format(self.type_id)
-        info_str_2 += 'bit depth: \t{}\n'.format(self.bit_depth)
-        info_str_2 += 'channels: \t{}\n'.format(self.channels)
-        info_str_2 += 'Y.shape: \t{}\n'.format(self.Y.shape)
+        meta_data = {
+            'type_id': self.type_id,
+            'type': self.valid_types[self.type_id],
+            'bit_depth': self.bit_depth,
+            'channels': self.channels,
+            'dimensions': self.dimensions,
+            'x_start': self.x_start,
+            'x_end': self.x_end,
+            'f_s': self.f_s,
+            'delta_x': self.delta_x,
+            'n': self.n,
+            'N': self.N,
+            'Y.shape': self.Y.shape,
+            'Y.dtype': self.Y.dtype,
+            'X[0].shape': self.X[0].shape,
+            'X[0].dtype': self.X[0].dtype
+        }
 
-        return info_str_1, info_str_2
+        return meta_data
 
     def name(self):
         if self.path is None:
@@ -398,7 +408,7 @@ class TimeSignal(Signal):
         x_start = X[0]
         x_end = X[-1]
         n = X.shape[0]
-        delta_x = (x_end - x_start + 0.0) / (n + 1.0)
+        delta_x = X[1] - X[0]
         bit_depth = 8 * Y.dtype.itemsize
         codomain = Y.dtype.name.replace(str(bit_depth), '')
         channels = Y.shape[-1]
@@ -427,10 +437,10 @@ class TimeSignal(Signal):
     def from_wav(file_path):
         """Does not yet support 24 bit wav."""
         wav = wave.open(file_path, mode='rb')
-        f_s = wav.getframerate()
-        delta_x = 1.0 / f_s
+        f_s = np.float64(wav.getframerate())
+        delta_x = np.float64(1.0) / f_s
         n = wav.getnframes()
-        t_end = delta_x * (n + 1)
+        t_end = delta_x * (n - 1)
         nchan = wav.getnchannels()
         bitsize = 8 * wav.getsampwidth()
         dstr = wav.readframes(n * nchan)
@@ -482,11 +492,47 @@ class FrequencySignal(Signal):
     @staticmethod
     def from_time_signal(time_signal):
         Y_f = np.fft.fftshift(np.fft.fft(time_signal.Y, axis=0))
-        X_f = np.linspace(-time_signal.f_s / 2, time_signal.f_s / 2, num=Y_f.shape[0], dtype=np.float64)
+        X_f = np.linspace(-time_signal.f_s / 2.0, time_signal.f_s / 2.0, num=Y_f.shape[0], dtype=np.float64)
         frequency_signal = FrequencySignal.from_data(X_f, Y_f)
         frequency_signal.time_signal = time_signal
         return frequency_signal
 
+
+class TimeFrequencySignal(MultiSignal):
+
+    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1):
+        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels)
+        self.time_signal = None
+        self.signal_type = 'time-frequency'
+
+    @staticmethod
+    def from_time_signal(time_signal, alpha):
+        t_start = time_signal.x_start
+        t_end = time_signal.x_end
+        f_start = - time_signal.f_s / 2.0
+        f_end = time_signal.f_s / 2.0
+        X_t = np.linspace(t_start, t_end, num=time_signal.n, dtype=np.float64)
+        delta_t = X_t[1] - X_t[0]
+        Y_t = time_signal.Y
+        X_f = np.linspace(f_start, f_end, num=time_signal.n // 8, dtype=np.float64)
+        delta_f = X_f[1] - X_f[0]
+
+        Y = np.zeros((time_signal.n, time_signal.n // 8, time_signal.channels), dtype=np.complex64)
+        for channel in range(time_signal.channels):
+            for k, x in enumerate(X_t):
+                Y_f = Y_t[:, 0] * np.exp(-0.5 * ((X_t - x) / alpha) ** 2) / (alpha * np.sqrt(2 * np.pi))
+                Y[k, :, channel] = np.fft.fftshift(np.fft.fft(Y_f, n=time_signal.n // 8, axis=0)).astype(np.complex64)
+                print(x)
+        time_frequency_signal = TimeFrequencySignal(
+            x_start=[t_start, f_start],
+            x_end=[t_end, f_end],
+            delta_x=[delta_t, delta_f],
+            bit_depth=64,
+            channels=time_signal.channels
+        )
+        time_frequency_signal.Y = Y
+        time_frequency_signal.time_signal = time_signal
+        return time_frequency_signal
 
 
 

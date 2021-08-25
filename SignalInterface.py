@@ -184,7 +184,16 @@ class SignalsInterface(QtWidgets.QWidget):
                     self.add_signal(ss.TimeSignal.from_frequency(signal))
 
     def menu_gabor_trigger(self):
-        pass
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            signal = self.signal_interfaces[index].signal
+            if signal is not None:
+                if signal.signal_type == 'time':
+                    wizard = GetAlpha()
+                    if wizard.complete:
+                        self.add_signal(ss.TimeFrequencySignal.from_time_signal(signal, wizard.alpha))
+                elif signal.signal_type == 'time-frequency':
+                    pass
 
     def menu_wavelet_trigger(self):
         pass
@@ -312,6 +321,17 @@ class SignalInterface(QtWidgets.QWidget):
                 for j in range(self.signal.channels):
                     plot_line = self.graph.plot(self.signal.X, np.absolute(self.signal.Y[:, j]))
                     plot_line.setAlpha(0.65, False)
+            elif self.signal.signal_type == 'time-frequency':
+                # Example: False color image with interactive level adjustment
+                img = pg.ImageItem(image=np.absolute(self.signal.Y))  # create monochrome image from demonstration data
+                self.graph.getPlotItem().addItem(img)  # add to PlotItem 'plot'
+                cm = pg.colormap.get('CET-L9')  # prepare a linear color map
+                bar = pg.ColorBarItem(values=(0, 20_000), cmap=cm)  # prepare interactive color bar
+                # Have ColorBarItem control colors of img and appear in 'plot':
+                bar.setImageItem(img, insert_in=self.graph.getPlotItem())
+                self.graph.setTitle('Spectrogram')
+                self.graph.setLabel('bottom', 'Time t, (s)')
+                self.graph.setLabel('left', 'Frequency f, (Hz)')
             else:
                 self.graph.setTitle('Generic signal')
                 self.graph.setLabel('bottom', 'Independent variable')
@@ -1291,7 +1311,7 @@ class CropSignal(QtWidgets.QDialog):
                     start_index = i
                     break
             for i, x in enumerate(self.ui_obj.signal.X):
-                if x >= new_end:
+                if x > new_end:
                     end_index = i
                     break
             new_X = self.ui_obj.signal.X[start_index:end_index]
@@ -1305,4 +1325,60 @@ class CropSignal(QtWidgets.QDialog):
                 logger.info('error')
                 print('error')
             self.close()
+
+
+class GetAlpha(QtWidgets.QDialog):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.setWindowTitle('Set window size')
+
+        self.complete = False
+        self.alpha = 0.5
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Transform')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.box_alpha = QtWidgets.QDoubleSpinBox()
+        self.box_alpha.setDecimals(3)
+        self.box_alpha.setSingleStep(1.0)
+        self.box_alpha.setMinimum(0.0)
+        self.box_alpha.setMaximum(10.0)
+        self.box_alpha.setValue(0.5)
+
+        self.build_layout()
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        grid = QtWidgets.QGridLayout()
+        grid.addWidget(QtWidgets.QLabel('Alpha: '), 0, 0)
+        grid.addWidget(self.box_alpha, 0, 1)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(grid)
+        layout.addLayout(btn_layout)
+
+        self.setLayout(layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        self.alpha = self.box_alpha.value()
+        self.close()
+        self.complete = True
+
+
+
+
+
 

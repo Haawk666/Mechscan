@@ -322,12 +322,10 @@ class SignalInterface(QtWidgets.QWidget):
                     plot_line = self.graph.plot(self.signal.X, np.absolute(self.signal.Y[:, j]))
                     plot_line.setAlpha(0.65, False)
             elif self.signal.signal_type == 'time-frequency':
-                # Example: False color image with interactive level adjustment
                 img = pg.ImageItem(image=np.absolute(self.signal.Y))  # create monochrome image from demonstration data
                 self.graph.getPlotItem().addItem(img)  # add to PlotItem 'plot'
                 cm = pg.colormap.get('CET-L9')  # prepare a linear color map
-                bar = pg.ColorBarItem(values=(0, 20_000), cmap=cm)  # prepare interactive color bar
-                # Have ColorBarItem control colors of img and appear in 'plot':
+                bar = pg.ColorBarItem(values=(np.absolute(self.signal.Y).min(), np.absolute(self.signal.Y).max()), cmap=cm)  # prepare interactive color bar
                 bar.setImageItem(img, insert_in=self.graph.getPlotItem())
                 self.graph.setTitle('Spectrogram')
                 self.graph.setLabel('bottom', 'Time t, (s)')

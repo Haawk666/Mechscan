@@ -520,7 +520,7 @@ class TimeFrequencySignal(MultiSignal):
         Y = np.zeros((time_signal.n, time_signal.n // 8, time_signal.channels), dtype=np.complex64)
         for channel in range(time_signal.channels):
             for k, x in enumerate(X_t):
-                Y_f = Y_t[:, 0] * np.exp(-0.5 * ((X_t - x) / alpha) ** 2) / (alpha * np.sqrt(2 * np.pi))
+                Y_f = np.multiply(Y_t[:, 0], np.exp(-0.5 * ((X_t - x) / alpha) ** 2) / (alpha * np.sqrt(2 * np.pi)))
                 Y[k, :, channel] = np.fft.fftshift(np.fft.fft(Y_f, n=time_signal.n // 8, axis=0)).astype(np.complex64)
                 print(x)
         time_frequency_signal = TimeFrequencySignal(

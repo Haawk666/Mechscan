@@ -65,25 +65,33 @@ class Signal(ABC):
         self.signal_type = 'generic_1D'
 
     def __str__(self):
-        info_str_1, info_str_2 = self.info()
-        return info_str_1 + info_str_2
+        meta_data = self.info()
+        info_string = ''
+        for key, value in meta_data.items():
+            info_string += '{}: {}\n'.format(key, value)
+        return info_string
 
     def info(self):
-        info_str_1 = 'dimensions: \t{}\n'.format(self.dimensions)
-        info_str_1 += 'x_start: \t{}\n'.format(self.x_start)
-        info_str_1 += 'x_end: \t{}\n'.format(self.x_end)
-        info_str_1 += 'f_s: \t{}\n'.format(self.f_s)
-        info_str_1 += 'delta_x: \t{}\n'.format(self.delta_x)
-        info_str_1 += 'n: \t{}\n'.format(self.n)
-        info_str_1 += 'N: \t{}\n'.format(self.N)
 
-        info_str_2 = 'type: \t{}\n'.format(self.valid_types[self.type_id])
-        info_str_2 += 'type id: \t{}\n'.format(self.type_id)
-        info_str_2 += 'bit depth: \t{}\n'.format(self.bit_depth)
-        info_str_2 += 'channels: \t{}\n'.format(self.channels)
-        info_str_2 += 'Y.shape: \t{}\n'.format(self.Y.shape)
+        meta_data = {
+            'type_id': self.type_id,
+            'type': self.valid_types[self.type_id],
+            'bit_depth': self.bit_depth,
+            'channels': self.channels,
+            'dimensions': self.dimensions,
+            'x_start': self.x_start,
+            'x_end': self.x_end,
+            'f_s': self.f_s,
+            'delta_x': self.delta_x,
+            'n': self.n,
+            'N': self.N,
+            'Y.shape': self.Y.shape,
+            'Y.dtype': self.Y.dtype,
+            'X.shape': self.X.shape,
+            'X.dtype': self.X.dtype
+        }
 
-        return info_str_1, info_str_2
+        return meta_data
 
     def name(self):
         if self.path is None:
@@ -390,7 +398,7 @@ class TimeSignal(Signal):
         x_start = X[0]
         x_end = X[-1]
         n = X.shape[0]
-        delta_x = (x_end - x_start) / (n + 1.0)
+        delta_x = (x_end - x_start + 0.0) / (n + 1.0)
         bit_depth = 8 * Y.dtype.itemsize
         codomain = Y.dtype.name.replace(str(bit_depth), '')
         channels = Y.shape[-1]

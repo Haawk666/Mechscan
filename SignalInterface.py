@@ -328,10 +328,10 @@ class SignalInterface(QtWidgets.QWidget):
                     plot.setLabel('bottom', 'Frequency f, (Hz)')
 
             elif self.signal.signal_type == 'time-frequency':
-                img = pg.ImageItem(image=np.absolute(self.signal.Y))  # create monochrome image from demonstration data
-                self.graph.getPlotItem().addItem(img)  # add to PlotItem 'plot'
-                cm = pg.colormap.get('CET-L9')  # prepare a linear color map
-                bar = pg.ColorBarItem(values=(np.absolute(self.signal.Y).min(), np.absolute(self.signal.Y).max()), cmap=cm)  # prepare interactive color bar
+                img = pg.ImageItem(image=np.absolute(self.signal.Y))
+                self.graph.getPlotItem().addItem(img)
+                cm = pg.colormap.get('CET-L9')
+                bar = pg.ColorBarItem(values=(np.absolute(self.signal.Y).min(), np.absolute(self.signal.Y).max()), cmap=cm)
                 bar.setImageItem(img, insert_in=self.graph.getPlotItem())
                 self.graph.setTitle('Spectrogram')
                 self.graph.setLabel('bottom', 'Time t, (s)')

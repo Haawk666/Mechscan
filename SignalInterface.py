@@ -268,13 +268,11 @@ class SignalInterface(QtWidgets.QWidget):
 
         self.signal = None
 
-        self.btn_print = GUI_subwidgets.MediumButton('Print', self, trigger_func=self.btn_print_trigger)
-
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')
 
-        self.graph = pg.PlotWidget()
-        self.graph.showGrid(x=True, y=True)
+        self.graphs = QtWidgets.QTabWidget()
+        self.graphs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
 
         self.build_layout()
         self.update_info()
@@ -286,41 +284,49 @@ class SignalInterface(QtWidgets.QWidget):
         info_layout.addWidget(self.lbl_info_values)
         info_layout.addStretch()
 
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btn_print)
-        btn_layout.addStretch()
-
         panel_layout = QtWidgets.QVBoxLayout()
         panel_layout.addLayout(info_layout)
-        panel_layout.addStretch()
-        panel_layout.addLayout(btn_layout)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.graph)
+        layout.addWidget(self.graphs)
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
-    def btn_print_trigger(self):
-        self.update_info()
-        print(self.signal)
-
     def plot_signal(self):
-        self.graph.plotItem.clear()
+        self.graphs.clear()
         if self.signal is not None:
             if self.signal.signal_type == 'time':
-                self.graph.setTitle('Time domain signal')
-                self.graph.setLabel('bottom', 'Time t, (s)')
-                self.graph.setLabel('left', 'Amplitude')
+
                 for j in range(self.signal.channels):
-                    plot_line = self.graph.plot(self.signal.X, self.signal.Y[:, j])
-                    plot_line.setAlpha(0.65, False)
+
+                    plot_widget = pg.GraphicsLayoutWidget()
+                    self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
+
+                    plot = plot_widget.addPlot(row=0, col=0)
+                    plot.plot(self.signal.X, self.signal.Y[:, j])
+                    plot.setTitle('Time series')
+                    plot.setLabel('left', 'Amplitude')
+                    plot.setLabel('bottom', 'Time t, (s)')
+
             elif self.signal.signal_type == 'frequency':
-                self.graph.setTitle('Power density spectrum')
-                self.graph.setLabel('bottom', 'Frequency f, (Hz)')
-                self.graph.setLabel('left', 'Magnitude')
+
                 for j in range(self.signal.channels):
-                    plot_line = self.graph.plot(self.signal.X, np.absolute(self.signal.Y[:, j]))
-                    plot_line.setAlpha(0.65, False)
+
+                    plot_widget = pg.GraphicsLayoutWidget()
+                    self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
+
+                    plot = plot_widget.addPlot(row=0, col=0)
+                    plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
+                    plot.setTitle('Power spectrum')
+                    plot.setLabel('left', 'Magnitude^2')
+                    plot.setLabel('bottom', 'Frequency f, (Hz)')
+
+                    plot = plot_widget.addPlot(row=1, col=0)
+                    plot.plot(self.signal.X[self.signal.n // 2:], np.angle(self.signal.Y[self.signal.n // 2:, j]))
+                    plot.setTitle('Phase spectrum')
+                    plot.setLabel('left', 'Angle Theta, (rad)')
+                    plot.setLabel('bottom', 'Frequency f, (Hz)')
+
             elif self.signal.signal_type == 'time-frequency':
                 img = pg.ImageItem(image=np.absolute(self.signal.Y))  # create monochrome image from demonstration data
                 self.graph.getPlotItem().addItem(img)  # add to PlotItem 'plot'
@@ -347,7 +353,7 @@ class SignalInterface(QtWidgets.QWidget):
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
         else:
-            self.graph.plotItem.clear()
+            self.graphs.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')
 
@@ -378,7 +384,8 @@ class GetFunction1DReal(QtWidgets.QDialog):
             'Sine',
             'Sign',
             'Delta',
-            'Noise'
+            'Noise',
+            'Constant'
         ])
         self.cmb_functions.setCurrentIndex(2)
 
@@ -401,6 +408,20 @@ class GetFunction1DReal(QtWidgets.QDialog):
                 self.cmb_channels.addItem('Channel {}'.format(nchan + 1))
         self.cmb_channels.setDisabled(True)
 
+        self.box_from = QtWidgets.QDoubleSpinBox()
+        self.box_from.setDecimals(3)
+        self.box_from.setSingleStep(1.0)
+        self.box_from.setMinimum(self.ui_obj.signal.x_start)
+        self.box_from.setMaximum(self.ui_obj.signal.x_end)
+        self.box_from.setValue(self.ui_obj.signal.x_start)
+
+        self.box_to = QtWidgets.QDoubleSpinBox()
+        self.box_to.setDecimals(3)
+        self.box_to.setSingleStep(1.0)
+        self.box_to.setMinimum(self.ui_obj.signal.x_start)
+        self.box_to.setMaximum(self.ui_obj.signal.x_end)
+        self.box_to.setValue(self.ui_obj.signal.x_end)
+
         self.lbl_explain = QtWidgets.QLabel('Enter a function as a string, ie: \'100 * np.exp(0.5 * x)\'.\nIf the signal has multiple dimensions, use \'x_1\', \'x_2\', etc...')
 
         self.box_function = QtWidgets.QLineEdit()
@@ -411,7 +432,7 @@ class GetFunction1DReal(QtWidgets.QDialog):
         self.box_amp_x.setMinimum(-1000.0)
         self.box_amp_x.setMaximum(1000.0)
         self.box_amp_x.setSingleStep(10.0)
-        self.box_amp_x.setValue(0.0)
+        self.box_amp_x.setValue(1.0)
 
         self.box_mu_x = QtWidgets.QDoubleSpinBox()
         self.box_mu_x.setDecimals(1)
@@ -483,6 +504,13 @@ class GetFunction1DReal(QtWidgets.QDialog):
         self.box_sigma_noise.setSingleStep(1.0)
         self.box_sigma_noise.setValue(10.0)
 
+        self.box_const = QtWidgets.QDoubleSpinBox()
+        self.box_const.setDecimals(1)
+        self.box_const.setMinimum(-1000.0)
+        self.box_const.setMaximum(1000.0)
+        self.box_const.setSingleStep(1.0)
+        self.box_const.setValue(666.0)
+
         self.build_layout()
 
         self.exec_()
@@ -500,10 +528,14 @@ class GetFunction1DReal(QtWidgets.QDialog):
         base_grid.addWidget(QtWidgets.QLabel('Operation: '), 1, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channels: '), 2, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channel: '), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('From timestamp: '), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('To timestamp: '), 5, 0)
         base_grid.addWidget(self.cmb_functions, 0, 1)
         base_grid.addWidget(self.cmb_operation, 1, 1)
         base_grid.addWidget(self.chb_all_channels, 2, 1)
         base_grid.addWidget(self.cmb_channels, 3, 1)
+        base_grid.addWidget(self.box_from, 4, 1)
+        base_grid.addWidget(self.box_to, 5, 1)
         base_widget = QtWidgets.QWidget()
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
@@ -563,6 +595,13 @@ class GetFunction1DReal(QtWidgets.QDialog):
         noise_widget.setLayout(noise_grid)
         self.stack.addWidget(noise_widget)
 
+        const_grid = QtWidgets.QGridLayout()
+        const_grid.addWidget(QtWidgets.QLabel('Constant: '), 0, 0)
+        const_grid.addWidget(self.box_const, 0, 1)
+        const_widget = QtWidgets.QWidget()
+        const_widget.setLayout(const_grid)
+        self.stack.addWidget(const_widget)
+
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addWidget(self.stack)
         top_layout.addLayout(btn_layout)
@@ -586,21 +625,32 @@ class GetFunction1DReal(QtWidgets.QDialog):
 
     def btn_next_trigger(self):
         if self.stage == 0:
-            self.btn_next.setText('Generate')
-            self.btn_cancel.setText('Back')
-            next_index = 1
-            if self.cmb_functions.currentText() == 'Gaussian pulse':
-                next_index = 2
-            elif self.cmb_functions.currentText() == 'Sine':
-                next_index = 3
-            elif self.cmb_functions.currentText() == 'Sign':
-                next_index = 4
-            elif self.cmb_functions.currentText() == 'Delta':
-                next_index = 5
-            elif self.cmb_functions.currentText() == 'Noise':
-                next_index = 6
-            self.stack.setCurrentIndex(next_index)
-            self.stage += 1
+            start = self.box_from.value()
+            end = self.box_to.value()
+            if start >= end:
+                msg = QtWidgets.QMessageBox()
+                msg.setText('Timestamp "to" must be larger than "from"!')
+                msg.exec()
+            else:
+                self.btn_next.setText('Generate')
+                self.btn_cancel.setText('Back')
+
+                next_index = 1
+                if self.cmb_functions.currentText() == 'Gaussian pulse':
+                    next_index = 2
+                elif self.cmb_functions.currentText() == 'Sine':
+                    next_index = 3
+                elif self.cmb_functions.currentText() == 'Sign':
+                    next_index = 4
+                elif self.cmb_functions.currentText() == 'Delta':
+                    next_index = 5
+                elif self.cmb_functions.currentText() == 'Noise':
+                    next_index = 6
+                elif self.cmb_functions.currentText() == 'Constant':
+                    next_index = 7
+
+                self.stack.setCurrentIndex(next_index)
+                self.stage += 1
         else:
             self.gen_signal()
             self.close()
@@ -608,12 +658,16 @@ class GetFunction1DReal(QtWidgets.QDialog):
 
     def gen_signal(self):
 
+        start = self.box_from.value()
+        end = self.box_to.value()
+
         function_string = self.box_function.text()
         operation = self.cmb_operation.currentText()
+
         channels = None
         if not self.chb_all_channels.isChecked():
             channels = self.cmb_channels.currentText().replace('Channel ', '')
-            channels = [int(channels)]
+            channels = [int(channels) - 1]
 
         if self.cmb_functions.currentText() == 'Gaussian pulse':
             amp = self.box_amp_x.value()
@@ -636,17 +690,20 @@ class GetFunction1DReal(QtWidgets.QDialog):
             mu = self.box_mu_noise.value()
             sigma = self.box_sigma_noise.value()
             function_string = '{} * random.gauss({}, {})'.format(amp, mu, sigma)
+        elif self.cmb_functions.currentText() == 'Constant':
+            const = self.box_const.value()
+            function_string = '{}'.format(const)
 
         if operation == 'Overwrite':
-            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Add':
-            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Subtract':
-            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Multiply':
-            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Convolve':
-            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels)
+            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels, a=start, b=end)
         else:
             logger.info('error')
             print('error')
@@ -677,7 +734,8 @@ class GetFunction1DComplex(QtWidgets.QDialog):
             'Gaussian pulse',
             'Sine',
             'Exponential',
-            'Noise'
+            'Noise',
+            'Constant'
         ])
         self.cmb_functions.setCurrentIndex(2)
 
@@ -699,6 +757,20 @@ class GetFunction1DComplex(QtWidgets.QDialog):
             for nchan in range(self.ui_obj.signal.channels):
                 self.cmb_channels.addItem('Channel {}'.format(nchan + 1))
         self.cmb_channels.setDisabled(True)
+
+        self.box_from = QtWidgets.QDoubleSpinBox()
+        self.box_from.setDecimals(3)
+        self.box_from.setSingleStep(1.0)
+        self.box_from.setMinimum(self.ui_obj.signal.x_start)
+        self.box_from.setMaximum(self.ui_obj.signal.x_end)
+        self.box_from.setValue(self.ui_obj.signal.x_start)
+
+        self.box_to = QtWidgets.QDoubleSpinBox()
+        self.box_to.setDecimals(3)
+        self.box_to.setSingleStep(1.0)
+        self.box_to.setMinimum(self.ui_obj.signal.x_start)
+        self.box_to.setMaximum(self.ui_obj.signal.x_end)
+        self.box_to.setValue(self.ui_obj.signal.x_end)
 
         self.lbl_explain = QtWidgets.QLabel('Enter a function as a string, ie: \'100 * np.exp(0.5 * x)\'.\nIf the signal has multiple dimensions, use \'x_1\', \'x_2\', etc...')
 
@@ -789,6 +861,20 @@ class GetFunction1DComplex(QtWidgets.QDialog):
         self.box_sigma_noise.setSingleStep(1.0)
         self.box_sigma_noise.setValue(10.0)
 
+        self.box_const_real = QtWidgets.QDoubleSpinBox()
+        self.box_const_real.setDecimals(1)
+        self.box_const_real.setMinimum(-1000.0)
+        self.box_const_real.setMaximum(1000.0)
+        self.box_const_real.setSingleStep(1.0)
+        self.box_const_real.setValue(666.0)
+
+        self.box_const_im = QtWidgets.QDoubleSpinBox()
+        self.box_const_im.setDecimals(1)
+        self.box_const_im.setMinimum(-1000.0)
+        self.box_const_im.setMaximum(1000.0)
+        self.box_const_im.setSingleStep(1.0)
+        self.box_const_im.setValue(666.0)
+
         self.build_layout()
 
         self.exec_()
@@ -866,6 +952,15 @@ class GetFunction1DComplex(QtWidgets.QDialog):
         noise_widget.setLayout(noise_grid)
         self.stack.addWidget(noise_widget)
 
+        const_grid = QtWidgets.QGridLayout()
+        const_grid.addWidget(QtWidgets.QLabel('Constant (real): '), 0, 0)
+        const_grid.addWidget(QtWidgets.QLabel('Constant (imaginary): '), 1, 0)
+        const_grid.addWidget(self.box_const_real, 0, 1)
+        const_grid.addWidget(self.box_const_im, 1, 1)
+        const_widget = QtWidgets.QWidget()
+        const_widget.setLayout(const_grid)
+        self.stack.addWidget(const_widget)
+
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addWidget(self.stack)
         top_layout.addLayout(btn_layout)
@@ -889,19 +984,28 @@ class GetFunction1DComplex(QtWidgets.QDialog):
 
     def btn_next_trigger(self):
         if self.stage == 0:
-            self.btn_next.setText('Generate')
-            self.btn_cancel.setText('Back')
-            next_index = 1
-            if self.cmb_functions.currentText() == 'Gaussian pulse':
-                next_index = 2
-            elif self.cmb_functions.currentText() == 'Sine':
-                next_index = 3
-            elif self.cmb_functions.currentText() == 'Exponential':
-                next_index = 4
-            elif self.cmb_functions.currentText() == 'Noise':
-                next_index = 5
-            self.stack.setCurrentIndex(next_index)
-            self.stage += 1
+            start = self.box_from.value()
+            end = self.box_to.value()
+            if start >= end:
+                msg = QtWidgets.QMessageBox()
+                msg.setText('Timestamp "to" must be larger than "from"!')
+                msg.exec()
+            else:
+                self.btn_next.setText('Generate')
+                self.btn_cancel.setText('Back')
+                next_index = 1
+                if self.cmb_functions.currentText() == 'Gaussian pulse':
+                    next_index = 2
+                elif self.cmb_functions.currentText() == 'Sine':
+                    next_index = 3
+                elif self.cmb_functions.currentText() == 'Exponential':
+                    next_index = 4
+                elif self.cmb_functions.currentText() == 'Noise':
+                    next_index = 5
+                elif self.cmb_functions.currentText() == 'Constant':
+                    next_index = 6
+                self.stack.setCurrentIndex(next_index)
+                self.stage += 1
         else:
             self.gen_signal()
             self.close()
@@ -909,12 +1013,16 @@ class GetFunction1DComplex(QtWidgets.QDialog):
 
     def gen_signal(self):
 
+        start = self.box_from.value()
+        end = self.box_to.value()
+
         function_string = self.box_function.text()
         operation = self.cmb_operation.currentText()
+
         channels = None
         if not self.chb_all_channels.isChecked():
             channels = self.cmb_channels.currentText().replace('Channel ', '')
-            channels = [int(channels)]
+            channels = [int(channels) - 1]
 
         if self.cmb_functions.currentText() == 'Gaussian pulse':
             amp = self.box_amp_x.value()
@@ -936,17 +1044,20 @@ class GetFunction1DComplex(QtWidgets.QDialog):
             mu = self.box_mu_noise.value()
             sigma = self.box_sigma_noise.value()
             function_string = '{} * np.complex(random.gauss({}, {}), random.gauss({}, {}))'.format(amp, mu, sigma, mu, sigma)
+        elif self.cmb_functions.currentText() == 'Constant':
+            const = np.complex(self.box_const_real.value(), self.box_const_im.value())
+            function_string = '{}'.format(const)
 
         if operation == 'Overwrite':
-            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Add':
-            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Subtract':
-            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Multiply':
-            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels)
+            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels, a=start, b=end)
         elif operation == 'Convolve':
-            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels)
+            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels, a=start, b=end)
         else:
             logger.info('error')
             print('error')
@@ -980,9 +1091,13 @@ class NewTimeSignal(QtWidgets.QDialog):
 
         self.box_t_start = QtWidgets.QDoubleSpinBox()
         self.box_t_start.setDecimals(3)
+        self.box_t_start.setMaximum(100.0)
+        self.box_t_start.setMinimum(-100.0)
 
         self.box_t_end = QtWidgets.QDoubleSpinBox()
         self.box_t_end.setDecimals(3)
+        self.box_t_end.setMaximum(100.0)
+        self.box_t_end.setMinimum(-100.0)
 
         self.box_channels = QtWidgets.QSpinBox()
         self.box_channels.setMaximum(10)
@@ -1070,9 +1185,13 @@ class NewFrequencySignal(QtWidgets.QDialog):
 
         self.box_t_start = QtWidgets.QDoubleSpinBox()
         self.box_t_start.setDecimals(3)
+        self.box_t_start.setMaximum(100.0)
+        self.box_t_start.setMinimum(-100.0)
 
         self.box_t_end = QtWidgets.QDoubleSpinBox()
         self.box_t_end.setDecimals(3)
+        self.box_t_end.setMaximum(100.0)
+        self.box_t_end.setMinimum(-100.0)
 
         self.box_channels = QtWidgets.QSpinBox()
         self.box_channels.setMaximum(10)

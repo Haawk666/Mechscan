@@ -151,39 +151,59 @@ class Signal(ABC):
         signal.load(path_string)
         return signal
 
-    def generate_function(self, function, channels=None):
+    def generate_function(self, function, channels=None, a=None, b=None):
+        if a is None:
+            a = self.X[0]
+        if b is None:
+            b = self.X[-1]
         if channels is None:
             channels = range(self.channels)
         for channel in channels:
             if 0 <= channel <= self.Y.shape[-1]:
                 for k, x in enumerate(self.X):
-                    self.Y[k, channel] = function(x)
+                    if a <= x <= b:
+                        self.Y[k, channel] = function(x)
 
-    def add_function(self, function, channels=None):
+    def add_function(self, function, channels=None, a=None, b=None):
+        if a is None:
+            a = self.X[0]
+        if b is None:
+            b = self.X[-1]
         if channels is None:
             channels = range(self.channels)
         for channel in channels:
             if 0 <= channel <= self.Y.shape[-1]:
                 for k, x in enumerate(self.X):
-                    self.Y[k, channel] += function(x)
+                    if a <= x <= b:
+                        self.Y[k, channel] += function(x)
 
-    def subtract_function(self, function, channels=None):
+    def subtract_function(self, function, channels=None, a=None, b=None):
+        if a is None:
+            a = self.X[0]
+        if b is None:
+            b = self.X[-1]
         if channels is None:
             channels = range(self.channels)
         for channel in channels:
             if 0 <= channel <= self.Y.shape[-1]:
                 for k, x in enumerate(self.X):
-                    self.Y[k, channel] -= function(x)
+                    if a <= x <= b:
+                        self.Y[k, channel] -= function(x)
 
-    def multiply_function(self, function, channels=None):
+    def multiply_function(self, function, channels=None, a=None, b=None):
+        if a is None:
+            a = self.X[0]
+        if b is None:
+            b = self.X[-1]
         if channels is None:
             channels = range(self.channels)
         for channel in channels:
             if 0 <= channel <= self.Y.shape[-1]:
                 for k, x in enumerate(self.X):
-                    self.Y[k, channel] *= function(x)
+                    if a <= x <= b:
+                        self.Y[k, channel] *= function(x)
 
-    def convolve_function(self, function, channel=None):
+    def convolve_function(self, function, channel=None, a=None, b=None):
         pass
 
     def noise(self, mu, sigma, channels=None, operation='add'):

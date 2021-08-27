@@ -33,7 +33,7 @@ class MainUI(QtWidgets.QMainWindow):
                                     }
                                 """)
 
-        self.signals_interface = SignalInterface.SignalsInterface(menu=self.menu)
+        self.signals_interface = SignalInterface.SignalsInterface(menu=self.menu, config=self.config)
         self.systems_interface = SystemInterface.SystemsInterface()
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()

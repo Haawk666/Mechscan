@@ -4,8 +4,9 @@
 
 # standard library
 import logging
+import random
 # 3rd party
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 import numpy as np
 import pyqtgraph as pg
 # Internals
@@ -18,7 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 class SignalsInterface(QtWidgets.QWidget):
 
-    def __init__(self, *args, menu=None):
+    def __init__(self, *args, menu=None, config=None):
         super().__init__(*args)
 
         self.signal_interfaces = []
@@ -28,6 +29,8 @@ class SignalsInterface(QtWidgets.QWidget):
 
         self.menu = menu.addMenu('Signal')
         self.populate_menu()
+
+        self.config = config
 
         self.build_layout()
 
@@ -77,7 +80,7 @@ class SignalsInterface(QtWidgets.QWidget):
 
         self.menu.addSeparator()
 
-        self.menu.addAction(GUI_subwidgets.Action('Options', self, trigger_func=self.menu_options_trigger))
+        self.menu.addAction(GUI_subwidgets.Action('Settings', self, trigger_func=self.menu_options_trigger))
 
     def build_layout(self):
 
@@ -95,22 +98,25 @@ class SignalsInterface(QtWidgets.QWidget):
         self.tabs.setCurrentIndex(len(self.tabs) - 1)
 
     def add_signal(self, signal):
-        interface = SignalInterface()
+        interface = SignalInterface(config=self.config)
         interface.signal = signal
         interface.update_info()
         self.add_interface(interface)
 
     def menu_generate_time_trigger(self):
-        signal_interface = SignalInterface()
+        signal_interface = SignalInterface(config=self.config)
         wizard = NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
-            func_wiz = GetFunction1DReal(ui_object=signal_interface)
+            if signal_interface.signal.codomain == 'int' or signal_interface.signal.codomain == 'float' or signal_interface.signal.codomain == 'bool_':
+                func_wiz = GetFunction1DReal(ui_object=signal_interface)
+            else:
+                func_wiz = GetFunction1DComplex(ui_object=signal_interface)
             if func_wiz.complete:
                 signal_interface.update_info()
                 self.add_interface(signal_interface)
 
     def menu_generate_frequency_trigger(self):
-        signal_interface = SignalInterface()
+        signal_interface = SignalInterface(config=self.config)
         wizard = NewFrequencySignal(ui_object=signal_interface)
         if wizard.complete:
             func_wiz = GetFunction1DComplex(ui_object=signal_interface)
@@ -119,14 +125,14 @@ class SignalsInterface(QtWidgets.QWidget):
                 self.add_interface(signal_interface)
 
     def menu_new_time_trigger(self):
-        signal_interface = SignalInterface()
+        signal_interface = SignalInterface(config=self.config)
         wizard = NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             signal_interface.update_info()
             self.add_interface(signal_interface)
 
     def menu_new_frequency_trigger(self):
-        signal_interface = SignalInterface()
+        signal_interface = SignalInterface(config=self.config)
         wizard = NewFrequencySignal(ui_object=signal_interface)
         if wizard.complete:
             signal_interface.update_info()
@@ -144,7 +150,7 @@ class SignalsInterface(QtWidgets.QWidget):
     def menu_load_trigger(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
         if filename[0]:
-            signal_interface = SignalInterface()
+            signal_interface = SignalInterface(config=self.config)
             signal_interface.signal = ss.TimeSignal.static_load(filename[0])
             signal_interface.update_info()
             self.add_interface(signal_interface)
@@ -160,7 +166,7 @@ class SignalsInterface(QtWidgets.QWidget):
         self.tabs.clear()
 
     def menu_import_trigger(self):
-        signal_interface = SignalInterface()
+        signal_interface = SignalInterface(config=self.config)
         wizard = ImportTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             self.tabs.addTab(signal_interface, '{}'.format(signal_interface.signal.name()))
@@ -230,7 +236,7 @@ class SignalsInterface(QtWidgets.QWidget):
         if index >= 0:
             signal = self.signal_interfaces[index].signal
             if signal is not None:
-                interface = SignalInterface()
+                interface = SignalInterface(config=self.config)
                 interface.signal = signal
                 wizard = CropSignal(ui_object=interface)
                 interface.update_info()
@@ -241,7 +247,7 @@ class SignalsInterface(QtWidgets.QWidget):
         if index >= 0:
             signal = self.signal_interfaces[index].signal
             if signal is not None:
-                interface = SignalInterface()
+                interface = SignalInterface(config=self.config)
                 interface.signal = signal
                 if signal.signal_type == 'time':
                     wizard = GetFunction1DReal(ui_object=interface)
@@ -258,13 +264,18 @@ class SignalsInterface(QtWidgets.QWidget):
         pass
 
     def menu_options_trigger(self):
-        pass
+        wizard = SetOptions(ui_obj=self)
+        for interface in self.signal_interfaces:
+            interface.config = self.config
+            interface.update_info()
 
 
 class SignalInterface(QtWidgets.QWidget):
 
-    def __init__(self, *args):
+    def __init__(self, *args, config=None):
         super().__init__(*args)
+
+        self.config = config
 
         self.signal = None
 
@@ -303,10 +314,23 @@ class SignalInterface(QtWidgets.QWidget):
                     self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
 
                     plot = plot_widget.addPlot(row=0, col=0)
-                    plot.plot(self.signal.X, self.signal.Y[:, j])
-                    plot.setTitle('Time series')
-                    plot.setLabel('left', 'Amplitude')
-                    plot.setLabel('bottom', 'Time t, (s)')
+                    if self.signal.codomain == 'complex':
+                        legend = plot.addLegend()
+                        legend.setBrush('k')
+                        plot_type = self.config.get('signals', 'time_plot_type')
+                        if 'r' in plot_type:
+                            plot.plot(self.signal.X, np.real(self.signal.Y[:, j]), name='Re')
+                        if 'i' in plot_type:
+                            plot.plot(self.signal.X, np.imag(self.signal.Y[:, j]), pen='r', name='Im')
+                        if 'm' in plot_type:
+                            plot.plot(self.signal.X, np.absolute(self.signal.Y[:, j]), pen='g', name='Magnitude')
+                        if 'p' in plot_type:
+                            plot.plot(self.signal.X, np.angle(self.signal.Y[:, j]), pen='y', name='Phase')
+                    else:
+                        plot.plot(self.signal.X, self.signal.Y[:, j])
+                    plot.setTitle('Signal')
+                    plot.setLabel('left', 'Amplitude ({})'.format(self.signal.units[1]))
+                    plot.setLabel('bottom', 'Time t, ({})'.format(self.signal.units[0]))
 
             elif self.signal.signal_type == 'frequency':
 
@@ -316,16 +340,28 @@ class SignalInterface(QtWidgets.QWidget):
                     self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
 
                     plot = plot_widget.addPlot(row=0, col=0)
-                    plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
-                    plot.setTitle('Power spectrum')
-                    plot.setLabel('left', 'Magnitude^2')
+                    spectrum_type = self.config.get('signals', 'spectrum_type')
+                    if spectrum_type == 'p':
+                        plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
+                        plot.setTitle('Power spectrum')
+                        plot.setLabel('left', 'Magnitude^2')
+                    elif spectrum_type == 'm':
+                        plot.plot(self.signal.X[self.signal.n // 2:], np.absolute(self.signal.Y[self.signal.n // 2:, j]))
+                        plot.setTitle('Magnitude spectrum')
+                        plot.setLabel('left', 'Magnitude')
+                    else:
+                        plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
+                        plot.setTitle('Power spectrum')
+                        plot.setLabel('left', 'Magnitude^2')
                     plot.setLabel('bottom', 'Frequency f, (Hz)')
 
-                    plot = plot_widget.addPlot(row=1, col=0)
-                    plot.plot(self.signal.X[self.signal.n // 2:], np.angle(self.signal.Y[self.signal.n // 2:, j]))
-                    plot.setTitle('Phase spectrum')
-                    plot.setLabel('left', 'Angle Theta, (rad)')
-                    plot.setLabel('bottom', 'Frequency f, (Hz)')
+                    spectrum_phase = self.config.get('signals', 'spectrum_phase')
+                    if spectrum_phase == 'y':
+                        plot = plot_widget.addPlot(row=1, col=0)
+                        plot.plot(self.signal.X[self.signal.n // 2:], np.angle(self.signal.Y[self.signal.n // 2:, j]))
+                        plot.setTitle('Phase spectrum')
+                        plot.setLabel('left', 'Angle Theta, (rad)')
+                        plot.setLabel('bottom', 'Frequency f, (Hz)')
 
             elif self.signal.signal_type == 'time-frequency':
                 img = pg.ImageItem(image=np.absolute(self.signal.Y))
@@ -737,7 +773,7 @@ class GetFunction1DComplex(QtWidgets.QDialog):
             'Noise',
             'Constant'
         ])
-        self.cmb_functions.setCurrentIndex(2)
+        self.cmb_functions.setCurrentIndex(3)
 
         self.cmb_operation = QtWidgets.QComboBox()
         self.cmb_operation.addItems([
@@ -831,7 +867,7 @@ class GetFunction1DComplex(QtWidgets.QDialog):
         self.box_freq_exp.setMinimum(0.0)
         self.box_freq_exp.setMaximum(100.0)
         self.box_freq_exp.setSingleStep(1.0)
-        self.box_freq_exp.setValue(1.0)
+        self.box_freq_exp.setValue(10.0)
 
         self.box_phase_exp = QtWidgets.QDoubleSpinBox()
         self.box_phase_exp.setDecimals(1)
@@ -1033,12 +1069,12 @@ class GetFunction1DComplex(QtWidgets.QDialog):
             amp = self.box_amp_sin.value()
             f = self.box_freq_sin.value()
             theta = self.box_phase_sin.value()
-            function_string = '{} * np.complex(np.sin(2 * np.pi * {} * x - {}, np.sin(2 * np.pi * {} * x - {}))'.format(amp, f, theta, f, theta)
-        elif self.cmb_functions.currentText() == 'Exp':
+            function_string = '{} * np.complex(np.sin(2 * np.pi * {} * x - {}), np.sin(2 * np.pi * {} * x - {}))'.format(amp, f, theta, f, theta)
+        elif self.cmb_functions.currentText() == 'Exponential':
             amp = self.box_amp_exp.value()
             f = self.box_freq_exp.value()
             phase = self.box_phase_exp.value()
-            function_string = '{} * np.exp(np.complex(0, 2 * np.pi * {} * x - {}))'.format(amp, f, phase)
+            function_string = '{} * np.exp(np.complex(0, -{} * (x - {})))'.format(amp, f, phase)
         elif self.cmb_functions.currentText() == 'Noise':
             amp = self.box_amp_noise.value()
             mu = self.box_mu_noise.value()
@@ -1086,7 +1122,16 @@ class NewTimeSignal(QtWidgets.QDialog):
         self.box_f_s.setSingleStep(100.0)
 
         self.cmb_bits = QtWidgets.QComboBox()
-        self.cmb_bits.addItems(['8', '16', '32', '64'])
+        self.cmb_bits.addItems([
+            '8 - int',
+            '16 - int',
+            '32 - int',
+            '64 - int',
+            '32 - float',
+            '64 - float',
+            '64 - complex',
+            '128 - complex'
+        ])
         self.cmb_bits.setCurrentIndex(1)
 
         self.box_t_start = QtWidgets.QDoubleSpinBox()
@@ -1109,6 +1154,11 @@ class NewTimeSignal(QtWidgets.QDialog):
         self.box_t_end.setValue(10.0)
         self.box_channels.setValue(1)
 
+        self.box_x_unit = QtWidgets.QLineEdit()
+        self.box_x_unit.setText('s')
+        self.box_y_unit = QtWidgets.QLineEdit()
+        self.box_y_unit.setText('1')
+
         self.build_layout()
 
         self.exec_()
@@ -1121,16 +1171,20 @@ class NewTimeSignal(QtWidgets.QDialog):
         btn_layout.addStretch()
 
         base_grid = QtWidgets.QGridLayout()
-        base_grid.addWidget(QtWidgets.QLabel('Sample rate f_s (Hz)'), 0, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Bit depth'), 1, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Start time (s)'), 2, 0)
-        base_grid.addWidget(QtWidgets.QLabel('End time (s)'), 3, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Channels'), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Sample rate f_s (Hz): '), 0, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Bit depth: '), 1, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Start: '), 2, 0)
+        base_grid.addWidget(QtWidgets.QLabel('End: '), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Channels: '), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('x unit: '), 5, 0)
+        base_grid.addWidget(QtWidgets.QLabel('y unit: '), 6, 0)
         base_grid.addWidget(self.box_f_s, 0, 1)
         base_grid.addWidget(self.cmb_bits, 1, 1)
         base_grid.addWidget(self.box_t_start, 2, 1)
         base_grid.addWidget(self.box_t_end, 3, 1)
         base_grid.addWidget(self.box_channels, 4, 1)
+        base_grid.addWidget(self.box_x_unit, 5, 1)
+        base_grid.addWidget(self.box_y_unit, 6, 1)
 
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(base_grid)
@@ -1147,13 +1201,15 @@ class NewTimeSignal(QtWidgets.QDialog):
         self.complete = True
 
     def gen_signal(self):
+        bit_depth, codomain = self.cmb_bits.currentText().split(' - ')
         self.ui_obj.signal = ss.TimeSignal(
             x_start=self.box_t_start.value(),
             x_end=self.box_t_end.value(),
             delta_x=1.0/self.box_f_s.value(),
-            bit_depth=int(self.cmb_bits.currentText()),
-            codomain='int',
-            channels=int(self.box_channels.value())
+            bit_depth=int(bit_depth),
+            codomain=codomain,
+            channels=int(self.box_channels.value()),
+            units=[self.box_x_unit.text(), self.box_y_unit.text()]
         )
 
 
@@ -1495,7 +1551,138 @@ class GetAlpha(QtWidgets.QDialog):
         self.complete = True
 
 
+class SetOptions(QtWidgets.QDialog):
 
+    def __init__(self, *args, ui_obj=None):
+        super().__init__(*args)
 
+        self.setWindowTitle('Options')
+
+        self.ui_obj = ui_obj
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Apply')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        plot_type = self.ui_obj.config.get('signals', 'time_plot_type')
+        self.chb_real = QtWidgets.QCheckBox('Re')
+        if 'r' in plot_type:
+            self.chb_real.setChecked(True)
+        else:
+            self.chb_real.setChecked(False)
+        self.chb_im = QtWidgets.QCheckBox('Im')
+        if 'i' in plot_type:
+            self.chb_im.setChecked(True)
+        else:
+            self.chb_im.setChecked(False)
+        self.chb_magnitude = QtWidgets.QCheckBox('Magnitude')
+        if 'm' in plot_type:
+            self.chb_magnitude.setChecked(True)
+        else:
+            self.chb_magnitude.setChecked(False)
+        self.chb_phase = QtWidgets.QCheckBox('Phase')
+        if 'p' in plot_type:
+            self.chb_phase.setChecked(True)
+        else:
+            self.chb_phase.setChecked(False)
+
+        spectrum_type = self.ui_obj.config.get('signals', 'spectrum_type')
+        self.cmb_spectrum_y = QtWidgets.QComboBox()
+        self.cmb_spectrum_y.addItems([
+            'Magnitude',
+            'Power (Magnitude^2)'
+        ])
+        if spectrum_type == 'm':
+            self.cmb_spectrum_y.setCurrentIndex(0)
+        elif spectrum_type == 'p':
+            self.cmb_spectrum_y.setCurrentIndex(1)
+
+        spectrum_phase = self.ui_obj.config.get('signals', 'spectrum_phase')
+        self.chb_spectrum_phase = QtWidgets.QCheckBox()
+        if spectrum_phase == 'y':
+            self.chb_spectrum_phase.setChecked(True)
+        else:
+            self.chb_spectrum_phase.setChecked(False)
+
+        self.build_layout()
+        self.exec_()
+
+        if self.ui_obj is None:
+            self.close()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        time_group = QtWidgets.QGroupBox('Time signals')
+        time_grid = QtWidgets.QGridLayout()
+        time_grid.addWidget(QtWidgets.QLabel('Complex plotting: '), 0, 0, 4, 1)
+        time_grid.addWidget(self.chb_real, 0, 1)
+        time_grid.addWidget(self.chb_im, 1, 1)
+        time_grid.addWidget(self.chb_magnitude, 2, 1)
+        time_grid.addWidget(self.chb_phase, 3, 1)
+        time_group.setLayout(time_grid)
+
+        frequency_group = QtWidgets.QGroupBox('Frequency signals')
+        frequency_grid = QtWidgets.QGridLayout()
+        frequency_grid.addWidget(QtWidgets.QLabel('Spectrum y-axis: '), 0, 0)
+        frequency_grid.addWidget(QtWidgets.QLabel('Show phase spectrum: '), 1, 0)
+        frequency_grid.addWidget(self.cmb_spectrum_y, 0, 1)
+        frequency_grid.addWidget(self.chb_spectrum_phase, 1, 1)
+        frequency_group.setLayout(frequency_grid)
+
+        group_layout = QtWidgets.QHBoxLayout()
+        group_layout.addWidget(time_group)
+        group_layout.addWidget(frequency_group)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(group_layout)
+        layout.addLayout(btn_layout)
+
+        self.setLayout(layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+
+        self.close()
+
+        plot_string = ''
+        if self.chb_real.isChecked():
+            plot_string += 'r'
+        if self.chb_im.isChecked():
+            plot_string += 'i'
+        if self.chb_magnitude.isChecked():
+            plot_string += 'm'
+        if self.chb_phase.isChecked():
+            plot_string += 'p'
+
+        if self.cmb_spectrum_y.currentText() == 'Magnitude':
+            spectrum_type = 'm'
+        elif self.cmb_spectrum_y.currentText() == 'Power (Magnitude^2)':
+            spectrum_type = 'p'
+        else:
+            spectrum_type = 'm'
+
+        if self.chb_spectrum_phase.isChecked():
+            spectrum_phase = 'y'
+        else:
+            spectrum_phase = 'n'
+
+        print(plot_string)
+        print(spectrum_type)
+        print(spectrum_phase)
+
+        self.ui_obj.config.set('signals', 'time_plot_type', plot_string)
+        self.ui_obj.config.set('signals', 'spectrum_type', spectrum_type)
+        self.ui_obj.config.set('signals', 'spectrum_phase', spectrum_phase)
+
+        with open('config.ini', 'w') as configfile:
+            self.ui_obj.config.write(configfile)
 
 

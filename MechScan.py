@@ -15,11 +15,16 @@ import GUI
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-DEFAULT_CONFIG_STRING = '[theme]\n' \
-                            'theme: dark\n\n' \
-                            '[tooltips]\n' \
-                            'tooltips: True\n\n' \
-                            '[colors]\n'
+DEFAULT_CONFIG_STRING = '[theme]\n'
+DEFAULT_CONFIG_STRING += 'theme: dark\n\n'
+DEFAULT_CONFIG_STRING += '[tooltips]\n'
+DEFAULT_CONFIG_STRING += 'tooltips: True\n\n'
+DEFAULT_CONFIG_STRING += '[colors]\n'
+DEFAULT_CONFIG_STRING += '\n\n'
+DEFAULT_CONFIG_STRING += '[signals]\n'
+DEFAULT_CONFIG_STRING += 'time_plot_type: ri\n'
+DEFAULT_CONFIG_STRING += 'spectrum_type: m\n'
+DEFAULT_CONFIG_STRING += 'spectrum_phase: y\n\n'
 
 
 if __name__ == '__main__':

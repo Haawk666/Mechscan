@@ -33,7 +33,12 @@ class Signal(ABC):
         'np.bool_'
     ]
 
-    def __init__(self, x_start=0.0, x_end=10.0, delta_x=1.0/44100.0, bit_depth=16, codomain='int', channels=1):
+    def __init__(self, x_start=0.0, x_end=10.0, delta_x=1.0/44100.0, bit_depth=16, codomain='int', channels=1, units=None):
+
+        if units is None:
+            self.units = ['1', '1']
+        else:
+            self.units = units
 
         if 'np.{}{}'.format(codomain, bit_depth) in self.valid_types:
             self.type_id = self.valid_types.index('np.{}{}'.format(codomain, bit_depth))
@@ -61,6 +66,8 @@ class Signal(ABC):
 
         self.Y = np.zeros((self.n, self.channels), dtype=eval(self.valid_types[self.type_id]))
 
+        self.codomain = self.Y.dtype.name.replace('{}'.format(self.bit_depth), '')
+
         self.path = None
         self.signal_type = 'generic_1D'
 
@@ -79,6 +86,8 @@ class Signal(ABC):
             'bit_depth': self.bit_depth,
             'channels': self.channels,
             'dimensions': self.dimensions,
+            'x units': self.units[0],
+            'y units': self.units[1],
             'x_start': self.x_start,
             'x_end': self.x_end,
             'f_s': self.f_s,
@@ -117,11 +126,14 @@ class Signal(ABC):
             f.create_dataset('Y', data=self.Y)
 
             f.attrs['type_id'] = self.type_id
+            f.attrs['codomain'] = self.codomain
             f.attrs['channels'] = self.channels
             f.attrs['dimensions'] = self.dimensions
             f.attrs['bit_depth'] = self.bit_depth
             f.attrs['signal_type'] = self.signal_type
             f.attrs['N'] = self.N
+            f.attrs['x_unit'] = self.units[0]
+            f.attrs['y_unit'] = self.units[1]
 
     def load(self, path_string):
 
@@ -130,11 +142,13 @@ class Signal(ABC):
         with h5py.File(path_string, 'r') as f:
 
             self.type_id = int(f.attrs['type_id'])
+            self.codomain = int(f.attrs['codomain'])
             self.channels = int(f.attrs['channels'])
             self.dimensions = int(f.attrs['dimensions'])
             self.bit_depth = int(f.attrs['bit_depth'])
             self.signal_type = str(f.attrs['signal_type'])
             self.N = int(f.attrs['N'])
+            self.units = [f.attrs['x_unit'], f.attrs['y_unit']]
 
             self.X = f['X'][()]
             self.f_s = f.attrs['f_s']
@@ -401,9 +415,11 @@ class MultiSignal(ABC):
 
 class TimeSignal(Signal):
 
-    def __init__(self, x_start=0.0, x_end=10.0, delta_x=1.0/44100.0, bit_depth=16, codomain='int', channels=1):
+    def __init__(self, x_start=0.0, x_end=10.0, delta_x=1.0/44100.0, bit_depth=16, codomain='int', channels=1, units=None):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
-        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels)
+        if units is None:
+            units = ['t', '1']
+        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels, units=units)
         self.signal_type = 'time'
 
     def check(self, fix=False):

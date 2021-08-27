@@ -44,18 +44,18 @@ if __name__ == '__main__':
     # Set theme
     if config.get('theme', 'theme') == 'dark':
         dark_palette = QtGui.QPalette()
-        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(53, 53, 53))
+        dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(0, 0, 0))
         dark_palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(200, 200, 200))
-        dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(25, 25, 25))
-        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(53, 53, 53))
+        dark_palette.setColor(QtGui.QPalette.Base, QtGui.QColor(45, 45, 45))
+        dark_palette.setColor(QtGui.QPalette.AlternateBase, QtGui.QColor(50, 50, 50))
         dark_palette.setColor(QtGui.QPalette.ToolTipBase, QtCore.Qt.white)
         dark_palette.setColor(QtGui.QPalette.ToolTipText, QtCore.Qt.white)
         dark_palette.setColor(QtGui.QPalette.Text, QtGui.QColor(200, 200, 200))
-        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(53, 53, 53))
+        dark_palette.setColor(QtGui.QPalette.Button, QtGui.QColor(0, 0, 0))
         dark_palette.setColor(QtGui.QPalette.ButtonText, QtGui.QColor(200, 200, 200))
         dark_palette.setColor(QtGui.QPalette.BrightText, QtCore.Qt.red)
         dark_palette.setColor(QtGui.QPalette.Link, QtGui.QColor(42, 130, 218))
-        dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(42, 130, 218))
+        dark_palette.setColor(QtGui.QPalette.Highlight, QtGui.QColor(220, 220, 220))
         dark_palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
         app.setPalette(dark_palette)
     else:

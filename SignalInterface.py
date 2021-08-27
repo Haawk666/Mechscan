@@ -91,7 +91,7 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def add_interface(self, interface):
         if interface.signal:
-            self.tabs.addTab(interface, '{}'.format(interface.signal.name()))
+            tab = self.tabs.addTab(interface, '{}'.format(interface.signal.name()))
         else:
             self.tabs.addTab(interface, 'Empty')
         self.signal_interfaces.append(interface)
@@ -265,9 +265,10 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_options_trigger(self):
         wizard = SetOptions(ui_obj=self)
-        for interface in self.signal_interfaces:
-            interface.config = self.config
-            interface.update_info()
+        if wizard.complete:
+            for interface in self.signal_interfaces:
+                interface.config = self.config
+                interface.update_info()
 
 
 class SignalInterface(QtWidgets.QWidget):
@@ -1560,6 +1561,8 @@ class SetOptions(QtWidgets.QDialog):
 
         self.ui_obj = ui_obj
 
+        self.complete = False
+
         self.btn_cancel = QtWidgets.QPushButton('Cancel')
         self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
         self.btn_next = QtWidgets.QPushButton('Apply')
@@ -1674,10 +1677,6 @@ class SetOptions(QtWidgets.QDialog):
         else:
             spectrum_phase = 'n'
 
-        print(plot_string)
-        print(spectrum_type)
-        print(spectrum_phase)
-
         self.ui_obj.config.set('signals', 'time_plot_type', plot_string)
         self.ui_obj.config.set('signals', 'spectrum_type', spectrum_type)
         self.ui_obj.config.set('signals', 'spectrum_phase', spectrum_phase)
@@ -1685,4 +1684,5 @@ class SetOptions(QtWidgets.QDialog):
         with open('config.ini', 'w') as configfile:
             self.ui_obj.config.write(configfile)
 
+        self.complete = True
 

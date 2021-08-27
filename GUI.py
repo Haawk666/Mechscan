@@ -25,11 +25,21 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.menu = self.menuBar()
         self.menu.setStyleSheet("""
-                                    QMenu::separator {
+                                    QMenu {
+                                        background: black;
+                                        border: 1px solid grey;
+                                    }
+        
+                                    QMenu::separator{
                                         height: 1px;
                                         background: grey;
                                         margin-left: 10px;
                                         margin-right: 5px;
+                                    }
+                                    
+                                    QMenu::item:selected{
+                                        background-color: rgb(200, 200, 200);
+                                        color: rgb(0, 0, 0);
                                     }
                                 """)
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""This module contains methods that process signals. Note that the input signal is assumed to be of the type
-SignalSystem.TimeSignal(). The methods will usually also return a signal of the same type."""
+"""Module docstring"""
 
 # standard library
 import logging

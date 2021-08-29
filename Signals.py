@@ -142,7 +142,7 @@ class Signal(ABC):
         with h5py.File(path_string, 'r') as f:
 
             self.type_id = int(f.attrs['type_id'])
-            self.codomain = int(f.attrs['codomain'])
+            self.codomain = f.attrs['codomain']
             self.channels = int(f.attrs['channels'])
             self.dimensions = int(f.attrs['dimensions'])
             self.bit_depth = int(f.attrs['bit_depth'])
@@ -260,7 +260,12 @@ class MultiSignal(ABC):
         'np.bool_'
     ]
 
-    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1):
+    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1, units=None):
+
+        if units is None:
+            self.units = ['1', '1']
+        else:
+            self.units = units
 
         if 'np.{}{}'.format(codomain, bit_depth) in self.valid_types:
             self.type_id = self.valid_types.index('np.{}{}'.format(codomain, bit_depth))
@@ -317,6 +322,8 @@ class MultiSignal(ABC):
         self.bit_depth = bit_depth
 
         self.Y = np.zeros(tuple(self.n + [self.channels]), dtype=eval(self.valid_types[self.type_id]))
+
+        self.codomain = self.Y.dtype.name.replace('{}'.format(self.bit_depth), '')
 
         self.path = None
         self.signal_type = 'generic_nD'
@@ -421,14 +428,6 @@ class TimeSignal(Signal):
             units = ['t', '1']
         super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels, units=units)
         self.signal_type = 'time'
-
-    def check(self, fix=False):
-        """Check that all attributes are correct and makes sense. If fix=True, will try to fix problems (might be
-        very buggy). Returns True if all attributes are coherent, false if not."""
-        print('(t_start + T * (n + 1) | t_end) = ({} | {})'.format(self.x_start + self.delta_x * (self.n + 1), self.x_end))
-        print('(n | X.shape[0]) = ({} | {})'.format(self.n, self.X.shape[0]))
-        print('(Y.dtype | bit depth) = {} | {})'.format(self.Y.dtype, self.bit_depth))
-        print('(8 * Y.dtype.itemsize | bit depth) = ({} | {})'.format(8 * self.Y.dtype.itemsize, self.bit_depth))
 
     @staticmethod
     def static_load(path_string):

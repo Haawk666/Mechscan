@@ -263,7 +263,7 @@ class MultiSignal(ABC):
     def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1, units=None):
 
         if units is None:
-            self.units = ['1', '1']
+            self.units = ['s', '1']
         else:
             self.units = units
 
@@ -425,7 +425,7 @@ class TimeSignal(Signal):
     def __init__(self, x_start=0.0, x_end=10.0, delta_x=1.0/44100.0, bit_depth=16, codomain='int', channels=1, units=None):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
         if units is None:
-            units = ['t', '1']
+            units = ['s', '1']
         super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels, units=units)
         self.signal_type = 'time'
 
@@ -451,22 +451,6 @@ class TimeSignal(Signal):
         new_signal.Y = Y
 
         return new_signal
-
-    @staticmethod
-    def from_frequency(frequency_signal):
-        f_s = 2.0 * (frequency_signal.X[-1])
-        delta_x = 1.0 / f_s
-        if frequency_signal.time_signal is not None:
-            x_start = frequency_signal.time_signal.X[0]
-            x_end = frequency_signal.time_signal.X[-1]
-        else:
-            x_start = 0.0
-            x_end = delta_x * (frequency_signal.n - 1)
-        Y = np.fft.ifft(np.fft.ifftshift(frequency_signal.Y), axis=0).real
-        bit_depth = 8 * Y.dtype.itemsize
-        time_signal = TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain='int', channels=frequency_signal.channels)
-        time_signal.Y = Y
-        return time_signal
 
     @staticmethod
     def from_wav(file_path):
@@ -496,9 +480,11 @@ class TimeSignal(Signal):
 
 class FrequencySignal(Signal):
 
-    def __init__(self, x_start=-22050.0, x_end=22050.0, delta_x=0.1, bit_depth=128, codomain='complex', channels=1):
+    def __init__(self, x_start=-22050.0, x_end=22050.0, delta_x=0.1, bit_depth=128, codomain='complex', channels=1, units=None):
         """Init a signal with a given **sampling rate** and start and end timestamps."""
-        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels)
+        if units is None:
+            units = ['Hz', '1']
+        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels, units=units)
         self.time_signal = None
         self.signal_type = 'frequency'
 
@@ -524,50 +510,24 @@ class FrequencySignal(Signal):
 
         return new_signal
 
-    @staticmethod
-    def from_time_signal(time_signal):
-        Y_f = np.fft.fftshift(np.fft.fft(time_signal.Y, axis=0))
-        X_f = np.linspace(-time_signal.f_s / 2.0, time_signal.f_s / 2.0, num=Y_f.shape[0], dtype=np.float64)
-        frequency_signal = FrequencySignal.from_data(X_f, Y_f)
-        frequency_signal.time_signal = time_signal
-        return frequency_signal
-
 
 class TimeFrequencySignal(MultiSignal):
 
-    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1):
-        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels)
+    def __init__(self, x_start=None, x_end=None, delta_x=None, bit_depth=128, codomain='complex', channels=1, units=None):
+        if units is None:
+            units = ['s', 'Hz', '1']
+        super().__init__(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain=codomain, channels=channels, units=units)
         self.time_signal = None
         self.signal_type = 'time-frequency'
 
-    @staticmethod
-    def from_time_signal(time_signal, alpha):
-        t_start = time_signal.x_start
-        t_end = time_signal.x_end
-        f_start = - time_signal.f_s / 2.0
-        f_end = time_signal.f_s / 2.0
-        X_t = np.linspace(t_start, t_end, num=time_signal.n, dtype=np.float64)
-        delta_t = X_t[1] - X_t[0]
-        Y_t = time_signal.Y
-        X_f = np.linspace(f_start, f_end, num=time_signal.n // 8, dtype=np.float64)
-        delta_f = X_f[1] - X_f[0]
+    def generate(self, function):
+        pass
 
-        Y = np.zeros((time_signal.n, time_signal.n // 8, time_signal.channels), dtype=np.complex64)
-        for channel in range(time_signal.channels):
-            for k, x in enumerate(X_t):
-                Y_f = np.multiply(Y_t[:, 0], np.exp(-0.5 * ((X_t - x) / alpha) ** 2) / (alpha * np.sqrt(2 * np.pi)))
-                Y[k, :, channel] = np.fft.fftshift(np.fft.fft(Y_f, n=time_signal.n // 8, axis=0)).astype(np.complex64)
-                print(x)
-        time_frequency_signal = TimeFrequencySignal(
-            x_start=[t_start, f_start],
-            x_end=[t_end, f_end],
-            delta_x=[delta_t, delta_f],
-            bit_depth=64,
-            channels=time_signal.channels
-        )
-        time_frequency_signal.Y = Y
-        time_frequency_signal.time_signal = time_signal
-        return time_frequency_signal
+    @staticmethod
+    def from_data(X, Y):
+        pass
+
+
 
 
 

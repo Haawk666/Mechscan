@@ -11,6 +11,7 @@ import pyqtgraph as pg
 # Internals
 import GUI_subwidgets
 import Signals as ss
+import SignalProcessing as sp
 import SignalDialogs
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -177,9 +178,9 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = self.signal_interfaces[index].signal
             if signal is not None:
                 if signal.signal_type == 'time':
-                    self.add_signal(ss.FrequencySignal.from_time_signal(signal))
+                    self.add_signal(sp.fft(signal))
                 elif signal.signal_type == 'frequency':
-                    self.add_signal(ss.TimeSignal.from_frequency(signal))
+                    self.add_signal(sp.ifft(signal))
 
     def menu_gabor_trigger(self):
         index = self.tabs.currentIndex()
@@ -189,7 +190,7 @@ class SignalsInterface(QtWidgets.QWidget):
                 if signal.signal_type == 'time':
                     wizard = SignalDialogs.GetAlpha()
                     if wizard.complete:
-                        self.add_signal(ss.TimeFrequencySignal.from_time_signal(signal, wizard.alpha))
+                        self.add_signal(sp.gabor_transform(signal))
                 elif signal.signal_type == 'time-frequency':
                     pass
 

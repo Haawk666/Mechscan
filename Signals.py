@@ -525,8 +525,28 @@ class TimeFrequencySignal(MultiSignal):
 
     @staticmethod
     def from_data(X, Y):
-        pass
+        shape_x = [X[0].shape[0], X[1].shape[0]]
+        shape_y = [Y.shape[0], Y.shape[1]]
+        if not shape_y == shape_x:
+            raise ValueError
 
+        x_start = [X[0][0], X[1][0]]
+        x_end = [X[0][-1], X[1][-1]]
+        n = [X[0].shape[0], X[1].shape[0]]
+        delta_x = [(x_end[0] - x_start[0]) / (n[0] - 1.0), (x_end[1] - x_start[1]) / (n[1] - 1.0)]
+        bit_depth = 8 * Y.dtype.itemsize
+        codomain = Y.dtype.name.replace(str(bit_depth), '')
+        channels = Y.shape[-1]
+
+        time_frequency_signal = TimeFrequencySignal(
+            x_start=x_start,
+            x_end=x_end,
+            delta_x=delta_x,
+            bit_depth=bit_depth,
+            codomain=codomain,
+            channels=channels
+        )
+        time_frequency_signal.Y = Y
 
 
 

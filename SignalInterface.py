@@ -132,13 +132,14 @@ class SignalsInterface(QtWidgets.QWidget):
             self.add_interface(signal_interface)
 
     def menu_save_trigger(self):
-        index = self.tabs.currentIndex()
-        signal_interface = self.signal_interfaces[index]
-        if signal_interface.signal:
-            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save signal", '', "")
-            if filename[0]:
-                signal_interface.signal.save(filename[0])
-                self.tabs.setTabText(index, signal_interface.signal.name())
+        if len(self.signal_interfaces) > 0:
+            index = self.tabs.currentIndex()
+            signal_interface = self.signal_interfaces[index]
+            if signal_interface.signal:
+                filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save signal", '', "")
+                if filename[0]:
+                    signal_interface.signal.save(filename[0])
+                    self.tabs.setTabText(index, signal_interface.signal.name())
 
     def menu_load_trigger(self):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
@@ -193,7 +194,7 @@ class SignalsInterface(QtWidgets.QWidget):
                         params = wizard.params
                         self.add_signal(sp.gabor_transform(
                             signal,
-                            window_size=params['window_size'],
+                            window_size=params['window_length'],
                             window_function=params['window_function'],
                             delta_tau=params['delta_tau'],
                             delta_freq=params['delta_freq']

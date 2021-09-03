@@ -54,6 +54,11 @@ def ifft(frequency_signal):
 
 def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_tau=None, delta_freq=None):
 
+    if time_signal.bit_depth in [1, 2, 8, 16, 32]:
+        bit_depth = 64
+    else:
+        bit_depth = 128
+
     if delta_tau is None:
         delta_tau = time_signal.delta_x
     if delta_freq is None:
@@ -62,8 +67,10 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
     frequency_signal = fft(time_signal)
 
     N = int(np.round(window_size / time_signal.delta_x + 1.0, decimals=0))
-    X = np.linspace(0.0, window_size, num=N, dtype=np.float64)
-    window_function_values = np.ndarray((N, time_signal.channels), dtype=np.float64)
+    delta_n = int(np.round(delta_tau / time_signal.delta_x, decimals=0))
+    N_f = int(np.round(time_signal.f_s / delta_freq + 1.0, decimals=0))
+
+    window_function_values = np.zeros((N, ), dtype=np.float64)
     if window_function == 'Hann':
         for x in range(N):
             window_function_values[x] = (np.sin(np.pi * x / N)) ** 2
@@ -71,12 +78,35 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
         for x in range(N):
             window_function_values[x] = (np.sin(np.pi * x / N)) ** 2
 
-    tau = np.linspace(time_signal.X[0], time_signal.X[-1], num=1.0/delta_tau, dtype=np.float64)
+    tau = np.linspace(time_signal.X[0], time_signal.X[-1], num=int(np.round((time_signal.X[-1] - time_signal.X[0]) / delta_tau + 1.0, decimals=0)), dtype=np.float64)
+    freq = np.linspace(0.0, frequency_signal.X[-1], num=int(np.round(frequency_signal.X[-1] / delta_freq + 1.0, decimals=0)), dtype=np.float64)
 
-    Y = np.ndarray((), )
+    Y_g = np.zeros((tau.shape[0], freq.shape[0], time_signal.channels), dtype=eval('np.complex{}'.format(bit_depth)))
 
-    time_signal = ss.TimeSignal.from_data(X, window_function_values)
-    return time_signal
+    Y = time_signal.Y
+    Y = np.concatenate((np.zeros((N // 2, time_signal.channels), dtype=Y.dtype), Y, np.zeros((N // 2, time_signal.channels), dtype=Y.dtype)), axis=0)
+
+    for channel in range(time_signal.channels):
+
+        cont = True
+        k = 0
+
+        while cont:
+
+            print(k)
+            print(Y[k:(k + N), channel].shape)
+            print(window_function_values.shape)
+
+            Y_g[k, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + N), channel] * window_function_values, n=N_f, axis=0)).astype(eval('np.complex{}'.format(bit_depth)))[N_f // 2:]
+            k += delta_n
+
+            if k > time_signal.X.shape[0] - 1:
+                cont = False
+
+    time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
+    time_frequency_signal.time_signal = time_signal
+
+    return time_frequency_signal
 
 
 

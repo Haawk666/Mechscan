@@ -188,9 +188,16 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = self.signal_interfaces[index].signal
             if signal is not None:
                 if signal.signal_type == 'time':
-                    wizard = SignalDialogs.GetAlpha()
+                    wizard = SignalDialogs.GetGaborParams()
                     if wizard.complete:
-                        self.add_signal(sp.gabor_transform(signal))
+                        params = wizard.params
+                        self.add_signal(sp.gabor_transform(
+                            signal,
+                            window_size=params['window_size'],
+                            window_function=params['window_function'],
+                            delta_tau=params['delta_tau'],
+                            delta_freq=params['delta_freq']
+                        ))
                 elif signal.signal_type == 'time-frequency':
                     pass
 

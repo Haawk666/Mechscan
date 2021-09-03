@@ -1026,6 +1026,92 @@ class CropSignal(QtWidgets.QDialog):
             self.close()
 
 
+class GetGaborParams(QtWidgets.QDialog):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.setWindowTitle('Gabor transform parameters')
+
+        self.complete = False
+        self.params = self.params = {
+            'window_length': 0.1,
+            'window_function': 'Hann',
+            'delta_tau': 0.5,
+            'delta_freq': 0.1
+        }
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Transform')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.box_alpha = QtWidgets.QDoubleSpinBox()
+        self.box_alpha.setDecimals(3)
+        self.box_alpha.setSingleStep(1.0)
+        self.box_alpha.setMinimum(0.0)
+        self.box_alpha.setMaximum(10.0)
+        self.box_alpha.setValue(0.1)
+
+        self.cmb_window_function = QtWidgets.QComboBox()
+        self.cmb_window_function.addItems([
+            'Hann'
+        ])
+
+        self.box_delta_tau = QtWidgets.QDoubleSpinBox()
+        self.box_delta_tau.setDecimals(3)
+        self.box_delta_tau.setSingleStep(1.0)
+        self.box_delta_tau.setMinimum(0.001)
+        self.box_delta_tau.setMaximum(10.000)
+        self.box_delta_tau.setValue(0.5)
+
+        self.box_delta_f = QtWidgets.QDoubleSpinBox()
+        self.box_delta_f.setDecimals(1)
+        self.box_delta_f.setSingleStep(1.0)
+        self.box_delta_f.setMinimum(0.1)
+        self.box_delta_f.setMaximum(10.0)
+        self.box_delta_f.setValue(0.1)
+
+        self.build_layout()
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        grid = QtWidgets.QGridLayout()
+        grid.addWidget(QtWidgets.QLabel('Window length: '), 0, 0)
+        grid.addWidget(QtWidgets.QLabel('Window function: '), 1, 0)
+        grid.addWidget(QtWidgets.QLabel('Delta tau: '), 2, 0)
+        grid.addWidget(QtWidgets.QLabel('Delta freq: '), 3, 0)
+        grid.addWidget(self.box_alpha, 0, 1)
+        grid.addWidget(self.cmb_window_function, 1, 1)
+        grid.addWidget(self.box_delta_tau, 2, 1)
+        grid.addWidget(self.box_delta_f, 3, 1)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(grid)
+        layout.addLayout(btn_layout)
+
+        self.setLayout(layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        self.params = {
+            'window_length': self.box_alpha.value(),
+            'window_function': self.cmb_window_function.currentText(),
+            'delta_tau': self.box_delta_tau.value(),
+            'delta_freq': self.box_delta_f.value()
+        }
+        self.close()
+        self.complete = True
+
+
 class GetAlpha(QtWidgets.QDialog):
 
     def __init__(self, *args):

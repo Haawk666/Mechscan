@@ -52,7 +52,15 @@ def ifft(frequency_signal):
     return time_signal
 
 
-def gabor_transform(time_signal, window_size=1.0, window_function='Hann'):
+def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_tau=None, delta_freq=None):
+
+    if delta_tau is None:
+        delta_tau = time_signal.delta_x
+    if delta_freq is None:
+        delta_freq = (time_signal.X[-1] - time_signal.X[0]) / (time_signal.n - 1.0)
+
+    frequency_signal = fft(time_signal)
+
     N = int(np.round(window_size / time_signal.delta_x + 1.0, decimals=0))
     X = np.linspace(0.0, window_size, num=N, dtype=np.float64)
     window_function_values = np.ndarray((N, time_signal.channels), dtype=np.float64)
@@ -63,7 +71,9 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann'):
         for x in range(N):
             window_function_values[x] = (np.sin(np.pi * x / N)) ** 2
 
+    tau = np.linspace(time_signal.X[0], time_signal.X[-1], num=1.0/delta_tau, dtype=np.float64)
 
+    Y = np.ndarray((), )
 
     time_signal = ss.TimeSignal.from_data(X, window_function_values)
     return time_signal

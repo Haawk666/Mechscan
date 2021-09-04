@@ -548,10 +548,14 @@ class GetFunction1DComplex(QtWidgets.QDialog):
         base_grid.addWidget(QtWidgets.QLabel('Operation: '), 1, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channels: '), 2, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channel: '), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('From: '), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('To: '), 5, 0)
         base_grid.addWidget(self.cmb_functions, 0, 1)
         base_grid.addWidget(self.cmb_operation, 1, 1)
         base_grid.addWidget(self.chb_all_channels, 2, 1)
         base_grid.addWidget(self.cmb_channels, 3, 1)
+        base_grid.addWidget(self.box_from, 4, 1)
+        base_grid.addWidget(self.box_to, 5, 1)
         base_widget = QtWidgets.QWidget()
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
@@ -671,6 +675,381 @@ class GetFunction1DComplex(QtWidgets.QDialog):
 
         start = self.box_from.value()
         end = self.box_to.value()
+
+        function_string = self.box_function.text()
+        operation = self.cmb_operation.currentText()
+
+        channels = None
+        if not self.chb_all_channels.isChecked():
+            channels = self.cmb_channels.currentText().replace('Channel ', '')
+            channels = [int(channels) - 1]
+
+        if self.cmb_functions.currentText() == 'Gaussian pulse':
+            amp = self.box_amp_x.value()
+            mu = self.box_mu_x.value()
+            sigma = self.box_sigma_x.value()
+            function_string = '{} * np.complex(np.exp(-0.5 * ((x - {}) / {}) ** 2) / ({} * np.sqrt(2 * np.pi), np.exp(-0.5 * ((x - {}) / {}) ** 2) / ({} * np.sqrt(2 * np.pi)))'.format(amp, mu, sigma, sigma, mu, sigma, sigma)
+        elif self.cmb_functions.currentText() == 'Sine':
+            amp = self.box_amp_sin.value()
+            f = self.box_freq_sin.value()
+            theta = self.box_phase_sin.value()
+            function_string = '{} * np.complex(np.sin(2 * np.pi * {} * x - {}), np.sin(2 * np.pi * {} * x - {}))'.format(amp, f, theta, f, theta)
+        elif self.cmb_functions.currentText() == 'Exponential':
+            amp = self.box_amp_exp.value()
+            f = self.box_freq_exp.value()
+            phase = self.box_phase_exp.value()
+            function_string = '{} * np.exp(np.complex(0, -{} * (x - {})))'.format(amp, f, phase)
+        elif self.cmb_functions.currentText() == 'Noise':
+            amp = self.box_amp_noise.value()
+            mu = self.box_mu_noise.value()
+            sigma = self.box_sigma_noise.value()
+            function_string = '{} * np.complex(random.gauss({}, {}), random.gauss({}, {}))'.format(amp, mu, sigma, mu, sigma)
+        elif self.cmb_functions.currentText() == 'Constant':
+            const = np.complex(self.box_const_real.value(), self.box_const_im.value())
+            function_string = '{}'.format(const)
+
+        if operation == 'Overwrite':
+            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Add':
+            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Subtract':
+            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Multiply':
+            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Convolve':
+            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels, a=start, b=end)
+        else:
+            logger.info('error')
+            print('error')
+
+
+class GetFunction2DComplex(QtWidgets.QDialog):
+
+    def __init__(self, *args, ui_object=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Functions')
+
+        self.ui_obj = ui_object
+
+        self.complete = False
+
+        self.stage = 0
+        self.stack = QtWidgets.QStackedWidget()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Next')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.cmb_functions = QtWidgets.QComboBox()
+        self.cmb_functions.addItems([
+            'Custom',
+            'Gaussian pulse',
+            'Sine',
+            'Noise',
+            'Constant'
+        ])
+        self.cmb_functions.setCurrentIndex(3)
+
+        self.cmb_operation = QtWidgets.QComboBox()
+        self.cmb_operation.addItems([
+            'Overwrite',
+            'Add',
+            'Subtract',
+            'Multiply',
+            'Convolve'
+        ])
+
+        self.chb_all_channels = QtWidgets.QCheckBox('All channels')
+        self.chb_all_channels.setChecked(True)
+        self.chb_all_channels.toggled.connect(self.chb_all_channels_trigger)
+
+        self.cmb_channels = QtWidgets.QComboBox()
+        if self.ui_obj.signal is not None:
+            for nchan in range(self.ui_obj.signal.channels):
+                self.cmb_channels.addItem('Channel {}'.format(nchan + 1))
+        self.cmb_channels.setDisabled(True)
+
+        self.box_from_x_1 = QtWidgets.QDoubleSpinBox()
+        self.box_from_x_1.setDecimals(3)
+        self.box_from_x_1.setSingleStep(1.0)
+        self.box_from_x_1.setMinimum(-100.0)
+        self.box_from_x_1.setMaximum(100.0)
+        self.box_from_x_1.setValue(0.0)
+
+        self.box_from_x_2 = QtWidgets.QDoubleSpinBox()
+        self.box_from_x_2.setDecimals(3)
+        self.box_from_x_2.setSingleStep(1.0)
+        self.box_from_x_2.setMinimum(-44100.0)
+        self.box_from_x_2.setMaximum(44100.0)
+        self.box_from_x_2.setValue(0.0)
+
+        self.box_to_x_1 = QtWidgets.QDoubleSpinBox()
+        self.box_to_x_1.setDecimals(3)
+        self.box_to_x_1.setSingleStep(1.0)
+        self.box_to_x_1.setMinimum(-100.0)
+        self.box_to_x_1.setMaximum(100.0)
+        self.box_to_x_1.setValue(1.0)
+
+        self.box_to_x_2 = QtWidgets.QDoubleSpinBox()
+        self.box_to_x_2.setDecimals(3)
+        self.box_to_x_2.setSingleStep(1.0)
+        self.box_to_x_2.setMinimum(-100.0)
+        self.box_to_x_2.setMaximum(100.0)
+        self.box_to_x_2.setValue(1.0)
+
+        self.lbl_explain = QtWidgets.QLabel('Enter a function as a string, ie: \'100 * np.exp(0.5 * x)\'.\nIf the signal has multiple dimensions, use \'x_1\', \'x_2\', etc...')
+
+        self.box_function = QtWidgets.QLineEdit()
+        self.box_function.setText('np.complex(5 * np.sin(2 * np.pi * 420 * x_1), x_2)')
+
+        self.box_amp_x = QtWidgets.QDoubleSpinBox()
+        self.box_amp_x.setDecimals(1)
+        self.box_amp_x.setMinimum(-1000.0)
+        self.box_amp_x.setMaximum(1000.0)
+        self.box_amp_x.setSingleStep(10.0)
+        self.box_amp_x.setValue(0.0)
+
+        self.box_mu_x = QtWidgets.QDoubleSpinBox()
+        self.box_mu_x.setDecimals(1)
+        self.box_mu_x.setMinimum(0.0)
+        self.box_mu_x.setMaximum(100.0)
+        self.box_mu_x.setSingleStep(1.0)
+        self.box_mu_x.setValue(0.0)
+
+        self.box_sigma_x = QtWidgets.QDoubleSpinBox()
+        self.box_sigma_x.setDecimals(1)
+        self.box_sigma_x.setMinimum(0.0)
+        self.box_sigma_x.setMaximum(1000.0)
+        self.box_sigma_x.setSingleStep(1.0)
+        self.box_sigma_x.setValue(10.0)
+
+        self.box_amp_sin = QtWidgets.QDoubleSpinBox()
+        self.box_amp_sin.setDecimals(1)
+        self.box_amp_sin.setMinimum(0.0)
+        self.box_amp_sin.setMaximum(1000.0)
+        self.box_amp_sin.setSingleStep(10.0)
+        self.box_amp_sin.setValue(666.0)
+
+        self.box_freq_sin = QtWidgets.QDoubleSpinBox()
+        self.box_freq_sin.setDecimals(1)
+        self.box_freq_sin.setMinimum(0.0)
+        self.box_freq_sin.setMaximum(10000.0)
+        self.box_freq_sin.setSingleStep(10.0)
+        self.box_freq_sin.setValue(666.0)
+
+        self.box_phase_sin = QtWidgets.QDoubleSpinBox()
+        self.box_phase_sin.setDecimals(1)
+        self.box_phase_sin.setMinimum(-2.0 * np.pi)
+        self.box_phase_sin.setMaximum(2.0 * np.pi)
+        self.box_phase_sin.setSingleStep(1.0)
+        self.box_phase_sin.setValue(0.0)
+
+        self.box_amp_exp = QtWidgets.QDoubleSpinBox()
+        self.box_amp_exp.setDecimals(1)
+        self.box_amp_exp.setMinimum(-10000.0)
+        self.box_amp_exp.setMaximum(10000.0)
+        self.box_amp_exp.setSingleStep(10.0)
+        self.box_amp_exp.setValue(100.0)
+
+        self.box_freq_exp = QtWidgets.QDoubleSpinBox()
+        self.box_freq_exp.setDecimals(1)
+        self.box_freq_exp.setMinimum(0.0)
+        self.box_freq_exp.setMaximum(100.0)
+        self.box_freq_exp.setSingleStep(1.0)
+        self.box_freq_exp.setValue(10.0)
+
+        self.box_phase_exp = QtWidgets.QDoubleSpinBox()
+        self.box_phase_exp.setDecimals(1)
+        self.box_phase_exp.setMinimum(-2 * np.pi)
+        self.box_phase_exp.setMaximum(2 * np.pi)
+        self.box_phase_exp.setSingleStep(0.25 * np.pi)
+        self.box_phase_exp.setValue(0.0)
+
+        self.box_amp_noise = QtWidgets.QDoubleSpinBox()
+        self.box_amp_noise.setDecimals(1)
+        self.box_amp_noise.setMinimum(0.0)
+        self.box_amp_noise.setMaximum(100.0)
+        self.box_amp_noise.setSingleStep(10.0)
+        self.box_amp_noise.setValue(1.0)
+
+        self.box_mu_noise = QtWidgets.QDoubleSpinBox()
+        self.box_mu_noise.setDecimals(1)
+        self.box_mu_noise.setMinimum(-10.0)
+        self.box_mu_noise.setMaximum(10.0)
+        self.box_mu_noise.setSingleStep(1.0)
+        self.box_mu_noise.setValue(0.0)
+
+        self.box_sigma_noise = QtWidgets.QDoubleSpinBox()
+        self.box_sigma_noise.setDecimals(1)
+        self.box_sigma_noise.setMinimum(0.0)
+        self.box_sigma_noise.setMaximum(100.0)
+        self.box_sigma_noise.setSingleStep(1.0)
+        self.box_sigma_noise.setValue(10.0)
+
+        self.box_const_real = QtWidgets.QDoubleSpinBox()
+        self.box_const_real.setDecimals(1)
+        self.box_const_real.setMinimum(-1000.0)
+        self.box_const_real.setMaximum(1000.0)
+        self.box_const_real.setSingleStep(1.0)
+        self.box_const_real.setValue(666.0)
+
+        self.box_const_im = QtWidgets.QDoubleSpinBox()
+        self.box_const_im.setDecimals(1)
+        self.box_const_im.setMinimum(-1000.0)
+        self.box_const_im.setMaximum(1000.0)
+        self.box_const_im.setSingleStep(1.0)
+        self.box_const_im.setValue(666.0)
+
+        self.build_layout()
+
+        self.exec_()
+
+    def build_layout(self):
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        base_grid = QtWidgets.QGridLayout()
+        base_grid.addWidget(QtWidgets.QLabel('Functions: '), 0, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Operation: '), 1, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Channels: '), 2, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Channel: '), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('From (x_1): '), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('To (x_1): '), 5, 0)
+        base_grid.addWidget(QtWidgets.QLabel('From (x_2): '), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('To (x_2): '), 5, 0)
+        base_grid.addWidget(self.cmb_functions, 0, 1)
+        base_grid.addWidget(self.cmb_operation, 1, 1)
+        base_grid.addWidget(self.chb_all_channels, 2, 1)
+        base_grid.addWidget(self.cmb_channels, 3, 1)
+        base_grid.addWidget(self.box_from_x_1, 4, 1)
+        base_grid.addWidget(self.box_to_x_1, 5, 1)
+        base_grid.addWidget(self.box_from_x_2, 4, 1)
+        base_grid.addWidget(self.box_to_x_2, 5, 1)
+        base_widget = QtWidgets.QWidget()
+        base_widget.setLayout(base_grid)
+        self.stack.addWidget(base_widget)
+
+        custom_function_grid = QtWidgets.QGridLayout()
+        custom_function_grid.addWidget(self.lbl_explain, 0, 0, 0, 2)
+        custom_function_grid.addWidget(QtWidgets.QLabel('Function string: '), 1, 0)
+        custom_function_grid.addWidget(self.box_function, 1, 1)
+        const_widget = QtWidgets.QWidget()
+        const_widget.setLayout(custom_function_grid)
+        self.stack.addWidget(const_widget)
+
+        pulse_grid = QtWidgets.QGridLayout()
+        pulse_grid.addWidget(QtWidgets.QLabel('Scale by: '), 0, 0)
+        pulse_grid.addWidget(QtWidgets.QLabel('Mu: '), 1, 0)
+        pulse_grid.addWidget(QtWidgets.QLabel('Sigma: '), 2, 0)
+        pulse_grid.addWidget(self.box_amp_x, 0, 1)
+        pulse_grid.addWidget(self.box_mu_x, 1, 1)
+        pulse_grid.addWidget(self.box_sigma_x, 2, 1)
+        pulse_widget = QtWidgets.QWidget()
+        pulse_widget.setLayout(pulse_grid)
+        self.stack.addWidget(pulse_widget)
+
+        sine_grid = QtWidgets.QGridLayout()
+        sine_grid.addWidget(QtWidgets.QLabel('Amplitude: '), 0, 0)
+        sine_grid.addWidget(QtWidgets.QLabel('Frequency: '), 1, 0)
+        sine_grid.addWidget(QtWidgets.QLabel('Phase: '), 2, 0)
+        sine_grid.addWidget(self.box_amp_sin, 0, 1)
+        sine_grid.addWidget(self.box_freq_sin, 1, 1)
+        sine_grid.addWidget(self.box_phase_sin, 2, 1)
+        sine_widget = QtWidgets.QWidget()
+        sine_widget.setLayout(sine_grid)
+        self.stack.addWidget(sine_widget)
+
+        exp_grid = QtWidgets.QGridLayout()
+        exp_grid.addWidget(QtWidgets.QLabel('Amplitude: '), 0, 0)
+        exp_grid.addWidget(QtWidgets.QLabel('Frequency: '), 1, 0)
+        exp_grid.addWidget(QtWidgets.QLabel('Phase: '), 2, 0)
+        exp_grid.addWidget(self.box_amp_exp, 0, 1)
+        exp_grid.addWidget(self.box_freq_exp, 1, 1)
+        exp_grid.addWidget(self.box_phase_exp, 2, 1)
+        exp_widget = QtWidgets.QWidget()
+        exp_widget.setLayout(exp_grid)
+        self.stack.addWidget(exp_widget)
+
+        noise_grid = QtWidgets.QGridLayout()
+        noise_grid.addWidget(QtWidgets.QLabel('Amplitude: '), 0, 0)
+        noise_grid.addWidget(QtWidgets.QLabel('Mu: '), 1, 0)
+        noise_grid.addWidget(QtWidgets.QLabel('Sigma: '), 2, 0)
+        noise_grid.addWidget(self.box_amp_noise, 0, 1)
+        noise_grid.addWidget(self.box_mu_noise, 1, 1)
+        noise_grid.addWidget(self.box_sigma_noise, 2, 1)
+        noise_widget = QtWidgets.QWidget()
+        noise_widget.setLayout(noise_grid)
+        self.stack.addWidget(noise_widget)
+
+        const_grid = QtWidgets.QGridLayout()
+        const_grid.addWidget(QtWidgets.QLabel('Constant (real): '), 0, 0)
+        const_grid.addWidget(QtWidgets.QLabel('Constant (imaginary): '), 1, 0)
+        const_grid.addWidget(self.box_const_real, 0, 1)
+        const_grid.addWidget(self.box_const_im, 1, 1)
+        const_widget = QtWidgets.QWidget()
+        const_widget.setLayout(const_grid)
+        self.stack.addWidget(const_widget)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addWidget(self.stack)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def chb_all_channels_trigger(self, state):
+        if state:
+            self.cmb_channels.setDisabled(True)
+        else:
+            self.cmb_channels.setDisabled(False)
+
+    def btn_cancel_trigger(self):
+        if self.stage == 0:
+            self.close()
+        else:
+            self.btn_next.setText('Next')
+            self.btn_cancel.setText('Cancel')
+            self.stack.setCurrentIndex(0)
+            self.stage = 0
+
+    def btn_next_trigger(self):
+        if self.stage == 0:
+            start = self.box_from.value()
+            end = self.box_to.value()
+            if start >= end:
+                msg = QtWidgets.QMessageBox()
+                msg.setText('Timestamp "to" must be larger than "from"!')
+                msg.exec()
+            else:
+                self.btn_next.setText('Generate')
+                self.btn_cancel.setText('Back')
+                next_index = 1
+                if self.cmb_functions.currentText() == 'Gaussian pulse':
+                    next_index = 2
+                elif self.cmb_functions.currentText() == 'Sine':
+                    next_index = 3
+                elif self.cmb_functions.currentText() == 'Exponential':
+                    next_index = 4
+                elif self.cmb_functions.currentText() == 'Noise':
+                    next_index = 5
+                elif self.cmb_functions.currentText() == 'Constant':
+                    next_index = 6
+                self.stack.setCurrentIndex(next_index)
+                self.stage += 1
+        else:
+            self.gen_signal()
+            self.close()
+            self.complete = True
+
+    def gen_signal(self):
+
+        start = [self.box_from_x_1.value(), self.box_from_x_2.value()]
+        end = [self.box_to_x_1.value(), self.box_to_x_2.value()]
 
         function_string = self.box_function.text()
         operation = self.cmb_operation.currentText()

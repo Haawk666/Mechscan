@@ -546,8 +546,10 @@ class TimeFrequencySignal(MultiSignal):
             codomain=codomain,
             channels=channels
         )
+
         time_frequency_signal.Y = Y
 
+        return time_frequency_signal
 
 
 

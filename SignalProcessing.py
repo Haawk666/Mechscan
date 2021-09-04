@@ -90,6 +90,7 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
 
         cont = True
         k = 0
+        i = 0
 
         while cont:
 
@@ -97,8 +98,9 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
             print(Y[k:(k + N), channel].shape)
             print(window_function_values.shape)
 
-            Y_g[k, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + N), channel] * window_function_values, n=N_f, axis=0)).astype(eval('np.complex{}'.format(bit_depth)))[N_f // 2:]
+            Y_g[i, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + N), channel] * window_function_values, n=N_f, axis=0)).astype(eval('np.complex{}'.format(bit_depth)))[N_f // 2:]
             k += delta_n
+            i += 1
 
             if k > time_signal.X.shape[0] - 1:
                 cont = False

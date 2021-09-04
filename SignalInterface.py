@@ -40,6 +40,7 @@ class SignalsInterface(QtWidgets.QWidget):
         generate = self.menu.addMenu('Generate')
         generate.addAction(GUI_subwidgets.Action('Time domain', self, trigger_func=self.menu_generate_time_trigger))
         generate.addAction(GUI_subwidgets.Action('Frequency domain', self, trigger_func=self.menu_generate_frequency_trigger))
+        generate.addAction(GUI_subwidgets.Action('Time-frequency domain', self, trigger_func=self.menu_generate_time_frequency_trigger))
 
         self.menu.addAction(GUI_subwidgets.Action('New', self, trigger_func=self.menu_new_trigger))
 
@@ -118,11 +119,30 @@ class SignalsInterface(QtWidgets.QWidget):
         signal_interface = SignalInterface(config=self.config)
         wizard = SignalDialogs.NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
-            signal_interface.signal = ss.FrequencySignal.from_time_signal(signal_interface.signal)
+            signal_interface.signal = sp.fft(signal_interface.signal)
             func_wiz = SignalDialogs.GetFunction1DComplex(ui_object=signal_interface)
             if func_wiz.complete:
                 signal_interface.update_info()
                 self.add_interface(signal_interface)
+
+    def menu_generate_time_frequency_trigger(self):
+        X_1 = np.zeros((4, ), dtype=np.float64)
+        X_2 = np.zeros((4, ), dtype=np.float64)
+        X_1[0] = 0.0
+        X_1[1] = 1.0
+        X_1[2] = 2.0
+        X_1[3] = 3.0
+        X_2[0] = 0.0
+        X_2[1] = 1.0
+        X_2[2] = 2.0
+        X_2[3] = 3.0
+        X = [X_1, X_2]
+        Y = np.zeros((4, 4, 1), dtype=np.complex64)
+        for i in range(4):
+            for j in range(4):
+                Y[i, j] = np.complex(50 * (X_1[i] + X_2[j]), 0)
+        time_frequency_signal = ss.TimeFrequencySignal.from_data(X, Y)
+        self.add_signal(time_frequency_signal)
 
     def menu_new_trigger(self):
         signal_interface = SignalInterface(config=self.config)
@@ -372,14 +392,14 @@ class SignalInterface(QtWidgets.QWidget):
                     plot_widget = pg.GraphicsLayoutWidget()
                     self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
 
-                    plot = plot_widget.addPlot(row=0, col=0)
+                    plot = plot_widget.addPlot(row=0, col=0, xvals=self.signal.X[0], yvals=self.signal.X[1])
                     cm = pg.colormap.get('CET-L9')
 
                     if self.signal.codomain == 'complex':
-                        img = pg.ImageItem(image=np.absolute(self.signal.Y[:, j]))
+                        img = pg.ImageItem(image=np.absolute(self.signal.Y[:, :, j]), xvals=self.signal.X[0], yvals=self.signal.X[1])
                         bar = pg.ColorBarItem(values=(np.absolute(self.signal.Y).min(), np.absolute(self.signal.Y).max()), cmap=cm)
                     else:
-                        img = pg.ImageItem(image=self.signal.Y[:, j])
+                        img = pg.ImageItem(image=self.signal.Y[:, :, j], xvals=self.signal.X[0], yvals=self.signal.X[1])
                         bar = pg.ColorBarItem(values=(self.signal.Y.min(), self.signal.Y.max()), cmap=cm)
 
                     plot.addItem(img)
@@ -387,6 +407,7 @@ class SignalInterface(QtWidgets.QWidget):
                     plot.setTitle('Spectrogram')
                     plot.setLabel('bottom', 'Time t, (s)')
                     plot.setLabel('left', 'Frequency f, (Hz)')
+
             else:
                 self.graph.setTitle('Generic signal')
                 self.graph.setLabel('bottom', 'Independent variable')

@@ -7,6 +7,7 @@ import logging
 import pathlib
 from abc import ABC
 import random
+import sounddevice
 # 3rd party
 import numpy as np
 import wave
@@ -81,6 +82,7 @@ class Signal(ABC):
     def info(self):
 
         meta_data = {
+            'signal_type': self.signal_type,
             'type_id': self.type_id,
             'type': self.valid_types[self.type_id],
             'bit_depth': self.bit_depth,
@@ -244,6 +246,10 @@ class Signal(ABC):
                     logger.info('error')
                     print('error')
 
+    def play(self, channel=1):
+
+        sounddevice.play(self.Y[:, channel - 1], self.f_s)
+
 
 class MultiSignal(ABC):
 
@@ -338,11 +344,14 @@ class MultiSignal(ABC):
     def info(self):
 
         meta_data = {
+            'signal_type': self.signal_type,
             'type_id': self.type_id,
             'type': self.valid_types[self.type_id],
             'bit_depth': self.bit_depth,
             'channels': self.channels,
             'dimensions': self.dimensions,
+            'x units': self.units[0],
+            'y units': self.units[1],
             'x_start': self.x_start,
             'x_end': self.x_end,
             'f_s': self.f_s,
@@ -351,9 +360,10 @@ class MultiSignal(ABC):
             'N': self.N,
             'Y.shape': self.Y.shape,
             'Y.dtype': self.Y.dtype,
-            'X[0].shape': self.X[0].shape,
-            'X[0].dtype': self.X[0].dtype
         }
+
+        for i in range(self.dimensions):
+            meta_data['X[{}].shape'.format(i)] = self.X[i].shape
 
         return meta_data
 

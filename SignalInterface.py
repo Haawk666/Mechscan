@@ -301,6 +301,8 @@ class SignalInterface(QtWidgets.QWidget):
 
         self.signal = None
 
+        self.btn_play = GUI_subwidgets.MediumButton('Play', self, trigger_func=self.play_trigger)
+
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')
 
@@ -312,7 +314,12 @@ class SignalInterface(QtWidgets.QWidget):
 
     def build_layout(self):
 
+        btn_layout = QtWidgets.QVBoxLayout()
+        btn_layout.addWidget(self.btn_play)
+        btn_layout.addStretch()
+
         info_layout = QtWidgets.QHBoxLayout()
+        info_layout.addLayout(btn_layout)
         info_layout.addWidget(self.lbl_info_keys)
         info_layout.addWidget(self.lbl_info_values)
         info_layout.addStretch()
@@ -428,6 +435,24 @@ class SignalInterface(QtWidgets.QWidget):
             self.graphs.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')
+
+    def play_trigger(self):
+
+        if self.signal is not None:
+
+            if self.signal.signal_type == 'time':
+
+                channel = self.graphs.currentIndex()
+
+                self.signal.play(channel=channel)
+
+            else:
+
+                if self.signal.time_signal is not None:
+
+                    channel = self.graphs.currentIndex()
+
+                    self.signal.time_signal.play(channel=channel)
 
 
 

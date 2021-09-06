@@ -67,7 +67,7 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
     frequency_signal = fft(time_signal)
 
     N = int(np.round(window_size / time_signal.delta_x + 1.0, decimals=0))
-    delta_n = int(np.round(delta_tau / time_signal.delta_x, decimals=0))
+    delta_N = int(np.round(delta_tau / time_signal.delta_x + 1.0, decimals=0))
     N_f = int(np.round(time_signal.f_s / delta_freq + 1.0, decimals=0))
 
     window_function_values = np.zeros((N, ), dtype=np.float64)
@@ -94,16 +94,14 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
 
         while cont:
 
-            print(k)
-            print(Y[k:(k + N), channel].shape)
-            print(window_function_values.shape)
-
             Y_g[i, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + N), channel] * window_function_values, n=N_f, axis=0)).astype(eval('np.complex{}'.format(bit_depth)))[N_f // 2:]
-            k += delta_n
+            k += delta_N
             i += 1
 
-            if k > time_signal.X.shape[0] - 1:
+            if k >= time_signal.X.shape[0] - 1:
                 cont = False
+                print('tau.shape[0] = {}'.format(tau.shape[0]))
+                print('K = {} | i = {}'.format(k, i))
 
     time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
     time_frequency_signal.time_signal = time_signal

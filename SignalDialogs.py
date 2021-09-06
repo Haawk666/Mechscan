@@ -41,7 +41,8 @@ class GetFunction1DReal(QtWidgets.QDialog):
             'Sign',
             'Delta',
             'Noise',
-            'Constant'
+            'Constant',
+            'Quadratic chirp'
         ])
         self.cmb_functions.setCurrentIndex(2)
 
@@ -167,6 +168,27 @@ class GetFunction1DReal(QtWidgets.QDialog):
         self.box_const.setSingleStep(1.0)
         self.box_const.setValue(666.0)
 
+        self.box_chirp_amp = QtWidgets.QDoubleSpinBox()
+        self.box_chirp_amp.setDecimals(1)
+        self.box_chirp_amp.setMinimum(0.0)
+        self.box_chirp_amp.setMaximum(1000.0)
+        self.box_chirp_amp.setSingleStep(10.0)
+        self.box_chirp_amp.setValue(666.0)
+
+        self.box_chirp_f_1 = QtWidgets.QDoubleSpinBox()
+        self.box_chirp_f_1.setDecimals(1)
+        self.box_chirp_f_1.setMinimum(0.0)
+        self.box_chirp_f_1.setMaximum(1000.0)
+        self.box_chirp_f_1.setSingleStep(10.0)
+        self.box_chirp_f_1.setValue(50.0)
+
+        self.box_chirp_f_2 = QtWidgets.QDoubleSpinBox()
+        self.box_chirp_f_2.setDecimals(1)
+        self.box_chirp_f_2.setMinimum(0.0)
+        self.box_chirp_f_2.setMaximum(1000.0)
+        self.box_chirp_f_2.setSingleStep(10.0)
+        self.box_chirp_f_2.setValue(400.0)
+
         self.build_layout()
 
         self.exec_()
@@ -258,6 +280,17 @@ class GetFunction1DReal(QtWidgets.QDialog):
         const_widget.setLayout(const_grid)
         self.stack.addWidget(const_widget)
 
+        chirp_grid = QtWidgets.QGridLayout()
+        chirp_grid.addWidget(QtWidgets.QLabel('Amplitude: '), 0, 0)
+        chirp_grid.addWidget(QtWidgets.QLabel('f_0: '), 1, 0)
+        chirp_grid.addWidget(QtWidgets.QLabel('f_1: '), 2, 0)
+        chirp_grid.addWidget(self.box_chirp_amp, 0, 1)
+        chirp_grid.addWidget(self.box_chirp_f_1, 1, 1)
+        chirp_grid.addWidget(self.box_chirp_f_2, 2, 1)
+        chirp_widget = QtWidgets.QWidget()
+        chirp_widget.setLayout(chirp_grid)
+        self.stack.addWidget(chirp_widget)
+
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addWidget(self.stack)
         top_layout.addLayout(btn_layout)
@@ -304,7 +337,8 @@ class GetFunction1DReal(QtWidgets.QDialog):
                     next_index = 6
                 elif self.cmb_functions.currentText() == 'Constant':
                     next_index = 7
-
+                elif self.cmb_functions.currentText() == 'Quadratic chirp':
+                    next_index = 8
                 self.stack.setCurrentIndex(next_index)
                 self.stage += 1
         else:
@@ -349,6 +383,12 @@ class GetFunction1DReal(QtWidgets.QDialog):
         elif self.cmb_functions.currentText() == 'Constant':
             const = self.box_const.value()
             function_string = '{}'.format(const)
+        elif self.cmb_functions.currentText() == 'Quadratic chirp':
+            amp = self.box_chirp_amp.value()
+            f_0 = self.box_chirp_f_1.value()
+            f_1 = self.box_chirp_f_2.value()
+            t_end = self.box_to.value()
+            function_string = '{} * np.cos(2 * np.pi * x * ({} + ({} - {}) * x ** 2 / (3 * {} ** 2)))'.format(amp, f_0, f_1, f_0, t_end)
 
         if operation == 'Overwrite':
             self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels, a=start, b=end)

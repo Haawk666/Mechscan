@@ -98,10 +98,8 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
             k += delta_N
             i += 1
 
-            if k >= time_signal.X.shape[0] - 1:
+            if k > time_signal.X.shape[0] - 1:
                 cont = False
-                print('tau.shape[0] = {}'.format(tau.shape[0]))
-                print('K = {} | i = {}'.format(k, i))
 
     time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
     time_frequency_signal.time_signal = time_signal
@@ -109,6 +107,8 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
     return time_frequency_signal
 
 
+def inverse_gabor_transform(time_frequency_signal, window_size=1.0, window_function='Hann', delta_tau=None, delta_freq=None):
 
+    pass
 
 

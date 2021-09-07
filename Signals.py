@@ -12,6 +12,7 @@ import sounddevice
 import numpy as np
 import wave
 import h5py
+import librosa
 # Internals
 
 # Instantiate logger:
@@ -476,6 +477,23 @@ class TimeSignal(Signal):
         data = np.fromstring(dstr, eval('np.int{}'.format(bitsize)))
         data = np.reshape(data, (-1, nchan))
         result = TimeSignal(x_start=0.0, x_end=t_end, delta_x=delta_x, bit_depth=bitsize, codomain='int', channels=nchan)
+        result.Y = data
+        return result
+
+    @staticmethod
+    def from_mp3(file_path):
+        data, f_s = librosa.load(file_path, sr=None, mono=False, dtype=np.float64)
+        if data.shape[0] == 2:
+            channels = 2
+            data = np.reshape(data, (-1, channels))
+        else:
+            channels = 1
+            data = np.reshape(data, (-1, 1))
+
+        delta_x = np.float64(1.0) / f_s
+        t_end = delta_x * (data.shape[0] - 1)
+
+        result = TimeSignal(x_start=0.0, x_end=t_end, delta_x=delta_x, bit_depth=64, codomain='float', channels=channels)
         result.Y = data
         return result
 

@@ -1270,7 +1270,8 @@ class ImportTimeSignal(QtWidgets.QDialog):
 
         self.cmb_type = QtWidgets.QComboBox()
         self.cmb_type.addItems([
-            'Wav'
+            'wav',
+            'mp3'
         ])
 
         self.build_layout()
@@ -1303,10 +1304,12 @@ class ImportTimeSignal(QtWidgets.QDialog):
         self.complete = True
 
     def gen_signal(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal from wav", '', "")
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Import signal", '', "")
         if filename[0]:
-            if self.cmb_type.currentText() == 'Wav':
+            if self.cmb_type.currentText() == 'wav':
                 self.ui_obj.signal = ss.TimeSignal.from_wav(filename[0])
+            elif self.cmb_type.currentText() == 'mp3':
+                self.ui_obj.signal = ss.TimeSignal.from_mp3(filename[0])
 
 
 class ExportTimeSignal(QtWidgets.QDialog):

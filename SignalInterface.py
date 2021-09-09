@@ -212,7 +212,28 @@ class SignalsInterface(QtWidgets.QWidget):
                     wizard = SignalDialogs.GetGaborParams()
                     if wizard.complete:
                         params = wizard.params
+                        progress_window = SignalDialogs.ProgressWindow(self, title='Performing STFT')
                         self.add_signal(sp.gabor_transform(
+                            signal,
+                            window_size=params['window_length'],
+                            window_function=params['window_function'],
+                            delta_tau=params['delta_tau'],
+                            delta_freq=params['delta_freq'],
+                            update=progress_window.proceed
+                        ))
+                elif signal.signal_type == 'time-frequency':
+                    pass
+
+    def menu_wavelet_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            signal = self.signal_interfaces[index].signal
+            if signal is not None:
+                if signal.signal_type == 'time':
+                    wizard = SignalDialogs.GetWaveletParams()
+                    if wizard.complete:
+                        params = wizard.params
+                        self.add_signal(sp.wavelet_transform(
                             signal,
                             window_size=params['window_length'],
                             window_function=params['window_function'],
@@ -221,9 +242,6 @@ class SignalsInterface(QtWidgets.QWidget):
                         ))
                 elif signal.signal_type == 'time-frequency':
                     pass
-
-    def menu_wavelet_trigger(self):
-        pass
 
     def menu_z_trigger(self):
         pass

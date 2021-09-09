@@ -5,7 +5,7 @@
 # standard library
 import logging
 # 3rd party
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui, QtCore, Qt
 import numpy as np
 import pyqtgraph as pg
 # Internals
@@ -212,14 +212,17 @@ class SignalsInterface(QtWidgets.QWidget):
                     wizard = SignalDialogs.GetGaborParams()
                     if wizard.complete:
                         params = wizard.params
-                        progress_window = SignalDialogs.ProgressWindow(self, title='Performing STFT')
+                        delta_tau_n = int(np.round(params['delta_tau'] / signal.delta_x, decimals=0))
+                        N = int(np.round(signal.N / delta_tau_n - 1, decimals=0))
+                        iterations = signal.channels * N
+                        progress_window = QtWidgets.QProgressDialog('Transforming...', '', 0, iterations, self)
                         self.add_signal(sp.gabor_transform(
                             signal,
                             window_size=params['window_length'],
                             window_function=params['window_function'],
                             delta_tau=params['delta_tau'],
                             delta_freq=params['delta_freq'],
-                            update=progress_window.proceed
+                            update=progress_window
                         ))
                 elif signal.signal_type == 'time-frequency':
                     pass

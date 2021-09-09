@@ -95,8 +95,6 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
     Y = time_signal.Y
     Y = np.concatenate((np.zeros((P_n, time_signal.channels), dtype=Y.dtype), Y, np.zeros((P_n, time_signal.channels), dtype=Y.dtype)), axis=0)
 
-    max_prog = time_signal.channels * N[0]
-
     for channel in range(time_signal.channels):
 
         for i in range(N[0]):
@@ -104,9 +102,8 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
             k = i * delta_tau_n
             Y_g[i, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + alpha_n), channel] * window_function_values, n=N[1], axis=0)).astype(eval('np.complex{}'.format(bit_depth)))
             if update is not None:
-                progress = int(100 * (channel * N[0] + i + 1) / max_prog)
-                print(progress)
-                update(progress)
+                update.setValue(channel * N[0] + i)
+                print(channel * N[0] + i)
 
     time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
     time_frequency_signal.time_signal = time_signal

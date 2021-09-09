@@ -14,36 +14,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class ProgressWindow(QtWidgets.QDialog):
-
-    def __init__(self, *args, title=None):
-        super().__init__(*args)
-
-        if title is None:
-            self.setWindowTitle('Working...')
-        else:
-            self.setWindowTitle(title)
-
-        self.bar = QtWidgets.QProgressBar()
-
-        self.build_layout()
-
-        self.exec_()
-
-    def build_layout(self):
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.bar)
-
-        self.setLayout(layout)
-
-    def proceed(self, value):
-        if value >= 100:
-            self.close()
-        else:
-            self.bar.setValue(value)
-
-
 class GetFunction1DReal(QtWidgets.QDialog):
 
     def __init__(self, *args, ui_object=None):

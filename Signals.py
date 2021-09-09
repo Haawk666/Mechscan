@@ -7,11 +7,11 @@ import logging
 import pathlib
 from abc import ABC
 import random
-import sounddevice
 # 3rd party
 import numpy as np
 import wave
 import h5py
+# import sounddevice
 import librosa
 # Internals
 
@@ -83,20 +83,22 @@ class Signal(ABC):
     def info(self):
 
         meta_data = {
+            'x_start': self.x_start,
+            'x_end': self.x_end,
+            'delta_x': self.delta_x,
+            'f_s': self.f_s,
+            'n': self.n,
+            'bit_depth': self.bit_depth,
+            'codomain': self.codomain,
+            '': '',
+            'N': self.N,
             'signal_type': self.signal_type,
             'type_id': self.type_id,
             'type': self.valid_types[self.type_id],
-            'bit_depth': self.bit_depth,
             'channels': self.channels,
             'dimensions': self.dimensions,
             'x units': self.units[0],
             'y units': self.units[1],
-            'x_start': self.x_start,
-            'x_end': self.x_end,
-            'f_s': self.f_s,
-            'delta_x': self.delta_x,
-            'n': self.n,
-            'N': self.N,
             'Y.shape': self.Y.shape,
             'Y.dtype': self.Y.dtype,
             'X.shape': self.X.shape,
@@ -345,20 +347,22 @@ class MultiSignal(ABC):
     def info(self):
 
         meta_data = {
+            'x_start': self.x_start,
+            'x_end': self.x_end,
+            'delta_x': self.delta_x,
+            'f_s': self.f_s,
+            'n': self.n,
+            'bit_depth': self.bit_depth,
+            'codomain': self.codomain,
+            '': '',
+            'N': self.N,
             'signal_type': self.signal_type,
             'type_id': self.type_id,
             'type': self.valid_types[self.type_id],
-            'bit_depth': self.bit_depth,
             'channels': self.channels,
             'dimensions': self.dimensions,
             'x units': self.units[0],
             'y units': self.units[1],
-            'x_start': self.x_start,
-            'x_end': self.x_end,
-            'f_s': self.f_s,
-            'delta_x': self.delta_x,
-            'n': self.n,
-            'N': self.N,
             'Y.shape': self.Y.shape,
             'Y.dtype': self.Y.dtype,
         }

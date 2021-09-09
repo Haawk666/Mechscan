@@ -399,14 +399,14 @@ class SignalInterface(QtWidgets.QWidget):
                     plot_widget = pg.GraphicsLayoutWidget()
                     self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
 
-                    plot = plot_widget.addPlot(row=0, col=0, xvals=self.signal.X[0], yvals=self.signal.X[1])
+                    plot = plot_widget.addPlot(row=0, col=0)
                     cm = pg.colormap.get('CET-L9')
 
                     if self.signal.codomain == 'complex':
-                        img = pg.ImageItem(image=np.absolute(self.signal.Y[:, :, j]), xvals=self.signal.X[0], yvals=self.signal.X[1])
+                        img = pg.ImageItem(image=np.absolute(self.signal.Y[:, self.signal.n[1] // 2:, j]))
                         bar = pg.ColorBarItem(values=(np.absolute(self.signal.Y).min(), np.absolute(self.signal.Y).max()), cmap=cm)
                     else:
-                        img = pg.ImageItem(image=self.signal.Y[:, :, j], xvals=self.signal.X[0], yvals=self.signal.X[1])
+                        img = pg.ImageItem(image=self.signal.Y[:, self.signal.n[1] // 2:, j])
                         bar = pg.ColorBarItem(values=(self.signal.Y.min(), self.signal.Y.max()), cmap=cm)
 
                     plot.addItem(img)

@@ -1473,7 +1473,7 @@ class GetGaborParams(QtWidgets.QDialog):
         self.box_alpha.setSingleStep(1.0)
         self.box_alpha.setMinimum(0.0)
         self.box_alpha.setMaximum(10.0)
-        self.box_alpha.setValue(0.5)
+        self.box_alpha.setValue(0.2)
 
         self.cmb_window_function = QtWidgets.QComboBox()
         self.cmb_window_function.addItems([
@@ -1485,7 +1485,7 @@ class GetGaborParams(QtWidgets.QDialog):
         self.box_delta_tau.setSingleStep(1.0)
         self.box_delta_tau.setMinimum(0.001)
         self.box_delta_tau.setMaximum(10.000)
-        self.box_delta_tau.setValue(0.25)
+        self.box_delta_tau.setValue(0.2)
 
         self.box_delta_f = QtWidgets.QDoubleSpinBox()
         self.box_delta_f.setDecimals(1)

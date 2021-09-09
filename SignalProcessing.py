@@ -64,45 +64,58 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
     if delta_freq is None:
         delta_freq = (time_signal.X[-1] - time_signal.X[0]) / (time_signal.n - 1.0)
 
-    frequency_signal = fft(time_signal)
+    # transform params:
+    alpha_n = int(2 * np.round(window_size / time_signal.delta_x + 1, decimals=0) + 1)
+    delta_tau_n = int(np.round(delta_tau / time_signal.delta_x, decimals=0))
+    delta_f_n = int(np.round(time_signal.f_s / delta_freq + 1, decimals=0))
+    delta_o_n = alpha_n - delta_tau_n
+    delta_o = time_signal.delta_x * (delta_o_n - 1)
+    P_n = int(np.round(window_size / time_signal.delta_x + 1, decimals=0))
 
-    N = int(np.round(window_size / time_signal.delta_x + 1.0, decimals=0))
-    delta_N = int(np.round(delta_tau / time_signal.delta_x + 1.0, decimals=0))
-    N_f = int(np.round(time_signal.f_s / delta_freq + 1.0, decimals=0))
-
-    window_function_values = np.zeros((N, ), dtype=np.float64)
+    window_function_values = np.zeros((alpha_n, ), dtype=np.float64)
     if window_function == 'Hann':
-        for x in range(N):
-            window_function_values[x] = (np.sin(np.pi * x / N)) ** 2
+        for x in range(alpha_n):
+            window_function_values[x] = (np.sin(np.pi * x / alpha_n)) ** 2
     else:
-        for x in range(N):
-            window_function_values[x] = (np.sin(np.pi * x / N)) ** 2
+        for x in range(alpha_n):
+            window_function_values[x] = (np.sin(np.pi * x / alpha_n)) ** 2
 
-    tau = np.linspace(time_signal.X[0], time_signal.X[-1], num=int(np.round((time_signal.X[-1] - time_signal.X[0]) / delta_tau + 1.0, decimals=0)), dtype=np.float64)
-    freq = np.linspace(0.0, frequency_signal.X[-1], num=int(np.round(frequency_signal.X[-1] / delta_freq + 1.0, decimals=0)), dtype=np.float64)
+    # Transform sample space:
+    x_start = [time_signal.X[0], -time_signal.f_s / 2]
+    x_end = [time_signal.X[0] + delta_tau_n * time_signal.delta_x * (np.round(time_signal.N / delta_tau_n, decimals=0) - 1), time_signal.f_s / 2]
+    delta_x = [delta_tau_n * time_signal.delta_x, time_signal.f_s / np.round(time_signal.f_s / delta_freq, decimals=0)]
+    f_s = [1 / delta_x[0], 1 / delta_x[1]]
+    N = [int(np.round(time_signal.N / delta_tau_n, decimals=0)), int(np.round(time_signal.f_s / delta_freq + 1, decimals=0))]
+
+    tau = np.linspace(x_start[0], x_end[0], num=N[0], dtype=np.float64)
+    freq = np.linspace(x_start[1], x_end[1], num=N[1], dtype=np.float64)
 
     Y_g = np.zeros((tau.shape[0], freq.shape[0], time_signal.channels), dtype=eval('np.complex{}'.format(bit_depth)))
 
     Y = time_signal.Y
-    Y = np.concatenate((np.zeros((N // 2, time_signal.channels), dtype=Y.dtype), Y, np.zeros((N // 2, time_signal.channels), dtype=Y.dtype)), axis=0)
+    Y = np.concatenate((np.zeros((P_n, time_signal.channels), dtype=Y.dtype), Y, np.zeros((P_n, time_signal.channels), dtype=Y.dtype)), axis=0)
 
     for channel in range(time_signal.channels):
 
-        cont = True
-        k = 0
-        i = 0
+        for i in range(N[0]):
 
-        while cont:
-
-            Y_g[i, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + N), channel] * window_function_values, n=N_f, axis=0)).astype(eval('np.complex{}'.format(bit_depth)))[N_f // 2:]
-            k += delta_N
-            i += 1
-
-            if k > time_signal.X.shape[0] - 1:
-                cont = False
+            k = i * delta_tau_n
+            Y_g[i, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + alpha_n), channel] * window_function_values, n=N[1], axis=0)).astype(eval('np.complex{}'.format(bit_depth)))
 
     time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
     time_frequency_signal.time_signal = time_signal
+
+    report = {
+        'alpha_n': alpha_n,
+        'delta_tau_n': delta_tau_n,
+        'delta_f_n': delta_f_n,
+        'delta_o_n': delta_o_n,
+        'delta_o': delta_o,
+        'P_n': P_n
+    }
+
+    for key, value in report.items():
+        print('{}: {}'.format(key, value))
 
     return time_frequency_signal
 

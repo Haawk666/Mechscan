@@ -15,14 +15,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def evaluate(signal, function, method='overwrite'):
+def evaluate(signal, function, method='overwrite', a=None, b=None, update=None):
     """Assumes that the function output matches the signal type!"""
 
-    if signal.signal_type == 'time_signal':
+    values = np.zeros(signal.Y.shape, dtype=signal.Y.dtype)
+
+    if signal.signal_type == 'time':
+        for k in range(signal.n):
+            values[k] = function(signal.X[k])
+            if update is not None:
+                update.setValue(k)
+    elif signal.signal_type == 'frequency':
         values = function(signal.X)
-    elif signal.signal_type == 'frequency_signal':
-        values = function(signal.X)
-    elif signal.signal_type == 'time_frequency_signal':
+    elif signal.signal_type == 'time-frequency':
         values = function(signal.X[0], signal.X[1])
     else:
         raise Exception('Unknown signal type.')

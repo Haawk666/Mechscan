@@ -12,7 +12,7 @@ import random
 import numpy as np
 import wave
 import h5py
-# import sounddevice
+import sounddevice
 import librosa
 # Internals
 

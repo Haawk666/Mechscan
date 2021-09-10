@@ -109,10 +109,19 @@ class SignalsInterface(QtWidgets.QWidget):
         wizard = SignalDialogs.NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             if signal_interface.signal.codomain == 'int' or signal_interface.signal.codomain == 'float' or signal_interface.signal.codomain == 'bool_':
-                func_wiz = SignalDialogs.GetFunction1DReal(ui_object=signal_interface)
+                func_wiz = SignalDialogs.GetFunction1D(ui_object=signal_interface)
             else:
                 func_wiz = SignalDialogs.GetFunction1DComplex(ui_object=signal_interface)
             if func_wiz.complete:
+                params = func_wiz.params
+                iterations = signal_interface.signal.n - 1
+                progress_window = GUI_subwidgets.ProgressDialog('Generating signal...', 'Cancel', 0, iterations, self)
+                signal_interface.signal = sp.evaluate(
+                    signal_interface.signal,
+                    lambda x: eval(params['function_string']),
+                    method=params['method'],
+                    update=progress_window
+                )
                 signal_interface.update_info()
                 self.add_interface(signal_interface)
 
@@ -290,18 +299,21 @@ class SignalsInterface(QtWidgets.QWidget):
         if index >= 0:
             signal = self.signal_interfaces[index].signal
             if signal is not None:
-                interface = SignalInterface(config=self.config)
-                interface.signal = signal
-                if signal.signal_type == 'time':
-                    wizard = SignalDialogs.GetFunction1DReal(ui_object=interface)
-                    if wizard.complete:
-                        interface.update_info()
-                        self.add_interface(interface)
-                elif signal.signal_type == 'frequency':
-                    wizard = SignalDialogs.GetFunction1DComplex(ui_object=interface)
-                    if wizard.complete:
-                        interface.update_info()
-                        self.add_interface(interface)
+                if signal.codomain == 'int' or signal.codomain == 'float' or signal.codomain == 'bool_':
+                    func_wiz = SignalDialogs.GetFunction1D(ui_object=self.signal_interfaces[index])
+                else:
+                    func_wiz = SignalDialogs.GetFunction1DComplex(ui_object=self.signal_interfaces[index])
+                if func_wiz.complete:
+                    params = func_wiz.params
+                    iterations = signal.n - 1
+                    progress_window = GUI_subwidgets.ProgressDialog('{}ing signals...'.format(params['method']), 'Cancel', 0, iterations, self)
+                    self.signal_interfaces[index].signal = sp.evaluate(
+                        signal,
+                        lambda x: eval(params['function_string']),
+                        method=params['method'],
+                        update=progress_window
+                    )
+                    self.signal_interfaces[index].update_info()
 
     def menu_resample_trigger(self):
         pass

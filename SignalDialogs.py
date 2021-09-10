@@ -83,8 +83,16 @@ class GetFunction1D(QtWidgets.QDialog):
         # Functions:
         # - Custom:
         self.param_boxes = dict()
-        for key, details in self.functions.items():
-            pass
+        for function, details in self.functions.items():
+            self.param_boxes[function] = dict()
+            for key, value in self.functions[function]['params'].items():
+                self.param_boxes[function][key] = GUI_subwidgets.DoubleSpinBox(
+                    minimum=value['min'],
+                    maximum=value['max'],
+                    step=value['step'],
+                    decimals=value['dec'],
+                    value=value['default']
+                )
 
         self.build_layout()
 
@@ -119,7 +127,7 @@ class GetFunction1D(QtWidgets.QDialog):
                             'default': 0.0
                         }
                     },
-                    'function_string': '{} * np.sin(2 * np.sin * {} * (x - {}))',
+                    'function_string': '{} * np.sin(2 * np.pi * {} * (x - {}))',
                     'argument_keys': ['A', 'f', 'phi']
                 },
                 'cosine': {
@@ -146,7 +154,7 @@ class GetFunction1D(QtWidgets.QDialog):
                             'default': 0.0
                         }
                     },
-                    'function_string': '{} * np.cos(2 * np.sin * {} * (x - {}))',
+                    'function_string': '{} * np.cos(2 * np.pi * {} * (x - {}))',
                     'argument_keys': ['A', 'f', 'phi']
                 },
                 'linear chirp': {
@@ -224,7 +232,7 @@ class GetFunction1D(QtWidgets.QDialog):
         custom_function_grid = QtWidgets.QGridLayout()
         custom_function_grid.addWidget(self.lbl_explain, 0, 0, 0, 2)
         custom_function_grid.addWidget(QtWidgets.QLabel('Function string: '), 1, 0)
-        custom_function_grid.addWidget(self.box_function, 1, 1)
+        custom_function_grid.addWidget(self.box_custom, 1, 1)
         const_widget = QtWidgets.QWidget()
         const_widget.setLayout(custom_function_grid)
         self.stack.addWidget(const_widget)
@@ -265,22 +273,29 @@ class GetFunction1D(QtWidgets.QDialog):
                 if self.cmb_functions.currentText() == 'custom':
                     next_index = 1
                 else:
+                    row = 0
                     grid = QtWidgets.QGridLayout()
-                    for
+                    for key, value in self.param_boxes[self.cmb_functions.currentText()].items():
+                        grid.addWidget(QtWidgets.QLabel('{}: '.format(key)), row, 0)
+                        grid.addWidget(value, row, 1)
+                        row += 1
+                    grid_widget = QtWidgets.QWidget()
+                    grid_widget.setLayout(grid)
+                    self.stack.addWidget(grid_widget)
+                    next_index = 2
 
                 self.stack.setCurrentIndex(next_index)
                 self.stage += 1
         else:
-            self.gen_signal()
+            self.gen_params()
             self.close()
             self.complete = True
 
-    def gen_signal(self):
+    def gen_params(self):
 
         start = self.box_from.value()
         end = self.box_to.value()
 
-        function_string = self.box_function.text()
         operation = self.cmb_operation.currentText()
 
         channels = None
@@ -288,50 +303,20 @@ class GetFunction1D(QtWidgets.QDialog):
             channels = self.cmb_channels.currentText().replace('Channel ', '')
             channels = [int(channels) - 1]
 
-        if self.cmb_functions.currentText() == 'Gaussian pulse':
-            amp = self.box_amp_x.value()
-            mu = self.box_mu_x.value()
-            sigma = self.box_sigma_x.value()
-            function_string = '{} * np.exp(-0.5 * ((x - {}) / {}) ** 2) / ({} * np.sqrt(2 * np.pi))'.format(amp, mu, sigma, sigma)
-        elif self.cmb_functions.currentText() == 'Sine':
-            amp = self.box_amp_sin.value()
-            f = self.box_freq_sin.value()
-            theta = self.box_phase_sin.value()
-            function_string = '{} * np.sin(2 * np.pi * {} * x - {})'.format(amp, f, theta)
-        elif self.cmb_functions.currentText() == 'Sign':
-            function_string = 'np.sign(x)'
-        elif self.cmb_functions.currentText() == 'Delta':
-            amp = self.box_amp_delta.value()
-            placement = self.box_delta.value()
-            function_string = '{} * (1 if {} == x else 0)'.format(amp, placement)
-        elif self.cmb_functions.currentText() == 'Noise':
-            amp = self.box_amp_noise.value()
-            mu = self.box_mu_noise.value()
-            sigma = self.box_sigma_noise.value()
-            function_string = '{} * random.gauss({}, {})'.format(amp, mu, sigma)
-        elif self.cmb_functions.currentText() == 'Constant':
-            const = self.box_const.value()
-            function_string = '{}'.format(const)
-        elif self.cmb_functions.currentText() == 'Quadratic chirp':
-            amp = self.box_chirp_amp.value()
-            f_0 = self.box_chirp_f_1.value()
-            f_1 = self.box_chirp_f_2.value()
-            t_end = self.box_to.value()
-            function_string = '{} * np.cos(2 * np.pi * x * ({} + ({} - {}) * x ** 2 / (3 * {} ** 2)))'.format(amp, f_0, f_1, f_0, t_end)
+        self.params['a'] = start
+        self.params['b'] = end
+        self.params['method'] = operation
+        self.params['channels'] = channels
 
-        if operation == 'Overwrite':
-            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels, a=start, b=end)
-        elif operation == 'Add':
-            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels, a=start, b=end)
-        elif operation == 'Subtract':
-            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels, a=start, b=end)
-        elif operation == 'Multiply':
-            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels, a=start, b=end)
-        elif operation == 'Convolve':
-            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels, a=start, b=end)
+        function = self.cmb_functions.currentText()
+
+        if function == 'custom':
+            self.params['function_string'] = self.box_custom.text()
         else:
-            logger.info('error')
-            print('error')
+            args = []
+            for key in self.functions[function]['argument_keys']:
+                args.append(self.param_boxes[function][key].value())
+            self.params['function_string'] = self.functions[function]['function_string'].format(*tuple(args))
 
 
 class GetFunction1DReal(QtWidgets.QDialog):

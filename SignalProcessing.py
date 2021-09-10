@@ -7,11 +7,36 @@ import logging
 import random
 # 3rd party
 import numpy as np
+from PyQt5.QtWidgets import QApplication
 # Internals
 import Signals as ss
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+def evaluate(signal, function, method='overwrite'):
+    """Assumes that the function output matches the signal type!"""
+
+    if signal.signal_type == 'time_signal':
+        values = function(signal.X)
+    elif signal.signal_type == 'frequency_signal':
+        values = function(signal.X)
+    elif signal.signal_type == 'time_frequency_signal':
+        values = function(signal.X[0], signal.X[1])
+    else:
+        raise Exception('Unknown signal type.')
+
+    if method == 'overwrite':
+        signal.Y = values.astype(eval(signal.valid_types[signal.type_id]))
+    elif method == 'add':
+        signal.Y += values.astype(eval(signal.valid_types[signal.type_id]))
+    elif method == 'mutliply':
+        signal.Y *= values.astype(eval(signal.valid_types[signal.type_id]))
+    else:
+        raise Exception('Unknown method type')
+
+    return signal
 
 
 def fft(time_signal):
@@ -103,7 +128,6 @@ def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_
             Y_g[i, :, channel] = np.fft.fftshift(np.fft.fft(Y[k:(k + alpha_n), channel] * window_function_values, n=N[1], axis=0)).astype(eval('np.complex{}'.format(bit_depth)))
             if update is not None:
                 update.setValue(channel * N[0] + i)
-                print(channel * N[0] + i)
 
     time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
     time_frequency_signal.time_signal = time_signal

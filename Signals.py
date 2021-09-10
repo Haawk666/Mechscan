@@ -6,6 +6,7 @@
 import logging
 import pathlib
 from abc import ABC
+from dataclasses import dataclass
 import random
 # 3rd party
 import numpy as np
@@ -169,85 +170,6 @@ class Signal(ABC):
         signal = Signal()
         signal.load(path_string)
         return signal
-
-    def generate_function(self, function, channels=None, a=None, b=None):
-        if a is None:
-            a = self.X[0]
-        if b is None:
-            b = self.X[-1]
-        if channels is None:
-            channels = range(self.channels)
-        for channel in channels:
-            if 0 <= channel <= self.Y.shape[-1]:
-                for k, x in enumerate(self.X):
-                    if a <= x <= b:
-                        self.Y[k, channel] = function(x)
-
-    def add_function(self, function, channels=None, a=None, b=None):
-        if a is None:
-            a = self.X[0]
-        if b is None:
-            b = self.X[-1]
-        if channels is None:
-            channels = range(self.channels)
-        for channel in channels:
-            if 0 <= channel <= self.Y.shape[-1]:
-                for k, x in enumerate(self.X):
-                    if a <= x <= b:
-                        self.Y[k, channel] += function(x)
-
-    def subtract_function(self, function, channels=None, a=None, b=None):
-        if a is None:
-            a = self.X[0]
-        if b is None:
-            b = self.X[-1]
-        if channels is None:
-            channels = range(self.channels)
-        for channel in channels:
-            if 0 <= channel <= self.Y.shape[-1]:
-                for k, x in enumerate(self.X):
-                    if a <= x <= b:
-                        self.Y[k, channel] -= function(x)
-
-    def multiply_function(self, function, channels=None, a=None, b=None):
-        if a is None:
-            a = self.X[0]
-        if b is None:
-            b = self.X[-1]
-        if channels is None:
-            channels = range(self.channels)
-        for channel in channels:
-            if 0 <= channel <= self.Y.shape[-1]:
-                for k, x in enumerate(self.X):
-                    if a <= x <= b:
-                        self.Y[k, channel] *= function(x)
-
-    def convolve_function(self, function, channel=None, a=None, b=None):
-        pass
-
-    def noise(self, mu, sigma, channels=None, operation='add'):
-        if channels is None:
-            channels = range(self.channels)
-        for channel in channels:
-            if 0 <= channel <= self.Y.shape[-1]:
-                if operation == 'overwrite':
-                    for k, y in enumerate(self.Y[:, channel]):
-                        self.Y[k, channel] = random.gauss(mu, sigma)
-                elif operation == 'add':
-                    for k, y in enumerate(self.Y[:, channel]):
-                        self.Y[k, channel] += random.gauss(mu, sigma)
-                elif operation == 'subtract':
-                    for k, y in enumerate(self.Y[:, channel]):
-                        self.Y[k, channel] -= random.gauss(mu, sigma)
-                elif operation == 'multiply':
-                    for k, y in enumerate(self.Y[:, channel]):
-                        self.Y[k, channel] *= random.gauss(mu, sigma)
-                elif operation == 'convolve':
-                    for k, y in enumerate(self.Y[:, channel]):
-                        pass
-                else:
-                    logger.info('error')
-                    print('error')
 
     def play(self, channel=1):
 

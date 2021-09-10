@@ -8,10 +8,330 @@ import logging
 from PyQt5 import QtWidgets
 import numpy as np
 # Internals
+import GUI_subwidgets
 import Signals as ss
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class GetFunction1D(QtWidgets.QDialog):
+
+    def __init__(self, *args, ui_object=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Functions')
+
+        self.ui_obj = ui_object
+        self.functions = dict()
+        self.params = dict()
+
+        self.collect_functions()
+
+        self.complete = False
+
+        self.stage = 0
+        self.stack = QtWidgets.QStackedWidget()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Next')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.cmb_functions = QtWidgets.QComboBox()
+        self.cmb_functions.addItem('custom')
+        for key in self.functions:
+            self.cmb_functions.addItem(key)
+
+        self.cmb_operation = QtWidgets.QComboBox()
+        self.cmb_operation.addItems([
+            'overwrite',
+            'add',
+            'multiply',
+            'convolve'
+        ])
+
+        self.chb_all_channels = QtWidgets.QCheckBox('All channels')
+        self.chb_all_channels.setChecked(True)
+        self.chb_all_channels.toggled.connect(self.chb_all_channels_trigger)
+
+        self.cmb_channels = QtWidgets.QComboBox()
+        for nchan in range(self.ui_obj.signal.channels):
+            self.cmb_channels.addItem('Channel {}'.format(nchan + 1))
+        self.cmb_channels.setDisabled(True)
+
+        self.box_from = GUI_subwidgets.DoubleSpinBox(
+            minimum=self.ui_obj.signal.x_start,
+            maximum=self.ui_obj.signal.x_end,
+            step=1.0,
+            decimals=3,
+            value=self.ui_obj.signal.x_start
+        )
+
+        self.box_to = GUI_subwidgets.DoubleSpinBox(
+            minimum=self.ui_obj.signal.x_start,
+            maximum=self.ui_obj.signal.x_end,
+            step=1.0,
+            decimals=3,
+            value=self.ui_obj.signal.x_end
+        )
+
+        self.lbl_explain = QtWidgets.QLabel('Enter a function as a string, ie: \'100 * np.exp(0.5 * x)\'.')
+
+        self.box_custom = QtWidgets.QLineEdit('')
+
+        # Functions:
+        # - Custom:
+        self.param_boxes = dict()
+        for key, details in self.functions.items():
+            pass
+
+        self.build_layout()
+
+        self.exec_()
+
+    def collect_functions(self):
+
+        if self.ui_obj.signal.codomain in ['int', 'float', 'bool_']:
+
+            self.functions = {
+                'sine': {
+                    'params': {
+                        'A': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 10.0,
+                            'dec': 1,
+                            'default': 666.0
+                        },
+                        'f': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 1.0,
+                            'dec': 1,
+                            'default': 666.0
+                        },
+                        'phi': {
+                            'min': -2 * np.pi,
+                            'max': 2 * np.pi,
+                            'step': 0.5 * np.pi,
+                            'dec': 3,
+                            'default': 0.0
+                        }
+                    },
+                    'function_string': '{} * np.sin(2 * np.sin * {} * (x - {}))',
+                    'argument_keys': ['A', 'f', 'phi']
+                },
+                'cosine': {
+                    'params': {
+                        'A': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 10.0,
+                            'dec': 1,
+                            'default': 666.0
+                        },
+                        'f': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 1.0,
+                            'dec': 1,
+                            'default': 666.0
+                        },
+                        'phi': {
+                            'min': -2 * np.pi,
+                            'max': 2 * np.pi,
+                            'step': 0.5 * np.pi,
+                            'dec': 3,
+                            'default': 0.0
+                        }
+                    },
+                    'function_string': '{} * np.cos(2 * np.sin * {} * (x - {}))',
+                    'argument_keys': ['A', 'f', 'phi']
+                },
+                'linear chirp': {
+                    'params': {
+                        'A': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 10.0,
+                            'dec': 1,
+                            'default': 666.0
+                        },
+                        'x_0': {
+                            'min': self.ui_obj.signal.x_start,
+                            'max': self.ui_obj.signal.x_end,
+                            'step': 1.0,
+                            'dec': 2,
+                            'default': self.ui_obj.signal.x_start
+                        },
+                        'x_1': {
+                            'min': self.ui_obj.signal.x_start,
+                            'max': self.ui_obj.signal.x_end,
+                            'step': 1.0,
+                            'dec': 2,
+                            'default': self.ui_obj.signal.x_end
+                        },
+                        'f_0': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 10.0,
+                            'dec': 1,
+                            'default': 0.0
+                        },
+                        'f_1': {
+                            'min': -1000.0,
+                            'max': 1000.0,
+                            'step': 10.0,
+                            'dec': 1,
+                            'default': 666.0
+                        }
+                    },
+                    'function_string': '{} * np.sin(2 * np.pi * ((({} - {}) / ({} - {})) * x + {} - (({} - {}) / ({} - {})) * {}) * x)',
+                    'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0']
+                }
+            }
+
+        else:
+
+            self.functions = dict()
+
+    def build_layout(self):
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        base_grid = QtWidgets.QGridLayout()
+        base_grid.addWidget(QtWidgets.QLabel('Functions: '), 0, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Operation: '), 1, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Channels: '), 2, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Channel: '), 3, 0)
+        base_grid.addWidget(QtWidgets.QLabel('From: '), 4, 0)
+        base_grid.addWidget(QtWidgets.QLabel('To: '), 5, 0)
+        base_grid.addWidget(self.cmb_functions, 0, 1)
+        base_grid.addWidget(self.cmb_operation, 1, 1)
+        base_grid.addWidget(self.chb_all_channels, 2, 1)
+        base_grid.addWidget(self.cmb_channels, 3, 1)
+        base_grid.addWidget(self.box_from, 4, 1)
+        base_grid.addWidget(self.box_to, 5, 1)
+        base_widget = QtWidgets.QWidget()
+        base_widget.setLayout(base_grid)
+        self.stack.addWidget(base_widget)
+
+        custom_function_grid = QtWidgets.QGridLayout()
+        custom_function_grid.addWidget(self.lbl_explain, 0, 0, 0, 2)
+        custom_function_grid.addWidget(QtWidgets.QLabel('Function string: '), 1, 0)
+        custom_function_grid.addWidget(self.box_function, 1, 1)
+        const_widget = QtWidgets.QWidget()
+        const_widget.setLayout(custom_function_grid)
+        self.stack.addWidget(const_widget)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addWidget(self.stack)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def chb_all_channels_trigger(self, state):
+        if state:
+            self.cmb_channels.setDisabled(True)
+        else:
+            self.cmb_channels.setDisabled(False)
+
+    def btn_cancel_trigger(self):
+        if self.stage == 0:
+            self.close()
+        else:
+            self.btn_next.setText('Next')
+            self.btn_cancel.setText('Cancel')
+            self.stack.setCurrentIndex(0)
+            self.stage = 0
+
+    def btn_next_trigger(self):
+        if self.stage == 0:
+            start = self.box_from.value()
+            end = self.box_to.value()
+            if start >= end:
+                msg = QtWidgets.QMessageBox()
+                msg.setText('Timestamp "to" must be larger than "from"!')
+                msg.exec()
+            else:
+                self.btn_next.setText('Generate')
+                self.btn_cancel.setText('Back')
+
+                if self.cmb_functions.currentText() == 'custom':
+                    next_index = 1
+                else:
+                    grid = QtWidgets.QGridLayout()
+                    for
+
+                self.stack.setCurrentIndex(next_index)
+                self.stage += 1
+        else:
+            self.gen_signal()
+            self.close()
+            self.complete = True
+
+    def gen_signal(self):
+
+        start = self.box_from.value()
+        end = self.box_to.value()
+
+        function_string = self.box_function.text()
+        operation = self.cmb_operation.currentText()
+
+        channels = None
+        if not self.chb_all_channels.isChecked():
+            channels = self.cmb_channels.currentText().replace('Channel ', '')
+            channels = [int(channels) - 1]
+
+        if self.cmb_functions.currentText() == 'Gaussian pulse':
+            amp = self.box_amp_x.value()
+            mu = self.box_mu_x.value()
+            sigma = self.box_sigma_x.value()
+            function_string = '{} * np.exp(-0.5 * ((x - {}) / {}) ** 2) / ({} * np.sqrt(2 * np.pi))'.format(amp, mu, sigma, sigma)
+        elif self.cmb_functions.currentText() == 'Sine':
+            amp = self.box_amp_sin.value()
+            f = self.box_freq_sin.value()
+            theta = self.box_phase_sin.value()
+            function_string = '{} * np.sin(2 * np.pi * {} * x - {})'.format(amp, f, theta)
+        elif self.cmb_functions.currentText() == 'Sign':
+            function_string = 'np.sign(x)'
+        elif self.cmb_functions.currentText() == 'Delta':
+            amp = self.box_amp_delta.value()
+            placement = self.box_delta.value()
+            function_string = '{} * (1 if {} == x else 0)'.format(amp, placement)
+        elif self.cmb_functions.currentText() == 'Noise':
+            amp = self.box_amp_noise.value()
+            mu = self.box_mu_noise.value()
+            sigma = self.box_sigma_noise.value()
+            function_string = '{} * random.gauss({}, {})'.format(amp, mu, sigma)
+        elif self.cmb_functions.currentText() == 'Constant':
+            const = self.box_const.value()
+            function_string = '{}'.format(const)
+        elif self.cmb_functions.currentText() == 'Quadratic chirp':
+            amp = self.box_chirp_amp.value()
+            f_0 = self.box_chirp_f_1.value()
+            f_1 = self.box_chirp_f_2.value()
+            t_end = self.box_to.value()
+            function_string = '{} * np.cos(2 * np.pi * x * ({} + ({} - {}) * x ** 2 / (3 * {} ** 2)))'.format(amp, f_0, f_1, f_0, t_end)
+
+        if operation == 'Overwrite':
+            self.ui_obj.signal.generate_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Add':
+            self.ui_obj.signal.add_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Subtract':
+            self.ui_obj.signal.subtract_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Multiply':
+            self.ui_obj.signal.multiply_function(lambda x: eval(function_string), channels, a=start, b=end)
+        elif operation == 'Convolve':
+            self.ui_objsignal.convolve_function(lambda x: eval(function_string), channels, a=start, b=end)
+        else:
+            logger.info('error')
+            print('error')
 
 
 class GetFunction1DReal(QtWidgets.QDialog):

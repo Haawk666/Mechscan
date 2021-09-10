@@ -5,12 +5,36 @@
 # standard library
 import logging
 # 3rd party
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtGui
 # Internals
 
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class DoubleSpinBox(QtWidgets.QDoubleSpinBox):
+
+    def __init__(self, *args, minimum=0.0, maximum=100.0, step=1.0, decimals=1, value=50.0):
+        super().__init__(*args)
+
+        self.setMinimum(minimum)
+        self.setMaximum(maximum)
+        self.setSingleStep(step)
+        self.setDecimals(decimals)
+        self.setValue(value)
+
+
+class ProgressDialog(QtWidgets.QProgressDialog):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.setWindowTitle('MechScan')
+        self.setCancelButton(None)
+
+    def setValue(self, progress: int) -> None:
+        super().setValue(progress)
+        QtWidgets.QApplication.processEvents()
 
 
 class Action(QtWidgets.QAction):

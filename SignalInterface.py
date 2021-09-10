@@ -4,6 +4,7 @@
 
 # standard library
 import logging
+import time
 # 3rd party
 from PyQt5 import QtWidgets, QtGui, QtCore, Qt
 import numpy as np
@@ -215,7 +216,7 @@ class SignalsInterface(QtWidgets.QWidget):
                         delta_tau_n = int(np.round(params['delta_tau'] / signal.delta_x, decimals=0))
                         N = int(np.round(signal.N / delta_tau_n - 1, decimals=0))
                         iterations = signal.channels * N
-                        progress_window = QtWidgets.QProgressDialog('Transforming...', '', 0, iterations, self)
+                        progress_window = GUI_subwidgets.ProgressDialog('Transforming...', 'Cancel', 0, iterations, self)
                         self.add_signal(sp.gabor_transform(
                             signal,
                             window_size=params['window_length'],

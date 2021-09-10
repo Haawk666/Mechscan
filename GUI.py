@@ -4,9 +4,12 @@
 
 # standard library
 import logging
+import time
 # 3rd party
+import PyQt5.QtWidgets
 from PyQt5 import QtWidgets
 # Internals
+import GUI_subwidgets
 import GUI_widgets
 import SignalInterface
 import SystemInterface
@@ -42,6 +45,7 @@ class MainUI(QtWidgets.QMainWindow):
                                         color: rgb(0, 0, 0);
                                     }
                                 """)
+        self.populate_menu()
 
         self.signals_interface = SignalInterface.SignalsInterface(menu=self.menu, config=self.config)
         self.systems_interface = SystemInterface.SystemsInterface()
@@ -68,11 +72,18 @@ class MainUI(QtWidgets.QMainWindow):
         # Intro
         logger.info('Welcome to MechScan by Haakon Tvedt')
 
+    def populate_menu(self):
+
+        app = self.menu.addMenu('App')
+
+        app.addAction(GUI_subwidgets.Action('Debug', self, trigger_func=self.menu_debug_trigger))
+
     def build_layout(self):
 
         self.setCentralWidget(self.tabs)
 
-
+    def menu_debug_trigger(self):
+        pass
 
 
 

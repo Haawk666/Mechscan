@@ -371,22 +371,29 @@ class SignalInterface(QtWidgets.QWidget):
 
                     plot_widget = pg.GraphicsLayoutWidget()
                     self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
-
                     plot = plot_widget.addPlot(row=0, col=0)
+
                     if self.signal.codomain == 'complex':
+
                         legend = plot.addLegend()
                         legend.setBrush('k')
-                        plot_type = self.config.get('signals', 'time_plot_type')
-                        if 'r' in plot_type:
+
+                        if self.config.getboolean('Plotting', 'complex-valued_time_signals_plot_real'):
                             plot.plot(self.signal.X, np.real(self.signal.Y[:, j]), name='Re')
-                        if 'i' in plot_type:
+
+                        if self.config.getboolean('Plotting', 'complex-valued_time_signals_plot_imaginary'):
                             plot.plot(self.signal.X, np.imag(self.signal.Y[:, j]), pen='r', name='Im')
-                        if 'm' in plot_type:
+
+                        if self.config.getboolean('Plotting', 'complex-valued_time_signals_plot_magnitude'):
                             plot.plot(self.signal.X, np.absolute(self.signal.Y[:, j]), pen='g', name='Magnitude')
-                        if 'p' in plot_type:
+
+                        if self.config.getboolean('Plotting', 'complex-valued_time_signals_plot_phase'):
                             plot.plot(self.signal.X, np.angle(self.signal.Y[:, j]), pen='y', name='Phase')
+
                     else:
+
                         plot.plot(self.signal.X, self.signal.Y[:, j])
+
                     plot.setTitle('Signal')
                     plot.setLabel('left', 'Amplitude ({})'.format(self.signal.units[1]))
                     plot.setLabel('bottom', 'Time t, ({})'.format(self.signal.units[0]))
@@ -397,29 +404,39 @@ class SignalInterface(QtWidgets.QWidget):
 
                     plot_widget = pg.GraphicsLayoutWidget()
                     self.graphs.addTab(plot_widget, 'Channel {}'.format(j + 1))
-
                     plot = plot_widget.addPlot(row=0, col=0)
-                    spectrum_type = self.config.get('signals', 'spectrum_type')
-                    if spectrum_type == 'p':
+
+                    if self.config.get('Plotting', 'complex-valued_frequency_signals_y-axis') == 'Power':
                         plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
                         plot.setTitle('Power spectrum')
-                        plot.setLabel('left', 'Magnitude^2')
-                    elif spectrum_type == 'm':
+                        plot.setLabel('left', 'Power')
+
+                    elif self.config.get('Plotting', 'complex-valued_frequency_signals_y-axis') == 'Magnitude':
                         plot.plot(self.signal.X[self.signal.n // 2:], np.absolute(self.signal.Y[self.signal.n // 2:, j]))
                         plot.setTitle('Magnitude spectrum')
                         plot.setLabel('left', 'Magnitude')
+
+                    elif self.config.get('Plotting', 'complex-valued_frequency_signals_y-axis') == 'Decibel':
+                        ref = 1
+                        if self.signal.time_signal is not None:
+                            if self.signal.time_signal.codomain in ['complex', 'int']:
+                                ref = 32768
+                        plot.plot(self.signal.X[self.signal.n // 2:], 20 * np.log10(np.absolute(self.signal.Y[self.signal.n // 2:, j]) / ref))
+                        plot.setTitle('Decibel spectrum')
+                        plot.setLabel('left', 'Db')
+
                     else:
                         plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
                         plot.setTitle('Power spectrum')
-                        plot.setLabel('left', 'Magnitude^2')
+                        plot.setLabel('left', 'Power')
+
                     plot.setLabel('bottom', 'Frequency f, (Hz)')
 
-                    spectrum_phase = self.config.get('signals', 'spectrum_phase')
-                    if spectrum_phase == 'y':
+                    if self.config.getboolean('Plotting', 'complex-valued_frequency_signals_plot_phase'):
                         plot = plot_widget.addPlot(row=1, col=0)
                         plot.plot(self.signal.X[self.signal.n // 2:], np.angle(self.signal.Y[self.signal.n // 2:, j]))
                         plot.setTitle('Phase spectrum')
-                        plot.setLabel('left', 'Angle Theta, (rad)')
+                        plot.setLabel('left', 'Angle, (rad)')
                         plot.setLabel('bottom', 'Frequency f, (Hz)')
 
             elif self.signal.signal_type == 'time-frequency':
@@ -451,14 +468,23 @@ class SignalInterface(QtWidgets.QWidget):
                 self.graph.setLabel('left', 'Signal')
 
     def update_info(self):
+
         if self.signal:
             self.plot_signal()
             meta_data = self.signal.info()
             key_string = ''
             value_string = ''
-            for key, value in meta_data.items():
-                key_string += '{}:    \n'.format(key)
-                value_string += '{}\n'.format(value)
+            if not self.config.get('GUI', 'signal_interface_display_signal_details') == 'None':
+                for key, value in meta_data.items():
+                    if self.config.get('GUI', 'signal_interface_display_signal_details') == 'Some' and key == '':
+                        break
+                    else:
+                        if key == '':
+                            key_string += '\n'
+                            value_string += '\n'
+                        else:
+                            key_string += '{}:    \n'.format(key)
+                            value_string += '{}\n'.format(value)
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
         else:
@@ -469,19 +495,12 @@ class SignalInterface(QtWidgets.QWidget):
     def play_trigger(self):
 
         if self.signal is not None:
-
             if self.signal.signal_type == 'time':
-
                 channel = self.graphs.currentIndex()
-
                 self.signal.play(channel=channel)
-
             else:
-
                 if self.signal.time_signal is not None:
-
                     channel = self.graphs.currentIndex()
-
                     self.signal.time_signal.play(channel=channel)
 
 

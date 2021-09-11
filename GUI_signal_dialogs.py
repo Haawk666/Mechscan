@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class GetFunction1D(QtWidgets.QDialog):
+class GetFunction(QtWidgets.QDialog):
 
-    def __init__(self, *args, ui_object=None):
+    def __init__(self, *args, signal=None):
         super().__init__(*args)
 
         self.setWindowTitle('Functions')
 
-        self.ui_obj = ui_object
+        self.signal = signal
         self.functions = dict()
         self.params = dict()
 
@@ -60,21 +60,42 @@ class GetFunction1D(QtWidgets.QDialog):
             self.cmb_channels.addItem('Channel {}'.format(nchan + 1))
         self.cmb_channels.setDisabled(True)
 
-        self.box_from = GUI_subwidgets.DoubleSpinBox(
-            minimum=self.ui_obj.signal.x_start,
-            maximum=self.ui_obj.signal.x_end,
-            step=1.0,
-            decimals=3,
-            value=self.ui_obj.signal.x_start
-        )
+        self.chb_range = QtWidgets.QCheckBox('Apply only to subdomain')
+        self.chb_range.setChecked(False)
 
-        self.box_to = GUI_subwidgets.DoubleSpinBox(
-            minimum=self.ui_obj.signal.x_start,
-            maximum=self.ui_obj.signal.x_end,
-            step=1.0,
-            decimals=3,
-            value=self.ui_obj.signal.x_end
-        )
+        self.range_widgets = []
+        for d in range(self.signal.dimensions):
+            self.range_widgets.append(dict())
+            if self.signal.dimensions == 1:
+                self.range_widgets[-1]['from'] = GUI_subwidgets.DoubleSpinBox(
+                    minimum=self.signal.x_start,
+                    maximum=self.signal.x_end,
+                    step=1.0,
+                    decimals=3,
+                    value=self.signal.x_start
+                )
+                self.range_widgets[-1]['to'] = GUI_subwidgets.DoubleSpinBox(
+                    minimum=self.signal.x_start,
+                    maximum=self.signal.x_end,
+                    step=1.0,
+                    decimals=3,
+                    value=self.signal.x_end
+                )
+            else:
+                self.range_widgets[-1]['from'] = GUI_subwidgets.DoubleSpinBox(
+                    minimum=self.signal.x_start[d],
+                    maximum=self.signal.x_end[d],
+                    step=1.0,
+                    decimals=3,
+                    value=self.signal.x_start[d]
+                )
+                self.range_widgets[-1]['to'] = GUI_subwidgets.DoubleSpinBox(
+                    minimum=self.signal.x_start[d],
+                    maximum=self.signal.x_end[d],
+                    step=1.0,
+                    decimals=3,
+                    value=self.signal.x_end[d]
+                )
 
         self.lbl_explain = QtWidgets.QLabel('Enter a function as a string, ie: \'100 * np.exp(0.5 * x)\'.')
 
@@ -100,109 +121,121 @@ class GetFunction1D(QtWidgets.QDialog):
 
     def collect_functions(self):
 
-        if self.ui_obj.signal.codomain in ['int', 'float', 'bool_']:
+        if self.signal.dimensions == 1:
 
-            self.functions = {
-                'sine': {
-                    'params': {
-                        'A': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 10.0,
-                            'dec': 1,
-                            'default': 666.0
+            if self.ui_obj.signal.codomain in ['int', 'float', 'bool_']:
+
+                self.functions = {
+                    'sine': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'f': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 1.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'phi': {
+                                'min': -2 * np.pi,
+                                'max': 2 * np.pi,
+                                'step': 0.5 * np.pi,
+                                'dec': 3,
+                                'default': 0.0
+                            }
                         },
-                        'f': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 1.0,
-                            'dec': 1,
-                            'default': 666.0
-                        },
-                        'phi': {
-                            'min': -2 * np.pi,
-                            'max': 2 * np.pi,
-                            'step': 0.5 * np.pi,
-                            'dec': 3,
-                            'default': 0.0
-                        }
+                        'function_string': '{} * np.sin(2 * np.pi * {} * (x - {}))',
+                        'argument_keys': ['A', 'f', 'phi']
                     },
-                    'function_string': '{} * np.sin(2 * np.pi * {} * (x - {}))',
-                    'argument_keys': ['A', 'f', 'phi']
-                },
-                'cosine': {
-                    'params': {
-                        'A': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 10.0,
-                            'dec': 1,
-                            'default': 666.0
+                    'cosine': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'f': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 1.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'phi': {
+                                'min': -2 * np.pi,
+                                'max': 2 * np.pi,
+                                'step': 0.5 * np.pi,
+                                'dec': 3,
+                                'default': 0.0
+                            }
                         },
-                        'f': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 1.0,
-                            'dec': 1,
-                            'default': 666.0
-                        },
-                        'phi': {
-                            'min': -2 * np.pi,
-                            'max': 2 * np.pi,
-                            'step': 0.5 * np.pi,
-                            'dec': 3,
-                            'default': 0.0
-                        }
+                        'function_string': '{} * np.cos(2 * np.pi * {} * (x - {}))',
+                        'argument_keys': ['A', 'f', 'phi']
                     },
-                    'function_string': '{} * np.cos(2 * np.pi * {} * (x - {}))',
-                    'argument_keys': ['A', 'f', 'phi']
-                },
-                'linear chirp': {
-                    'params': {
-                        'A': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 10.0,
-                            'dec': 1,
-                            'default': 666.0
+                    'linear chirp': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'x_0': {
+                                'min': self.ui_obj.signal.x_start,
+                                'max': self.ui_obj.signal.x_end,
+                                'step': 1.0,
+                                'dec': 2,
+                                'default': self.ui_obj.signal.x_start
+                            },
+                            'x_1': {
+                                'min': self.ui_obj.signal.x_start,
+                                'max': self.ui_obj.signal.x_end,
+                                'step': 1.0,
+                                'dec': 2,
+                                'default': self.ui_obj.signal.x_end
+                            },
+                            'f_0': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 0.0
+                            },
+                            'f_1': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            }
                         },
-                        'x_0': {
-                            'min': self.ui_obj.signal.x_start,
-                            'max': self.ui_obj.signal.x_end,
-                            'step': 1.0,
-                            'dec': 2,
-                            'default': self.ui_obj.signal.x_start
-                        },
-                        'x_1': {
-                            'min': self.ui_obj.signal.x_start,
-                            'max': self.ui_obj.signal.x_end,
-                            'step': 1.0,
-                            'dec': 2,
-                            'default': self.ui_obj.signal.x_end
-                        },
-                        'f_0': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 10.0,
-                            'dec': 1,
-                            'default': 0.0
-                        },
-                        'f_1': {
-                            'min': -1000.0,
-                            'max': 1000.0,
-                            'step': 10.0,
-                            'dec': 1,
-                            'default': 666.0
-                        }
-                    },
-                    'function_string': '{} * np.sin(2 * np.pi * ((({} - {}) / ({} - {})) * x + {} - (({} - {}) / ({} - {})) * {}) * x)',
-                    'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0']
+                        'function_string': '{} * np.sin(2 * np.pi * ((({} - {}) / ({} - {})) * x + {} - (({} - {}) / ({} - {})) * {}) * x)',
+                        'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0']
+                    }
                 }
-            }
+
+            else:
+
+                self.functions = dict()
 
         else:
 
-            self.functions = dict()
+            if self.ui_obj.signal.codomain in ['int', 'float', 'bool_']:
+
+                self.functions = dict()
+
+            else:
+
+                self.functions = dict()
 
     def build_layout(self):
 
@@ -217,17 +250,28 @@ class GetFunction1D(QtWidgets.QDialog):
         base_grid.addWidget(QtWidgets.QLabel('Operation: '), 1, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channels: '), 2, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channel: '), 3, 0)
-        base_grid.addWidget(QtWidgets.QLabel('From: '), 4, 0)
-        base_grid.addWidget(QtWidgets.QLabel('To: '), 5, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Range: '), 4, 0)
         base_grid.addWidget(self.cmb_functions, 0, 1)
         base_grid.addWidget(self.cmb_operation, 1, 1)
         base_grid.addWidget(self.chb_all_channels, 2, 1)
         base_grid.addWidget(self.cmb_channels, 3, 1)
-        base_grid.addWidget(self.box_from, 4, 1)
-        base_grid.addWidget(self.box_to, 5, 1)
+        base_grid.addWidget(self.chb_range, 4, 1)
         base_widget = QtWidgets.QWidget()
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
+
+        range_grid = QtWidgets.QGridLayout()
+        range_grid.addWidget(QtWidgets.QLabel('From: '), 0, 1)
+        range_grid.addWidget(QtWidgets.QLabel('To: '), 0, 2)
+        row = 1
+        for d, dimension in enumerate(self.range_widgets):
+            range_grid.addWidget(QtWidgets.QLabel('dimension {}: '.format(d)), row, 0)
+            range_grid.addWidget(dimension['from'], row, 1)
+            range_grid.addWidget(dimension['to'], row, 2)
+            row += 1
+        range_widget = QtWidgets.QWidget()
+        range_widget.setLayout(range_grid)
+        self.stack.addWidget(range_widget)
 
         custom_function_grid = QtWidgets.QGridLayout()
         custom_function_grid.addWidget(self.lbl_explain, 0, 0, 0, 2)
@@ -252,44 +296,69 @@ class GetFunction1D(QtWidgets.QDialog):
     def btn_cancel_trigger(self):
         if self.stage == 0:
             self.close()
-        else:
+        elif self.stage == 1:
             self.btn_next.setText('Next')
             self.btn_cancel.setText('Cancel')
             self.stack.setCurrentIndex(0)
             self.stage = 0
+        else:
+            if self.chb_range.isChecked():
+                self.btn_next.setText('Next')
+                self.btn_cancel.setText('Back')
+                self.stack.setCurrentIndex(1)
+                self.stage = 1
+            else:
+                self.btn_next.setText('Next')
+                self.btn_cancel.setText('Cancel')
+                self.stack.setCurrentIndex(0)
+                self.stage = 0
 
     def btn_next_trigger(self):
         if self.stage == 0:
-            start = self.box_from.value()
-            end = self.box_to.value()
-            if start >= end:
-                msg = QtWidgets.QMessageBox()
-                msg.setText('Timestamp "to" must be larger than "from"!')
-                msg.exec()
+            if self.stack.count() == 4:
+                self.stack.removeWidget(self.stack.widget(3))
+
+            param_grid = QtWidgets.QGridLayout()
+            function = self.cmb_functions.currentText()
+            row = 0
+            for param, properties in self.functions[function]['params'].items():
+                param_grid.addWidget(QtWidgets.QLabel('{}: '.format(param)), row, 0)
+                param_grid.addWidget(self.param_boxes[function][param], row, 1)
+                row += 1
+            param_widget = QtWidgets.QWidget()
+            param_widget.setLayout(param_grid)
+            self.stack.addWidget(param_widget)
+
+            if self.chb_range.isChecked():
+                self.stack.setCurrentIndex(1)
+                self.stage = 1
             else:
+                if function == 'custom':
+                    self.stack.setCurrentIndex(2)
+                    self.stage = 2
+
+                else:
+                    self.stack.setCurrentIndex(3)
+                    self.stage = 2
                 self.btn_next.setText('Generate')
                 self.btn_cancel.setText('Back')
 
-                if self.cmb_functions.currentText() == 'custom':
-                    next_index = 1
-                else:
-                    row = 0
-                    grid = QtWidgets.QGridLayout()
-                    for key, value in self.param_boxes[self.cmb_functions.currentText()].items():
-                        grid.addWidget(QtWidgets.QLabel('{}: '.format(key)), row, 0)
-                        grid.addWidget(value, row, 1)
-                        row += 1
-                    grid_widget = QtWidgets.QWidget()
-                    grid_widget.setLayout(grid)
-                    self.stack.addWidget(grid_widget)
-                    next_index = 2
+        elif self.stage == 1:
+            function = self.cmb_functions.currentText()
+            if function == 'custom':
+                self.stack.setCurrentIndex(2)
+                self.stage = 2
 
-                self.stack.setCurrentIndex(next_index)
-                self.stage += 1
+            else:
+                self.stack.setCurrentIndex(3)
+                self.stage = 2
+            self.btn_next.setText('Generate')
+            self.btn_cancel.setText('Back')
+
         else:
             self.gen_params()
-            self.close()
             self.complete = True
+            self.close()
 
     def gen_params(self):
 

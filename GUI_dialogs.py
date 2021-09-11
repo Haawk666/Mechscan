@@ -51,7 +51,7 @@ class SetOptions(QtWidgets.QDialog):
 
                     self.widgets[section][item] = dict()
 
-                    group = QtWidgets.QGroupBox(item)
+                    group = QtWidgets.QGroupBox(item.replace('_', ' '))
                     group_layout = QtWidgets.QVBoxLayout()
 
                     for item_item, properties_properties in properties['members'].items():
@@ -68,7 +68,7 @@ class SetOptions(QtWidgets.QDialog):
                                     break
 
                             item_layout = QtWidgets.QHBoxLayout()
-                            item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item_item)))
+                            item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item_item.replace('_', ' '))))
                             item_layout.addWidget(item_widget)
 
                             self.widgets[section][item][item_item] = item_widget
@@ -77,7 +77,7 @@ class SetOptions(QtWidgets.QDialog):
 
                         elif properties_properties['type'] == 'bool':
 
-                            item_widget = QtWidgets.QCheckBox(item_item)
+                            item_widget = QtWidgets.QCheckBox(item_item.replace('_', ' '))
                             item_widget.setChecked(properties_properties['current'])
 
                             self.widgets[section][item][item_item] = item_widget
@@ -105,7 +105,7 @@ class SetOptions(QtWidgets.QDialog):
                                 break
 
                         item_layout = QtWidgets.QHBoxLayout()
-                        item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item)))
+                        item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item.replace('_', ' '))))
                         item_layout.addWidget(item_widget)
 
                         self.widgets[section][item] = item_widget
@@ -114,7 +114,7 @@ class SetOptions(QtWidgets.QDialog):
 
                     elif properties['type'] == 'bool':
 
-                        item_widget = QtWidgets.QCheckBox(item)
+                        item_widget = QtWidgets.QCheckBox(item.replace('_', ' '))
                         item_widget.setChecked(properties['current'])
 
                         self.widgets[section][item] = item_widget
@@ -125,6 +125,7 @@ class SetOptions(QtWidgets.QDialog):
 
                         raise Exception('Unknown setting type!')
 
+            tab_layout.addStretch()
             widget.setLayout(tab_layout)
             self.tabs.addTab(widget, section)
 

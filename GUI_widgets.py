@@ -11,7 +11,7 @@ import numpy as np
 import pyqtgraph as pg
 # Internals
 import GUI_subwidgets
-import Models as tf
+import Model as tf
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

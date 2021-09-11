@@ -6,10 +6,8 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
-import numpy as np
 # Internals
-import GUI_subwidgets
-import Signals as ss
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -26,191 +24,118 @@ class SetOptions(QtWidgets.QDialog):
 
         self.complete = False
 
-        self.btn_cancel = QtWidgets.QPushButton('Cancel')
-        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
         self.btn_next = QtWidgets.QPushButton('Apply')
         self.btn_next.clicked.connect(self.btn_next_trigger)
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
 
-        plot_type = self.ui_obj.config.get('signals', 'time_plot_type')
-        self.chb_real = QtWidgets.QCheckBox('Re')
-        if 'r' in plot_type:
-            self.chb_real.setChecked(True)
-        else:
-            self.chb_real.setChecked(False)
-        self.chb_im = QtWidgets.QCheckBox('Im')
-        if 'i' in plot_type:
-            self.chb_im.setChecked(True)
-        else:
-            self.chb_im.setChecked(False)
-        self.chb_magnitude = QtWidgets.QCheckBox('Magnitude')
-        if 'm' in plot_type:
-            self.chb_magnitude.setChecked(True)
-        else:
-            self.chb_magnitude.setChecked(False)
-        self.chb_phase = QtWidgets.QCheckBox('Phase')
-        if 'p' in plot_type:
-            self.chb_phase.setChecked(True)
-        else:
-            self.chb_phase.setChecked(False)
+        self.tabs = QtWidgets.QTabWidget()
 
-        spectrum_type = self.ui_obj.config.get('signals', 'spectrum_type')
-        self.cmb_spectrum_y = QtWidgets.QComboBox()
-        self.cmb_spectrum_y.addItems([
-            'Magnitude',
-            'Power (Magnitude^2)'
-        ])
-        if spectrum_type == 'm':
-            self.cmb_spectrum_y.setCurrentIndex(0)
-        elif spectrum_type == 'p':
-            self.cmb_spectrum_y.setCurrentIndex(1)
-
-        spectrum_phase = self.ui_obj.config.get('signals', 'spectrum_phase')
-        self.chb_spectrum_phase = QtWidgets.QCheckBox()
-        if spectrum_phase == 'y':
-            self.chb_spectrum_phase.setChecked(True)
-        else:
-            self.chb_spectrum_phase.setChecked(False)
+        self.widgets = dict()
 
         self.build_layout()
         self.exec_()
 
     def build_layout(self):
 
-        layout = QtWidgets.QVBoxLayout()
+        for section, items in self.settings_map.items():
 
-        self.setLayout(layout)
+            self.widgets[section] = dict()
 
-    def btn_cancel_trigger(self):
-        self.close()
+            widget = QtWidgets.QWidget()
+            tab_layout = QtWidgets.QVBoxLayout()
 
-    def btn_next_trigger(self):
+            for item, properties in items.items():
 
-        self.close()
+                if properties['type'] == 'group':
 
-        plot_string = ''
-        if self.chb_real.isChecked():
-            plot_string += 'r'
-        if self.chb_im.isChecked():
-            plot_string += 'i'
-        if self.chb_magnitude.isChecked():
-            plot_string += 'm'
-        if self.chb_phase.isChecked():
-            plot_string += 'p'
+                    self.widgets[section][item] = dict()
 
-        if self.cmb_spectrum_y.currentText() == 'Magnitude':
-            spectrum_type = 'm'
-        elif self.cmb_spectrum_y.currentText() == 'Power (Magnitude^2)':
-            spectrum_type = 'p'
-        else:
-            spectrum_type = 'm'
+                    group = QtWidgets.QGroupBox(item)
+                    group_layout = QtWidgets.QVBoxLayout()
 
-        if self.chb_spectrum_phase.isChecked():
-            spectrum_phase = 'y'
-        else:
-            spectrum_phase = 'n'
+                    for item_item, properties_properties in properties['members'].items():
 
-        self.ui_obj.config.set('signals', 'time_plot_type', plot_string)
-        self.ui_obj.config.set('signals', 'spectrum_type', spectrum_type)
-        self.ui_obj.config.set('signals', 'spectrum_phase', spectrum_phase)
+                        if properties_properties['type'] == 'string':
 
-        with open('config.ini', 'w') as configfile:
-            self.ui_obj.config.write(configfile)
+                            item_widget = QtWidgets.QComboBox()
+                            item_widget.addItems(
+                                properties_properties['options']
+                            )
+                            for current_index in range(item_widget.count()):
+                                item_widget.setCurrentIndex(current_index)
+                                if item_widget.currentText() == properties_properties['current']:
+                                    break
 
-        self.complete = True
+                            item_layout = QtWidgets.QHBoxLayout()
+                            item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item_item)))
+                            item_layout.addWidget(item_widget)
 
+                            self.widgets[section][item][item_item] = item_widget
 
-class SetOptionsOld(QtWidgets.QDialog):
+                            group_layout.addLayout(item_layout)
 
-    def __init__(self, *args, ui_obj=None):
-        super().__init__(*args)
+                        elif properties_properties['type'] == 'bool':
 
-        self.setWindowTitle('Options')
+                            item_widget = QtWidgets.QCheckBox(item_item)
+                            item_widget.setChecked(properties_properties['current'])
 
-        self.ui_obj = ui_obj
+                            self.widgets[section][item][item_item] = item_widget
 
-        self.complete = False
+                            group_layout.addWidget(item_widget)
 
-        self.btn_cancel = QtWidgets.QPushButton('Cancel')
-        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
-        self.btn_next = QtWidgets.QPushButton('Apply')
-        self.btn_next.clicked.connect(self.btn_next_trigger)
+                        else:
 
-        plot_type = self.ui_obj.config.get('signals', 'time_plot_type')
-        self.chb_real = QtWidgets.QCheckBox('Re')
-        if 'r' in plot_type:
-            self.chb_real.setChecked(True)
-        else:
-            self.chb_real.setChecked(False)
-        self.chb_im = QtWidgets.QCheckBox('Im')
-        if 'i' in plot_type:
-            self.chb_im.setChecked(True)
-        else:
-            self.chb_im.setChecked(False)
-        self.chb_magnitude = QtWidgets.QCheckBox('Magnitude')
-        if 'm' in plot_type:
-            self.chb_magnitude.setChecked(True)
-        else:
-            self.chb_magnitude.setChecked(False)
-        self.chb_phase = QtWidgets.QCheckBox('Phase')
-        if 'p' in plot_type:
-            self.chb_phase.setChecked(True)
-        else:
-            self.chb_phase.setChecked(False)
+                            raise Exception('Unknown setting type!')
 
-        spectrum_type = self.ui_obj.config.get('signals', 'spectrum_type')
-        self.cmb_spectrum_y = QtWidgets.QComboBox()
-        self.cmb_spectrum_y.addItems([
-            'Magnitude',
-            'Power (Magnitude^2)'
-        ])
-        if spectrum_type == 'm':
-            self.cmb_spectrum_y.setCurrentIndex(0)
-        elif spectrum_type == 'p':
-            self.cmb_spectrum_y.setCurrentIndex(1)
+                    group.setLayout(group_layout)
+                    tab_layout.addWidget(group)
 
-        spectrum_phase = self.ui_obj.config.get('signals', 'spectrum_phase')
-        self.chb_spectrum_phase = QtWidgets.QCheckBox()
-        if spectrum_phase == 'y':
-            self.chb_spectrum_phase.setChecked(True)
-        else:
-            self.chb_spectrum_phase.setChecked(False)
+                else:
 
-        self.build_layout()
-        self.exec_()
+                    if properties['type'] == 'string':
 
-        if self.ui_obj is None:
-            self.close()
+                        item_widget = QtWidgets.QComboBox()
+                        item_widget.addItems(
+                            properties['options']
+                        )
+                        for current_index in range(item_widget.count()):
+                            item_widget.setCurrentIndex(current_index)
+                            if item_widget.currentText() == properties['current']:
+                                break
 
-    def build_layout(self):
+                        item_layout = QtWidgets.QHBoxLayout()
+                        item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item)))
+                        item_layout.addWidget(item_widget)
+
+                        self.widgets[section][item] = item_widget
+
+                        tab_layout.addLayout(item_layout)
+
+                    elif properties['type'] == 'bool':
+
+                        item_widget = QtWidgets.QCheckBox(item)
+                        item_widget.setChecked(properties['current'])
+
+                        self.widgets[section][item] = item_widget
+
+                        tab_layout.addWidget(item_widget)
+
+                    else:
+
+                        raise Exception('Unknown setting type!')
+
+            widget.setLayout(tab_layout)
+            self.tabs.addTab(widget, section)
+
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_cancel)
         btn_layout.addWidget(self.btn_next)
         btn_layout.addStretch()
 
-        time_group = QtWidgets.QGroupBox('Time signals')
-        time_grid = QtWidgets.QGridLayout()
-        time_grid.addWidget(QtWidgets.QLabel('Complex plotting: '), 0, 0, 4, 1)
-        time_grid.addWidget(self.chb_real, 0, 1)
-        time_grid.addWidget(self.chb_im, 1, 1)
-        time_grid.addWidget(self.chb_magnitude, 2, 1)
-        time_grid.addWidget(self.chb_phase, 3, 1)
-        time_group.setLayout(time_grid)
-
-        frequency_group = QtWidgets.QGroupBox('Frequency signals')
-        frequency_grid = QtWidgets.QGridLayout()
-        frequency_grid.addWidget(QtWidgets.QLabel('Spectrum y-axis: '), 0, 0)
-        frequency_grid.addWidget(QtWidgets.QLabel('Show phase spectrum: '), 1, 0)
-        frequency_grid.addWidget(self.cmb_spectrum_y, 0, 1)
-        frequency_grid.addWidget(self.chb_spectrum_phase, 1, 1)
-        frequency_group.setLayout(frequency_grid)
-
-        group_layout = QtWidgets.QHBoxLayout()
-        group_layout.addWidget(time_group)
-        group_layout.addWidget(frequency_group)
-
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(group_layout)
+        layout.addWidget(self.tabs)
         layout.addLayout(btn_layout)
 
         self.setLayout(layout)
@@ -220,36 +145,26 @@ class SetOptionsOld(QtWidgets.QDialog):
 
     def btn_next_trigger(self):
 
-        self.close()
-
-        plot_string = ''
-        if self.chb_real.isChecked():
-            plot_string += 'r'
-        if self.chb_im.isChecked():
-            plot_string += 'i'
-        if self.chb_magnitude.isChecked():
-            plot_string += 'm'
-        if self.chb_phase.isChecked():
-            plot_string += 'p'
-
-        if self.cmb_spectrum_y.currentText() == 'Magnitude':
-            spectrum_type = 'm'
-        elif self.cmb_spectrum_y.currentText() == 'Power (Magnitude^2)':
-            spectrum_type = 'p'
-        else:
-            spectrum_type = 'm'
-
-        if self.chb_spectrum_phase.isChecked():
-            spectrum_phase = 'y'
-        else:
-            spectrum_phase = 'n'
-
-        self.ui_obj.config.set('signals', 'time_plot_type', plot_string)
-        self.ui_obj.config.set('signals', 'spectrum_type', spectrum_type)
-        self.ui_obj.config.set('signals', 'spectrum_phase', spectrum_phase)
-
-        with open('config.ini', 'w') as configfile:
-            self.ui_obj.config.write(configfile)
+        for section, items in self.settings_map.items():
+            for item, properties in items.items():
+                if properties['type'] == 'group':
+                    for item_item, properties_properties in properties['members'].items():
+                        if properties_properties['type'] == 'string':
+                            self.settings_map[section][item]['members'][item_item]['current'] = self.widgets[section][item][item_item].currentText()
+                        elif properties_properties['type'] == 'bool':
+                            self.settings_map[section][item]['members'][item_item]['current'] = self.widgets[section][item][item_item].isChecked()
+                        else:
+                            raise Exception('Unknown type!')
+                else:
+                    if properties['type'] == 'string':
+                        self.settings_map[section][item]['current'] = self.widgets[section][item].currentText()
+                    elif properties['type'] == 'bool':
+                        self.settings_map[section][item]['current'] = self.widgets[section][item].isChecked()
+                    else:
+                        raise Exception('Unknown type!')
 
         self.complete = True
+        self.close()
+
+
 

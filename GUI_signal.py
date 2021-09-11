@@ -11,9 +11,9 @@ import numpy as np
 import pyqtgraph as pg
 # Internals
 import GUI_subwidgets
-import Signals as ss
-import SignalProcessing as sp
-import SignalDialogs
+import Signal as ss
+import Signal_processing as sp
+import GUI_signal_dialogs
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -109,12 +109,12 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_generate_time_trigger(self):
         signal_interface = SignalInterface(config=self.config)
-        wizard = SignalDialogs.NewTimeSignal(ui_object=signal_interface)
+        wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             if signal_interface.signal.codomain == 'int' or signal_interface.signal.codomain == 'float' or signal_interface.signal.codomain == 'bool_':
-                func_wiz = SignalDialogs.GetFunction1D(ui_object=signal_interface)
+                func_wiz = GUI_signal_dialogs.GetFunction1D(ui_object=signal_interface)
             else:
-                func_wiz = SignalDialogs.GetFunction1DComplex(ui_object=signal_interface)
+                func_wiz = GUI_signal_dialogs.GetFunction1DComplex(ui_object=signal_interface)
             if func_wiz.complete:
                 params = func_wiz.params
                 iterations = signal_interface.signal.n - 1
@@ -130,10 +130,10 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_generate_frequency_trigger(self):
         signal_interface = SignalInterface(config=self.config)
-        wizard = SignalDialogs.NewTimeSignal(ui_object=signal_interface)
+        wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             signal_interface.signal = sp.fft(signal_interface.signal)
-            func_wiz = SignalDialogs.GetFunction1DComplex(ui_object=signal_interface)
+            func_wiz = GUI_signal_dialogs.GetFunction1DComplex(ui_object=signal_interface)
             if func_wiz.complete:
                 signal_interface.update_info()
                 self.add_interface(signal_interface)
@@ -159,7 +159,7 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_new_trigger(self):
         signal_interface = SignalInterface(config=self.config)
-        wizard = SignalDialogs.NewTimeSignal(ui_object=signal_interface)
+        wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             signal_interface.update_info()
             self.add_interface(signal_interface)
@@ -194,7 +194,7 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_import_trigger(self):
         signal_interface = SignalInterface(config=self.config)
-        wizard = SignalDialogs.ImportTimeSignal(ui_object=signal_interface)
+        wizard = GUI_signal_dialogs.ImportTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             self.tabs.addTab(signal_interface, '{}'.format(signal_interface.signal.name()))
             self.signal_interfaces.append(signal_interface)
@@ -204,7 +204,7 @@ class SignalsInterface(QtWidgets.QWidget):
     def menu_export_trigger(self):
         index = self.tabs.currentIndex()
         interface = self.signal_interfaces[index]
-        SignalDialogs.ExportTimeSignal(ui_object=interface)
+        GUI_signal_dialogs.ExportTimeSignal(ui_object=interface)
 
     def menu_FFT_trigger(self):
         index = self.tabs.currentIndex()
@@ -222,7 +222,7 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = self.signal_interfaces[index].signal
             if signal is not None:
                 if signal.signal_type == 'time':
-                    wizard = SignalDialogs.GetGaborParams()
+                    wizard = GUI_signal_dialogs.GetGaborParams()
                     if wizard.complete:
                         params = wizard.params
                         delta_tau_n = int(np.round(params['delta_tau'] / signal.delta_x, decimals=0))
@@ -246,7 +246,7 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = self.signal_interfaces[index].signal
             if signal is not None:
                 if signal.signal_type == 'time':
-                    wizard = SignalDialogs.GetWaveletParams()
+                    wizard = GUI_signal_dialogs.GetWaveletParams()
                     if wizard.complete:
                         params = wizard.params
                         self.add_signal(sp.wavelet_transform(
@@ -293,7 +293,7 @@ class SignalsInterface(QtWidgets.QWidget):
             if signal is not None:
                 interface = SignalInterface(config=self.config)
                 interface.signal = signal
-                wizard = SignalDialogs.CropSignal(ui_object=interface)
+                wizard = GUI_signal_dialogs.CropSignal(ui_object=interface)
                 interface.update_info()
                 self.add_interface(interface)
 
@@ -303,9 +303,9 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = self.signal_interfaces[index].signal
             if signal is not None:
                 if signal.codomain == 'int' or signal.codomain == 'float' or signal.codomain == 'bool_':
-                    func_wiz = SignalDialogs.GetFunction1D(ui_object=self.signal_interfaces[index])
+                    func_wiz = GUI_signal_dialogs.GetFunction1D(ui_object=self.signal_interfaces[index])
                 else:
-                    func_wiz = SignalDialogs.GetFunction1DComplex(ui_object=self.signal_interfaces[index])
+                    func_wiz = GUI_signal_dialogs.GetFunction1DComplex(ui_object=self.signal_interfaces[index])
                 if func_wiz.complete:
                     params = func_wiz.params
                     iterations = signal.n - 1

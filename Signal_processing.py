@@ -9,7 +9,7 @@ import random
 import numpy as np
 from PyQt5.QtWidgets import QApplication
 # Internals
-import Signals as ss
+import Signal as ss
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

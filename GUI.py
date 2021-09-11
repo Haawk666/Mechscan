@@ -4,16 +4,14 @@
 
 # standard library
 import logging
-import time
 # 3rd party
-import PyQt5.QtWidgets
 from PyQt5 import QtWidgets
 # Internals
 import GUI_subwidgets
 import GUI_widgets
 import GUI_dialogs
-import SignalInterface
-import SystemInterface
+import GUI_signal
+import GUI_system
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -133,8 +131,8 @@ class MainUI(QtWidgets.QMainWindow):
                                 """)
         self.populate_menu()
 
-        self.signals_interface = SignalInterface.SignalsInterface(menu=self.menu, config=self.config)
-        self.systems_interface = SystemInterface.SystemsInterface()
+        self.signals_interface = GUI_signal.SignalsInterface(menu=self.menu, config=self.config)
+        self.systems_interface = GUI_system.SystemsInterface()
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()
 
@@ -215,8 +213,8 @@ class MainUI(QtWidgets.QMainWindow):
         for section, items in settings_map.items():
             for item, properties in items.items():
                 if properties['type'] == 'group':
-                    for member, properties_ in properties['members'].items():
-                        settings_map[section][item][member]['current'] = self.get_setting(section, member, group=item, type_=properties_['type'])
+                    for item_item, properties_properties in properties['members'].items():
+                        settings_map[section][item]['members'][item_item]['current'] = self.get_setting(section, item_item, group=item, type_=properties_properties['type'])
                 else:
                     settings_map[section][item]['current'] = self.get_setting(section, item, type_=properties['type'])
 

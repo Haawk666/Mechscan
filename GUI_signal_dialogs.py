@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets
 import numpy as np
 # Internals
 import GUI_subwidgets
-import Signals as ss
+import Signal as ss
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

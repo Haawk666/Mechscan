@@ -10,8 +10,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 # Internals
 import GUI_subwidgets
-import Signals as ss
-import Systems
+import Signal as ss
+import System
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -86,7 +86,7 @@ class SystemInterface(QtWidgets.QWidget):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.system = Systems.SystemLTI()
+        self.system = System.SystemLTI()
 
         self.btn_simulate = GUI_subwidgets.MediumButton('Simulate', self, trigger_func=self.btn_simulate_trigger)
         self.btn_print = GUI_subwidgets.MediumButton('Print', self, trigger_func=self.btn_print_trigger)

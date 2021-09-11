@@ -7,7 +7,7 @@ import logging
 # 3rd party
 
 # Internals
-import Signals as ss
+import Signal as ss
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

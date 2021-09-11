@@ -15,31 +15,63 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def evaluate(signal, function, method='overwrite', a=None, b=None, update=None):
+def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None, update=None):
     """Assumes that the function output matches the signal type!"""
 
-    values = np.zeros(signal.Y.shape, dtype=signal.Y.dtype)
+    if channels is None:
+        channels = [x for x in range(signal.channels)]
 
-    if signal.signal_type == 'time':
+    if signal.dimensions == 1:
+
+        values = np.zeros((signal.Y.shape[0]), dtype=signal.Y.dtype)
+
         for k in range(signal.n):
             values[k] = function(signal.X[k])
             if update is not None:
                 update.setValue(k)
-    elif signal.signal_type == 'frequency':
-        values = function(signal.X)
-    elif signal.signal_type == 'time-frequency':
-        values = function(signal.X[0], signal.X[1])
-    else:
-        raise Exception('Unknown signal type.')
 
-    if method == 'overwrite':
-        signal.Y = values.astype(eval(signal.valid_types[signal.type_id]))
-    elif method == 'add':
-        signal.Y += values.astype(eval(signal.valid_types[signal.type_id]))
-    elif method == 'mutliply':
-        signal.Y *= values.astype(eval(signal.valid_types[signal.type_id]))
+        for channel in channels:
+
+            if method == 'overwrite':
+                signal.Y[:, channel] = values.astype(eval(signal.valid_types[signal.type_id]))
+
+            elif method == 'add':
+                signal.Y[:, channel] += values.astype(eval(signal.valid_types[signal.type_id]))
+
+            elif method == 'mutliply':
+                signal.Y[:, channel] = np.multiply(signal.Y[:, channel], values.astype(eval(signal.valid_types[signal.type_id])))
+
+            else:
+                raise Exception('Unknown method type')
+
+    elif signal.dimensions == 2:
+
+        values = np.zeros((signal.Y.shape[0], signal.Y.shape[1]), dtype=signal.Y.dtype)
+
+        for i in range(signal.n[0]):
+            for j in range(signal.n[1]):
+
+                values[i, j] = function(signal.X[0][i], signal.X[1][j])
+                if update is not None:
+                    update.setValue(i * j)
+
+        for channel in channels:
+
+            if method == 'overwrite':
+                signal.Y[:, :, channel] = values.astype(eval(signal.valid_types[signal.type_id]))
+
+            elif method == 'add':
+                signal.Y[:, :, channel] += values.astype(eval(signal.valid_types[signal.type_id]))
+
+            elif method == 'mutliply':
+                signal.Y[:, :, channel] = np.multiply(signal.Y[:, :, channel], values.astype(eval(signal.valid_types[signal.type_id])))
+
+            else:
+                raise Exception('Unknown method type')
+
     else:
-        raise Exception('Unknown method type')
+
+        raise Exception('Not implemented!')
 
     return signal
 
@@ -82,7 +114,7 @@ def ifft(frequency_signal):
     return time_signal
 
 
-def gabor_transform(time_signal, window_size=1.0, window_function='Hann', delta_tau=None, delta_freq=None, update=None):
+def gabor_transform(time_signal, window_size=0.1, window_function='Hann', delta_tau=None, delta_freq=None, update=None):
 
     if time_signal.bit_depth in [1, 2, 8, 16, 32]:
         bit_depth = 64

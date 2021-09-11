@@ -15,17 +15,6 @@ import GUI
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-DEFAULT_CONFIG_STRING = '[theme]\n'
-DEFAULT_CONFIG_STRING += 'theme: dark\n\n'
-DEFAULT_CONFIG_STRING += '[tooltips]\n'
-DEFAULT_CONFIG_STRING += 'tooltips: True\n\n'
-DEFAULT_CONFIG_STRING += '[colors]\n'
-DEFAULT_CONFIG_STRING += '\n\n'
-DEFAULT_CONFIG_STRING += '[signals]\n'
-DEFAULT_CONFIG_STRING += 'time_plot_type: ri\n'
-DEFAULT_CONFIG_STRING += 'spectrum_type: m\n'
-DEFAULT_CONFIG_STRING += 'spectrum_phase: y\n\n'
-
 
 if __name__ == '__main__':
 
@@ -35,14 +24,14 @@ if __name__ == '__main__':
     # Check for existence of config file:
     if not os.path.isfile('config.ini'):
         with open('config.ini', 'w') as f:
-            f.write(DEFAULT_CONFIG_STRING)
+            f.write(GUI.get_default_settings_string())
 
     # Import configurations from config file
     config = configparser.ConfigParser()
     config.read('config.ini')
 
     # Set theme
-    if config.get('theme', 'theme') == 'dark':
+    if config.get('GUI', 'Theme') == 'Dark':
         dark_palette = QtGui.QPalette()
         dark_palette.setColor(QtGui.QPalette.Window, QtGui.QColor(0, 0, 0))
         dark_palette.setColor(QtGui.QPalette.WindowText, QtGui.QColor(200, 200, 200))

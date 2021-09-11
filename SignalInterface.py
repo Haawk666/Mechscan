@@ -79,10 +79,6 @@ class SignalsInterface(QtWidgets.QWidget):
 
         self.menu.addAction(GUI_subwidgets.Action('Functions', self, trigger_func=self.menu_combine_trigger))
 
-        self.menu.addSeparator()
-
-        self.menu.addAction(GUI_subwidgets.Action('Settings', self, trigger_func=self.menu_options_trigger))
-
     def build_layout(self):
 
         layout = QtWidgets.QVBoxLayout()
@@ -103,6 +99,13 @@ class SignalsInterface(QtWidgets.QWidget):
         interface.signal = signal
         interface.update_info()
         self.add_interface(interface)
+
+    def update_config(self, config):
+
+        self.config = config
+        for interface in self.signal_interfaces:
+            interface.config = self.config
+            interface.update_info()
 
     def menu_generate_time_trigger(self):
         signal_interface = SignalInterface(config=self.config)
@@ -317,13 +320,6 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_resample_trigger(self):
         pass
-
-    def menu_options_trigger(self):
-        wizard = SignalDialogs.SetOptions(ui_obj=self)
-        if wizard.complete:
-            for interface in self.signal_interfaces:
-                interface.config = self.config
-                interface.update_info()
 
 
 class SignalInterface(QtWidgets.QWidget):

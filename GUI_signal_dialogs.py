@@ -190,18 +190,18 @@ class GetFunction(QtWidgets.QDialog):
                                 'default': 666.0
                             },
                             'x_0': {
-                                'min': self.ui_obj.signal.x_start,
-                                'max': self.ui_obj.signal.x_end,
+                                'min': self.signal.x_start,
+                                'max': self.signal.x_end,
                                 'step': 1.0,
                                 'dec': 2,
-                                'default': self.ui_obj.signal.x_start
+                                'default': self.signal.x_start
                             },
                             'x_1': {
-                                'min': self.ui_obj.signal.x_start,
-                                'max': self.ui_obj.signal.x_end,
+                                'min': self.signal.x_start,
+                                'max': self.signal.x_end,
                                 'step': 1.0,
                                 'dec': 2,
-                                'default': self.ui_obj.signal.x_end
+                                'default': self.signal.x_end
                             },
                             'f_0': {
                                 'min': -1000.0,

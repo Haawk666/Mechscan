@@ -38,7 +38,7 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
             elif method == 'add':
                 signal.Y[:, channel] += values.astype(eval(signal.valid_types[signal.type_id]))
 
-            elif method == 'mutliply':
+            elif method == 'multiply':
                 signal.Y[:, channel] = np.multiply(signal.Y[:, channel], values.astype(eval(signal.valid_types[signal.type_id])))
 
             else:
@@ -63,7 +63,7 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
             elif method == 'add':
                 signal.Y[:, :, channel] += values.astype(eval(signal.valid_types[signal.type_id]))
 
-            elif method == 'mutliply':
+            elif method == 'multiply':
                 signal.Y[:, :, channel] = np.multiply(signal.Y[:, :, channel], values.astype(eval(signal.valid_types[signal.type_id])))
 
             else:

@@ -178,10 +178,13 @@ class SignalsInterface(QtWidgets.QWidget):
         wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
         if wizard.complete:
             signal = signal_interface.signal
-            transiterations = signal.channels * signal.n
-            transformation_progress_window = GUI_subwidgets.ProgressDialog('Transforming...', '', 0, transiterations + 1, self)
-            signal = sp.gabor_transform(signal, update=transformation_progress_window)
-            transformation_progress_window.setValue(transiterations + 1)
+
+            # params:
+            delta = None
+
+            signal = ss.TimeFrequencySignal(
+                x_start=[]
+            )
 
             if signal is not None:
                 function_wiz = GUI_signal_dialogs.GetFunction(signal=signal)

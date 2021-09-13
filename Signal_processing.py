@@ -39,8 +39,7 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
     if signal.dimensions == 1:
         b_index = [signal.n - 1]
     else:
-        b_index = [x for x in signal.n]
-        b_index -= [1] * signal.dimensions
+        b_index = [x - 1 for x in signal.n]
 
     if signal.dimensions == 1:
         distance_a = 100000000000

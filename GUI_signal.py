@@ -180,10 +180,21 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = signal_interface.signal
 
             # params:
-            delta = None
+            x_start = [signal.x_start, -signal.f_s / 2]
+            x_end = [signal.x_start + signal.delta_x * (signal.n - 1), signal.f_s / 2]
+            delta_x = [signal.delta_x, signal.n - 1]
+            if signal.bit_depth in [1, 2, 8, 16, 32]:
+                bit_depth = 64
+            else:
+                bit_depth = 128
 
             signal = ss.TimeFrequencySignal(
-                x_start=[]
+                x_start=x_start,
+                x_end=x_end,
+                delta_x=delta_x,
+                bit_depth=bit_depth,
+                codomain='complex',
+                channels=signal.channels
             )
 
             if signal is not None:

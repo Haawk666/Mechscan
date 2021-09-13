@@ -359,26 +359,27 @@ class SignalsInterface(QtWidgets.QWidget):
             signal = self.signal_interfaces[index].signal
             if signal is not None:
                 function_wiz = GUI_signal_dialogs.GetFunction(signal=signal)
-                iterations = signal.N
-                progress_window = GUI_subwidgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
-                if signal.dimensions == 1:
-                    def func(x): return eval(function_wiz.params['function_string'])
-                elif signal.dimensions == 2:
-                    def func(x_1, x_2): return eval(function_wiz.params['function_string'])
-                else:
-                    raise Exception('Not implemented!')
+                if function_wiz.complete:
+                    iterations = signal.N
+                    progress_window = GUI_subwidgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
+                    if signal.dimensions == 1:
+                        def func(x): return eval(function_wiz.params['function_string'])
+                    elif signal.dimensions == 2:
+                        def func(x_1, x_2): return eval(function_wiz.params['function_string'])
+                    else:
+                        raise Exception('Not implemented!')
 
-                self.signal_interfaces[index].signal = sp.evaluate(
-                    signal,
-                    func,
-                    method=function_wiz.params['method'],
-                    a=function_wiz.params['a'],
-                    b=function_wiz.params['b'],
-                    channels=function_wiz.params['channels'],
-                    update=progress_window
-                )
-                progress_window.setValue(iterations + 1)
-                self.signal_interfaces[index].update_info()
+                    self.signal_interfaces[index].signal = sp.evaluate(
+                        signal,
+                        func,
+                        method=function_wiz.params['method'],
+                        a=function_wiz.params['a'],
+                        b=function_wiz.params['b'],
+                        channels=function_wiz.params['channels'],
+                        update=progress_window
+                    )
+                    progress_window.setValue(iterations + 1)
+                    self.signal_interfaces[index].update_info()
 
     def menu_resample_trigger(self):
         pass

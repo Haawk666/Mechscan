@@ -4,10 +4,8 @@
 
 # standard library
 import logging
-import random
 # 3rd party
 import numpy as np
-from PyQt5.QtWidgets import QApplication
 # Internals
 import Signal as ss
 # Instantiate logger:
@@ -21,6 +19,53 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
     if channels is None:
         channels = [x for x in range(signal.channels)]
 
+    if a is None:
+        if signal.dimensions == 1:
+            a = [signal.x_start]
+        else:
+            a = []
+            for d in range(signal.dimensions):
+                a.append(signal.x_start[d])
+
+    if b is None:
+        if signal.dimensions == 1:
+            b = [signal.x_end]
+        else:
+            b = []
+            for d in range(signal.dimensions):
+                b.append(signal.x_end[d])
+
+    a_index = [0] * signal.dimensions
+    if signal.dimensions == 1:
+        b_index = [signal.n - 1]
+    else:
+        b_index = [x for x in signal.n]
+        b_index -= [1] * signal.dimensions
+
+    if signal.dimensions == 1:
+        distance_a = 100000000000
+        distance_b = 100000000000
+        for k, x in enumerate(signal.X):
+            if np.absolute(a[0] - x) < distance_a:
+                distance_a = np.absolute(a[0] - x)
+                a_index[0] = k
+            if np.absolute(b[0] - x) < distance_b:
+                distance_b = np.absolute(b[0] - x)
+                b_index[0] = k
+    else:
+        distance_a = []
+        distance_b = []
+        for d in range(signal.dimensions):
+            distance_a.append(100000000000)
+            distance_b.append(100000000000)
+            for k, x in enumerate(signal.X[d]):
+                if np.absolute(a[d] - x) < distance_a[d]:
+                    distance_a[d] = np.absolute(a[d] - x)
+                    a_index[d] = k
+                if np.absolute(b[0] - x) < distance_b[d]:
+                    distance_b[d] = np.absolute(b[d] - x)
+                    b_index[d] = k
+
     if signal.dimensions == 1:
 
         values = np.zeros((signal.Y.shape[0]), dtype=signal.Y.dtype)
@@ -33,13 +78,13 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
         for channel in channels:
 
             if method == 'overwrite':
-                signal.Y[:, channel] = values.astype(eval(signal.valid_types[signal.type_id]))
+                signal.Y[a_index[0]:b_index[0], channel] = values.astype(eval(signal.valid_types[signal.type_id]))[a_index[0]:b_index[0]]
 
             elif method == 'add':
-                signal.Y[:, channel] += values.astype(eval(signal.valid_types[signal.type_id]))
+                signal.Y[a_index[0]:b_index[0], channel] += values.astype(eval(signal.valid_types[signal.type_id]))[a_index[0]:b_index[0]]
 
             elif method == 'multiply':
-                signal.Y[:, channel] = np.multiply(signal.Y[:, channel], values.astype(eval(signal.valid_types[signal.type_id])))
+                signal.Y[a_index[0]:b_index[0], channel] = np.multiply(signal.Y[:, channel], values.astype(eval(signal.valid_types[signal.type_id])))[a_index[0]:b_index[0]]
 
             else:
                 raise Exception('Unknown method type')
@@ -58,13 +103,13 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
         for channel in channels:
 
             if method == 'overwrite':
-                signal.Y[:, :, channel] = values.astype(eval(signal.valid_types[signal.type_id]))
+                signal.Y[a_index[0]:b_index[0], a_index[1]:b_index[1], channel] = values.astype(eval(signal.valid_types[signal.type_id]))[a_index[0]:b_index[0], a_index[1]:b_index[1]]
 
             elif method == 'add':
-                signal.Y[:, :, channel] += values.astype(eval(signal.valid_types[signal.type_id]))
+                signal.Y[a_index[0]:b_index[0], a_index[1]:b_index[1], channel] += values.astype(eval(signal.valid_types[signal.type_id]))[a_index[0]:b_index[0], a_index[1]:b_index[1]]
 
             elif method == 'multiply':
-                signal.Y[:, :, channel] = np.multiply(signal.Y[:, :, channel], values.astype(eval(signal.valid_types[signal.type_id])))
+                signal.Y[a_index[0]:b_index[0], a_index[1]:b_index[1], channel] = np.multiply(signal.Y[:, :, channel], values.astype(eval(signal.valid_types[signal.type_id])))[a_index[0]:b_index[0], a_index[1]:b_index[1]]
 
             else:
                 raise Exception('Unknown method type')

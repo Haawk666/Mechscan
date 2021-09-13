@@ -60,9 +60,6 @@ class GetFunction(QtWidgets.QDialog):
             self.cmb_channels.addItem('Channel {}'.format(nchan + 1))
         self.cmb_channels.setDisabled(True)
 
-        self.chb_range = QtWidgets.QCheckBox('Apply only to subdomain')
-        self.chb_range.setChecked(False)
-
         self.range_widgets = []
         for d in range(self.signal.dimensions):
             self.range_widgets.append(dict())
@@ -250,12 +247,10 @@ class GetFunction(QtWidgets.QDialog):
         base_grid.addWidget(QtWidgets.QLabel('Operation: '), 1, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channels: '), 2, 0)
         base_grid.addWidget(QtWidgets.QLabel('Channel: '), 3, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Range: '), 4, 0)
         base_grid.addWidget(self.cmb_functions, 0, 1)
         base_grid.addWidget(self.cmb_operation, 1, 1)
         base_grid.addWidget(self.chb_all_channels, 2, 1)
         base_grid.addWidget(self.cmb_channels, 3, 1)
-        base_grid.addWidget(self.chb_range, 4, 1)
         base_widget = QtWidgets.QWidget()
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
@@ -301,65 +296,43 @@ class GetFunction(QtWidgets.QDialog):
             self.btn_cancel.setText('Cancel')
             self.stack.setCurrentIndex(0)
             self.stage = 0
+        elif self.stage == 2:
+            self.btn_next.setText('Next')
+            self.btn_cancel.setText('Back')
+            self.stack.setCurrentIndex(1)
+            self.stage = 1
         else:
-            if self.chb_range.isChecked():
-                self.btn_next.setText('Next')
-                self.btn_cancel.setText('Back')
-                self.stack.setCurrentIndex(1)
-                self.stage = 1
-            else:
-                self.btn_next.setText('Next')
-                self.btn_cancel.setText('Cancel')
-                self.stack.setCurrentIndex(0)
-                self.stage = 0
+            self.btn_next.setText('Next')
+            self.btn_cancel.setText('Back')
+            self.stack.setCurrentIndex(12)
+            self.stage = 2
 
     def btn_next_trigger(self):
         if self.stage == 0:
-
-            function = self.cmb_functions.currentText()
-
-            if self.chb_range.isChecked():
-                self.stack.setCurrentIndex(1)
-                self.stage = 1
-
-            else:
-                if function == 'custom':
-                    self.stack.setCurrentIndex(2)
-                    self.stage = 2
-
-                else:
-                    if self.stack.count() == 4:
-                        self.stack.removeWidget(self.stack.widget(3))
-
-                    param_grid = QtWidgets.QGridLayout()
-
-                    row = 0
-                    for param, properties in self.functions[function]['params'].items():
-                        param_grid.addWidget(QtWidgets.QLabel('{}: '.format(param)), row, 0)
-                        param_grid.addWidget(self.param_boxes[function][param], row, 1)
-                        row += 1
-                    param_widget = QtWidgets.QWidget()
-                    param_widget.setLayout(param_grid)
-                    self.stack.addWidget(param_widget)
-
-                    self.stack.setCurrentIndex(3)
-                    self.stage = 2
-
-                self.btn_next.setText('Generate')
-                self.btn_cancel.setText('Back')
-
+            self.stack.setCurrentIndex(1)
+            self.stage = 1
+            self.btn_next.setText('Next')
+            self.btn_cancel.setText('Back')
         elif self.stage == 1:
             function = self.cmb_functions.currentText()
             if function == 'custom':
                 self.stack.setCurrentIndex(2)
-                self.stage = 2
-
             else:
+                if self.stack.count() == 4:
+                    self.stack.removeWidget(self.stack.widget(3))
+                param_grid = QtWidgets.QGridLayout()
+                row = 0
+                for param, properties in self.functions[function]['params'].items():
+                    param_grid.addWidget(QtWidgets.QLabel('{}: '.format(param)), row, 0)
+                    param_grid.addWidget(self.param_boxes[function][param], row, 1)
+                    row += 1
+                param_widget = QtWidgets.QWidget()
+                param_widget.setLayout(param_grid)
+                self.stack.addWidget(param_widget)
                 self.stack.setCurrentIndex(3)
-                self.stage = 2
+            self.stage = 2
             self.btn_next.setText('Generate')
             self.btn_cancel.setText('Back')
-
         else:
             self.gen_params()
             self.complete = True

@@ -77,6 +77,13 @@ def get_settings_map():
                     }
                 }
             }
+        },
+        'Systems': {
+            'Sampling': {
+                'type': 'string',
+                'default': 'Interpolate',
+                'options': ['Interpolate', 'Resample']
+            }
         }
     }
 

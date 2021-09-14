@@ -132,7 +132,7 @@ class MainUI(QtWidgets.QMainWindow):
         self.populate_menu()
 
         self.signals_interface = GUI_signal.SignalsInterface(menu=self.menu, config=self.config)
-        self.systems_interface = GUI_system.SystemsInterface()
+        self.systems_interface = GUI_system.SystemsInterface(menu=self.menu, config=self.config)
         self.data_interface = GUI_widgets.DataInterface()
         self.model_interface = GUI_widgets.ModelInterface()
 

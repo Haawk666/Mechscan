@@ -4,13 +4,11 @@
 
 # standard library
 import logging
-import random
 # 3rd party
-from PyQt5 import QtWidgets, QtCore, QtGui
-import pyqtgraph as pg
+from PyQt5 import QtWidgets
 # Internals
 import GUI_subwidgets
-import Signal as ss
+import GUI_system_dialogs
 import System
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -19,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 
 class SystemsInterface(QtWidgets.QWidget):
 
-    def __init__(self, *args):
+    def __init__(self, *args, menu=None, config=None):
         super().__init__(*args)
 
         self.system_interfaces = []
@@ -27,196 +25,143 @@ class SystemsInterface(QtWidgets.QWidget):
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
 
-        self.btn_new = GUI_subwidgets.MediumButton('New', self, trigger_func=self.btn_new_trigger)
-        self.btn_save = GUI_subwidgets.MediumButton('Save', self, trigger_func=self.btn_save_trigger)
-        self.btn_load = GUI_subwidgets.MediumButton('Load', self, trigger_func=self.btn_load_trigger)
-        self.btn_clear = GUI_subwidgets.MediumButton('Close', self, trigger_func=self.btn_clear_trigger)
+        self.menu = menu.addMenu('System')
+        self.populate_menu()
+
+        self.config = config
 
         self.build_layout()
 
+    def populate_menu(self):
+
+        self.menu.addAction(GUI_subwidgets.Action('New', self, trigger_func=self.menu_new_trigger))
+
+        self.menu.addAction(GUI_subwidgets.Action('Save', self, trigger_func=self.menu_save_trigger))
+        self.menu.addAction(GUI_subwidgets.Action('Load', self, trigger_func=self.menu_load_trigger))
+        self.menu.addAction(GUI_subwidgets.Action('Close', self, trigger_func=self.menu_close_trigger))
+        self.menu.addAction(GUI_subwidgets.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
+
     def build_layout(self):
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btn_new)
-        btn_layout.addWidget(self.btn_load)
-        btn_layout.addWidget(self.btn_save)
-        btn_layout.addWidget(self.btn_clear)
-        btn_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(btn_layout)
-        layout.addWidget(GUI_subwidgets.HorSeparator())
         layout.addWidget(self.tabs)
 
         self.setLayout(layout)
 
-    def btn_new_trigger(self):
-        system_interface = SystemInterface()
-        self.tabs.addTab(system_interface, '{}'.format(system_interface.system.name()))
-        self.system_interfaces.append(system_interface)
-        system_interface.update_info()
+    def add_interface(self, interface):
+        if interface.system:
+            self.tabs.addTab(interface, '{}'.format(interface.system.name()))
+        else:
+            self.tabs.addTab(interface, 'Empty')
+        self.system_interfaces.append(interface)
         self.tabs.setCurrentIndex(len(self.tabs) - 1)
 
-    def btn_save_trigger(self):
-        index = self.tabs.currentIndex()
-        system_interface = self.system_interfaces[index]
-        if system_interface.system:
-            filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save system", '', "")
-            if filename[0]:
-                system_interface.system.save(filename[0])
-                self.tabs.setTabText(index, system_interface.system.name())
+    def add_system(self, system):
+        interface = SystemInterface(config=self.config)
+        interface.system = system
+        interface.update_info()
+        self.add_interface(interface)
 
-    def btn_load_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
-        if filename[0]:
-            system_interface = SystemInterface()
-            system_interface.system = ss.SystemLTI.static_load(filename[0])
-            self.system_interfaces.append(system_interface)
-            self.tabs.addTab(system_interface, '{}'.format(system_interface.system.name()))
+    def update_config(self, config):
+
+        self.config = config
+        for interface in self.system_interfaces:
+            interface.config = self.config
+            interface.update_info()
+
+    def menu_new_trigger(self):
+        system_interface = SystemInterface(config=self.config)
+        wizard = GUI_system_dialogs.NewSystem()
+        if wizard.complete:
+            system_interface.system = wizard.system
             system_interface.update_info()
-            self.tabs.setCurrentIndex(len(self.tabs) - 1)
+            self.add_interface(system_interface)
 
-    def btn_clear_trigger(self):
-        index = self.tabs.currentIndex()
-        self.system_interfaces.pop(index)
-        self.tabs.removeTab(index)
+    def menu_save_trigger(self):
+        if len(self.system_interfaces) > 0:
+            index = self.tabs.currentIndex()
+            system_interface = self.system_interfaces[index]
+            if system_interface.system:
+                filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save signal", '', "")
+                if filename[0]:
+                    system_interface.system.save(filename[0])
+                    self.tabs.setTabText(index, system_interface.system.name())
+
+    def menu_load_trigger(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
+        if filename[0]:
+            system_interface = SystemInterface(config=self.config)
+            system_interface.system = System.System.static_load(filename[0])
+            system_interface.update_info()
+            self.add_interface(system_interface)
+
+    def menu_close_trigger(self):
+        if len(self.tabs) > 0:
+            index = self.tabs.currentIndex()
+            self.system_interfaces.pop(index)
+            self.tabs.removeTab(index)
+
+    def menu_close_all_trigger(self):
+        self.system_interfaces = []
+        self.tabs.clear()
 
 
 class SystemInterface(QtWidgets.QWidget):
 
-    def __init__(self, *args):
+    def __init__(self, *args, config=None):
         super().__init__(*args)
 
-        self.system = System.SystemLTI()
+        self.config = config
 
-        self.btn_simulate = GUI_subwidgets.MediumButton('Simulate', self, trigger_func=self.btn_simulate_trigger)
-        self.btn_print = GUI_subwidgets.MediumButton('Print', self, trigger_func=self.btn_print_trigger)
+        self.system = None
 
-        self.scene = QtWidgets.QGraphicsScene()
-        self.scene.setBackgroundBrush(QtGui.QBrush(QtGui.QColor.fromRgbF(0, 0, 0, 1)))
-        self.view = QtWidgets.QGraphicsView()
-        self.view.setScene(self.scene)
+        self.btn_simulate = GUI_subwidgets.MediumButton('Simulate', self, trigger_func=self.simulate_trigger)
 
-        self.out_graph = pg.PlotWidget()
-        self.out_graph.setTitle('Output signals')
-        self.out_graph.setLabel('bottom', 'Time t, (s)')
-        self.out_graph.setLabel('left', 'Amplitude')
-        self.out_graph.showGrid(x=True, y=True)
+        self.lbl_info_keys = QtWidgets.QLabel('')
+        self.lbl_info_values = QtWidgets.QLabel('')
 
-        self.lst_input = QtWidgets.QListWidget()
-        self.lst_input.setStyleSheet('QListWidget{background: black;}')
-        self.lst_output = QtWidgets.QListWidget()
-        self.lst_output.setStyleSheet('QListWidget{background: black;}')
-
-        self.btn_add_input = GUI_subwidgets.MediumButton('Add', self, trigger_func=self.btn_add_input_trigger)
-        self.btn_remove_input = GUI_subwidgets.MediumButton('Del', self, trigger_func=self.btn_remove_input_trigger)
-        self.btn_edit_input = GUI_subwidgets.MediumButton('Edit', self, trigger_func=self.btn_edit_input_trigger)
-
-        self.btn_add_output = GUI_subwidgets.MediumButton('Add', self, trigger_func=self.btn_add_output_trigger)
-        self.btn_remove_output = GUI_subwidgets.MediumButton('Del', self, trigger_func=self.btn_remove_output_trigger)
-        self.btn_edit_output = GUI_subwidgets.MediumButton('Edit', self, trigger_func=self.btn_edit_output_trigger)
+        self.graphs = QtWidgets.QTabWidget()
+        self.graphs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
 
         self.build_layout()
         self.update_info()
 
     def build_layout(self):
 
-        input_btns_layout = QtWidgets.QHBoxLayout()
-        input_btns_layout.addWidget(QtWidgets.QLabel('Input: '))
-        input_btns_layout.addWidget(self.btn_add_input)
-        input_btns_layout.addWidget(self.btn_edit_input)
-        input_btns_layout.addWidget(self.btn_remove_input)
-        input_btns_layout.addStretch()
-
-        input_layout = QtWidgets.QVBoxLayout()
-        input_layout.addLayout(input_btns_layout)
-        input_layout.addWidget(self.lst_input)
-
-        input_widget = QtWidgets.QWidget()
-        input_widget.setLayout(input_layout)
-
-        output_btns_layout = QtWidgets.QHBoxLayout()
-        output_btns_layout.addWidget(QtWidgets.QLabel('Output: '))
-        output_btns_layout.addWidget(self.btn_add_output)
-        output_btns_layout.addWidget(self.btn_edit_output)
-        output_btns_layout.addWidget(self.btn_remove_output)
-        output_btns_layout.addStretch()
-
-        output_layout = QtWidgets.QVBoxLayout()
-        output_layout.addLayout(output_btns_layout)
-        output_layout.addWidget(self.lst_output)
-
-        output_widget = QtWidgets.QWidget()
-        output_widget.setLayout(output_layout)
-
-        info_layout = QtWidgets.QGridLayout()
-
-        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout = QtWidgets.QVBoxLayout()
         btn_layout.addWidget(self.btn_simulate)
-        btn_layout.addWidget(self.btn_print)
         btn_layout.addStretch()
+
+        info_layout = QtWidgets.QHBoxLayout()
+        info_layout.addLayout(btn_layout)
+        info_layout.addWidget(self.lbl_info_keys)
+        info_layout.addWidget(self.lbl_info_values)
+        info_layout.addStretch()
 
         panel_layout = QtWidgets.QVBoxLayout()
         panel_layout.addLayout(info_layout)
-        panel_layout.addLayout(btn_layout)
-        panel_layout.addWidget(self.out_graph)
-        panel_layout.addStretch()
-
-        panel_widget = QtWidgets.QWidget()
-        panel_widget.setLayout(panel_layout)
-
-        split_1 = QtWidgets.QSplitter(self)
-        split_1.setOrientation(QtCore.Qt.Vertical)
-        split_2 = QtWidgets.QSplitter(self)
-        split_3 = QtWidgets.QSplitter(self)
-        split_3.setOrientation(QtCore.Qt.Vertical)
-
-        split_3.addWidget(input_widget)
-        split_3.addWidget(output_widget)
-        split_2.addWidget(panel_widget)
-        split_2.addWidget(split_3)
-        split_2.setSizes([950, 10])
-        split_1.addWidget(self.view)
-        split_1.addWidget(split_2)
-        split_1.setSizes([800, 10])
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(split_1)
-
+        layout.addWidget(self.graphs)
+        layout.addLayout(panel_layout)
         self.setLayout(layout)
 
-    def btn_add_input_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
-        if filename[0]:
-            signal = ss.TimeSignal.static_load(filename[0])
-            self.lst_input.addItem(signal.name())
-            self.system.input_signals.append(signal)
-
-    def btn_remove_input_trigger(self):
-        pass
-
-    def btn_edit_input_trigger(self):
-        pass
-
-    def btn_add_output_trigger(self):
-        pass
-
-    def btn_remove_output_trigger(self):
-        pass
-
-    def btn_edit_output_trigger(self):
-        pass
-
-    def btn_simulate_trigger(self):
-        pass
-
-    def btn_print_trigger(self):
-        print(self.system)
+    def plot_system(self):
+        self.graphs.clear()
 
     def update_info(self):
         if self.system:
-            pass
+            self.plot_system()
+            meta_data = self.system.info()
+            key_string = ''
+            value_string = ''
         else:
-            pass
+            self.graphs.clear()
+            self.lbl_info_keys.setText('')
+            self.lbl_info_values.setText('')
+
+    def simulate_trigger(self):
+        pass
 
 
 

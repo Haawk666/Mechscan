@@ -7,10 +7,16 @@ import logging
 # 3rd party
 
 # Internals
-import Signal as ss
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class System:
+
+    def __init__(self):
+        pass
 
 
 class SystemLTI:

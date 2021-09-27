@@ -4,6 +4,7 @@
 
 # standard library
 import logging
+import time
 # 3rd party
 import numpy as np
 # Internals
@@ -13,8 +14,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None, update=None):
+def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None, update=None, vector=False):
     """Assumes that the function output matches the signal type!"""
+
+    start_time = time.time()
 
     if channels is None:
         channels = [x for x in range(signal.channels)]
@@ -67,12 +70,16 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
 
     if signal.dimensions == 1:
 
-        values = np.zeros((signal.Y.shape[0]), dtype=signal.Y.dtype)
-
-        for k in range(signal.n):
-            values[k] = function(signal.X[k])
+        if vector:
+            values = function(signal.X).astype(signal.Y.dtype)
             if update is not None:
-                update.setValue(k)
+                update.setValue(signal.n - 1)
+        else:
+            values = np.zeros((signal.Y.shape[0]), dtype=signal.Y.dtype)
+            for k in range(signal.n):
+                values[k] = function(signal.X[k])
+                if update is not None:
+                    update.setValue(k)
 
         for channel in channels:
 
@@ -116,6 +123,8 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
     else:
 
         raise Exception('Not implemented!')
+
+    print(time.time() - start_time)
 
     return signal
 

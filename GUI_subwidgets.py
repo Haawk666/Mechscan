@@ -31,6 +31,7 @@ class ProgressDialog(QtWidgets.QProgressDialog):
         super().__init__(*args)
         self.setWindowTitle('MechScan')
         self.setCancelButton(None)
+        self.setMinimumDuration(0)
 
     def setValue(self, progress: int) -> None:
         super().setValue(progress)

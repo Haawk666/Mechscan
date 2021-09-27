@@ -11,6 +11,7 @@ import sys
 from PyQt5 import QtWidgets, QtGui, QtCore
 # Internals
 import GUI
+import Library
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -24,7 +25,7 @@ if __name__ == '__main__':
     # Check for existence of config file:
     if not os.path.isfile('config.ini'):
         with open('config.ini', 'w') as f:
-            f.write(GUI.get_default_settings_string())
+            f.write(Library.get_default_settings_string())
 
     # Import configurations from config file
     config = configparser.ConfigParser()

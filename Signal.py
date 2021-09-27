@@ -12,7 +12,7 @@ import random
 import numpy as np
 import wave
 import h5py
-# import sounddevice
+import sounddevice
 import librosa
 # Internals
 
@@ -355,6 +355,10 @@ class MultiSignal(ABC):
         signal = Signal()
         signal.load(path_string)
         return signal
+
+    def play(self, channel=1):
+
+        sounddevice.play(self.Y[:, 0, channel - 1], self.f_s[0])
 
 
 class TimeSignal(Signal):

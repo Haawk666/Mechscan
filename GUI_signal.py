@@ -133,7 +133,8 @@ class SignalsInterface(QtWidgets.QWidget):
                         a=function_wiz.params['a'],
                         b=function_wiz.params['b'],
                         channels=function_wiz.params['channels'],
-                        update=progress_window
+                        update=progress_window,
+                        vector=function_wiz.params['vector']
                     )
                     progress_window.setValue(iterations + 1)
                     signal_interface.update_info()
@@ -167,7 +168,8 @@ class SignalsInterface(QtWidgets.QWidget):
                         a=function_wiz.params['a'],
                         b=function_wiz.params['b'],
                         channels=function_wiz.params['channels'],
-                        update=progress_window
+                        update=progress_window,
+                        vector=function_wiz.params['vector']
                     )
                     progress_window.setValue(iterations + 1)
                     signal_interface.update_info()
@@ -218,7 +220,8 @@ class SignalsInterface(QtWidgets.QWidget):
                         a=function_wiz.params['a'],
                         b=function_wiz.params['b'],
                         channels=function_wiz.params['channels'],
-                        update=progress_window
+                        update=progress_window,
+                        vector=function_wiz.params['vector']
                     )
                     progress_window.setValue(iterations + 1)
                     signal_interface.update_info()
@@ -387,7 +390,8 @@ class SignalsInterface(QtWidgets.QWidget):
                         a=function_wiz.params['a'],
                         b=function_wiz.params['b'],
                         channels=function_wiz.params['channels'],
-                        update=progress_window
+                        update=progress_window,
+                        vector=function_wiz.params['vector']
                     )
                     progress_window.setValue(iterations + 1)
                     self.signal_interfaces[index].update_info()
@@ -474,6 +478,11 @@ class SignalInterface(QtWidgets.QWidget):
 
             elif self.signal.signal_type == 'frequency':
 
+                if self.config.getboolean('Plotting', 'complex-valued_frequency_signals_Plot_negative_frequencies'):
+                    start_frequency_index = 0
+                else:
+                    start_frequency_index = self.signal.n // 2
+
                 for j in range(self.signal.channels):
 
                     plot_widget = pg.GraphicsLayoutWidget()
@@ -481,12 +490,12 @@ class SignalInterface(QtWidgets.QWidget):
                     plot = plot_widget.addPlot(row=0, col=0)
 
                     if self.config.get('Plotting', 'complex-valued_frequency_signals_y-axis') == 'Power':
-                        plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
+                        plot.plot(self.signal.X[start_frequency_index:], np.square(np.absolute(self.signal.Y[start_frequency_index:, j])))
                         plot.setTitle('Power spectrum')
                         plot.setLabel('left', 'Power')
 
                     elif self.config.get('Plotting', 'complex-valued_frequency_signals_y-axis') == 'Magnitude':
-                        plot.plot(self.signal.X[self.signal.n // 2:], np.absolute(self.signal.Y[self.signal.n // 2:, j]))
+                        plot.plot(self.signal.X[start_frequency_index:], np.absolute(self.signal.Y[start_frequency_index:, j]))
                         plot.setTitle('Magnitude spectrum')
                         plot.setLabel('left', 'Magnitude')
 
@@ -495,12 +504,12 @@ class SignalInterface(QtWidgets.QWidget):
                         if self.signal.time_signal is not None:
                             if self.signal.time_signal.codomain in ['complex', 'int']:
                                 ref = 32768
-                        plot.plot(self.signal.X[self.signal.n // 2:], 20 * np.log10(np.absolute(self.signal.Y[self.signal.n // 2:, j]) / ref))
+                        plot.plot(self.signal.X[start_frequency_index:], 20 * np.log10(np.absolute(self.signal.Y[start_frequency_index:, j]) / ref))
                         plot.setTitle('Decibel spectrum')
                         plot.setLabel('left', 'Db')
 
                     else:
-                        plot.plot(self.signal.X[self.signal.n // 2:], np.square(np.absolute(self.signal.Y[self.signal.n // 2:, j])))
+                        plot.plot(self.signal.X[start_frequency_index:], np.square(np.absolute(self.signal.Y[start_frequency_index:, j])))
                         plot.setTitle('Power spectrum')
                         plot.setLabel('left', 'Power')
 
@@ -515,6 +524,11 @@ class SignalInterface(QtWidgets.QWidget):
 
             elif self.signal.signal_type == 'time-frequency':
 
+                if self.config.getboolean('Plotting', 'complex-valued_frequency_signals_Plot_negative_frequencies'):
+                    start_frequency_index = 0
+                else:
+                    start_frequency_index = self.signal.n[1] // 2
+
                 for j in range(self.signal.channels):
 
                     plot_widget = pg.GraphicsLayoutWidget()
@@ -524,10 +538,10 @@ class SignalInterface(QtWidgets.QWidget):
                     cm = pg.colormap.get('CET-L9')
 
                     if self.signal.codomain == 'complex':
-                        img = pg.ImageItem(image=np.absolute(self.signal.Y[:, self.signal.n[1] // 2:, j]))
+                        img = pg.ImageItem(image=np.absolute(self.signal.Y[:, start_frequency_index:, j]))
                         bar = pg.ColorBarItem(values=(np.absolute(self.signal.Y).min(), np.absolute(self.signal.Y).max()), cmap=cm)
                     else:
-                        img = pg.ImageItem(image=self.signal.Y[:, self.signal.n[1] // 2:, j])
+                        img = pg.ImageItem(image=self.signal.Y[:, start_frequency_index:, j])
                         bar = pg.ColorBarItem(values=(self.signal.Y.min(), self.signal.Y.max()), cmap=cm)
 
                     plot.addItem(img)

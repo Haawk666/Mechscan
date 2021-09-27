@@ -148,7 +148,8 @@ class GetFunction(QtWidgets.QDialog):
                             }
                         },
                         'function_string': '{} * np.sin(2 * np.pi * {} * (x - {}))',
-                        'argument_keys': ['A', 'f', 'phi']
+                        'argument_keys': ['A', 'f', 'phi'],
+                        'vector': True
                     },
                     'cosine': {
                         'params': {
@@ -175,7 +176,8 @@ class GetFunction(QtWidgets.QDialog):
                             }
                         },
                         'function_string': '{} * np.cos(2 * np.pi * {} * (x - {}))',
-                        'argument_keys': ['A', 'f', 'phi']
+                        'argument_keys': ['A', 'f', 'phi'],
+                        'vector': True
                     },
                     'linear chirp': {
                         'params': {
@@ -216,13 +218,71 @@ class GetFunction(QtWidgets.QDialog):
                             }
                         },
                         'function_string': '{} * np.sin(2 * np.pi * ((({} - {}) / ({} - {})) * x + {} - (({} - {}) / ({} - {})) * {}) * x)',
-                        'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0']
+                        'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0'],
+                        'vector': True
                     }
                 }
 
             else:
 
-                self.functions = dict()
+                self.functions = {
+                    'sine': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'f': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 1.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'phi': {
+                                'min': -2 * np.pi,
+                                'max': 2 * np.pi,
+                                'step': 0.5 * np.pi,
+                                'dec': 3,
+                                'default': 0.0
+                            }
+                        },
+                        'function_string': '{} * np.exp(np.complex(0, -2 * np.pi * {} * (x - {})))',
+                        'argument_keys': ['A', 'f', 'phi'],
+                        'vector': False
+                    },
+                    'cosine': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'f': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 1.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'phi': {
+                                'min': -2 * np.pi,
+                                'max': 2 * np.pi,
+                                'step': 0.5 * np.pi,
+                                'dec': 3,
+                                'default': 0.0
+                            }
+                        },
+                        'function_string': '{} * np.exp(np.complex(0, 2 * np.pi * {} * (x - {})))',
+                        'argument_keys': ['A', 'f', 'phi'],
+                        'vector': False
+                    }
+                }
 
         else:
 
@@ -363,6 +423,8 @@ class GetFunction(QtWidgets.QDialog):
             for key in self.functions[function]['argument_keys']:
                 args.append(self.param_boxes[function][key].value())
             self.params['function_string'] = self.functions[function]['function_string'].format(*tuple(args))
+
+        self.params['vector'] = self.functions[function]['vector']
 
 
 class NewTimeSignal(QtWidgets.QDialog):

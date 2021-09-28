@@ -22,7 +22,7 @@ class NewSystem(QtWidgets.QDialog):
 
         self.complete = False
         self.stack = QtWidgets.QStackedWidget()
-        self.system = None
+        self.params = dict()
 
         self.btn_cancel = QtWidgets.QPushButton('Cancel')
         self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
@@ -30,7 +30,7 @@ class NewSystem(QtWidgets.QDialog):
         self.btn_next.clicked.connect(self.btn_next_trigger)
 
         self.cmb_type = QtWidgets.QComboBox()
-        self.cmb_type.addItems(['LTI'])
+        self.cmb_type.addItems(['empty', 'LTI'])
 
         self.build_layout()
 
@@ -61,9 +61,9 @@ class NewSystem(QtWidgets.QDialog):
 
     def btn_next_trigger(self):
         self.gen_system()
-        self.close()
         self.complete = True
+        self.close()
 
     def gen_system(self):
-        pass
+        self.params['type'] = self.cmb_type.currentText()
 

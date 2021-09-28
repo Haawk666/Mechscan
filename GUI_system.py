@@ -73,7 +73,12 @@ class SystemsInterface(QtWidgets.QWidget):
         system_interface = SystemInterface(config=self.config)
         wizard = GUI_system_dialogs.NewSystem()
         if wizard.complete:
-            system_interface.system = wizard.system
+            if wizard.params['type'] == 'empty':
+                system_interface.system = System.System()
+            elif wizard.params['type'] == 'LTI':
+                system_interface.system = System.SystemLTI()
+            else:
+                system_interface.system = System.System()
             system_interface.update_info()
             self.add_interface(system_interface)
 
@@ -117,11 +122,14 @@ class SystemInterface(QtWidgets.QWidget):
 
         self.btn_simulate = GUI_subwidgets.MediumButton('Simulate', self, trigger_func=self.simulate_trigger)
 
-        self.lbl_info_keys = QtWidgets.QLabel('')
-        self.lbl_info_values = QtWidgets.QLabel('')
-
         self.graphs = QtWidgets.QTabWidget()
         self.graphs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
+
+        self.input_widget = GUI_subwidgets.InputSignalList('Input signals', system_interface=self)
+        self.output_widget = GUI_subwidgets.OutputSignalList('Output signals', system_interface=self)
+
+        self.lbl_info_keys = QtWidgets.QLabel('')
+        self.lbl_info_values = QtWidgets.QLabel('')
 
         self.build_layout()
         self.update_info()
@@ -138,8 +146,11 @@ class SystemInterface(QtWidgets.QWidget):
         info_layout.addWidget(self.lbl_info_values)
         info_layout.addStretch()
 
-        panel_layout = QtWidgets.QVBoxLayout()
+        panel_layout = QtWidgets.QHBoxLayout()
         panel_layout.addLayout(info_layout)
+        panel_layout.addWidget(self.input_widget)
+        panel_layout.addWidget(self.output_widget)
+        panel_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.graphs)

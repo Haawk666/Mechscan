@@ -179,6 +179,34 @@ class GetFunction(QtWidgets.QDialog):
                         'argument_keys': ['A', 'f', 'phi'],
                         'vector': True
                     },
+                    'pulse': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'mu': {
+                                'min': self.signal.X[0],
+                                'max': self.signal.X[-1],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
+                            },
+                            'sigma': {
+                                'min': 0.0,
+                                'max': self.signal.X[-1] - self.signal.X[0],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': self.signal.X[-1] - self.signal.X[0]
+                            }
+                        },
+                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2)',
+                        'argument_keys': ['A', 'mu', 'sigma'],
+                        'vector': True
+                    },
                     'linear chirp': {
                         'params': {
                             'A': {
@@ -220,6 +248,48 @@ class GetFunction(QtWidgets.QDialog):
                         'function_string': '{} * np.sin(2 * np.pi * ((({} - {}) / ({} - {})) * x + {} - (({} - {}) / ({} - {})) * {}) * x)',
                         'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0'],
                         'vector': True
+                    },
+                    'morlet wavelet': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'f': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 1.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'phi': {
+                                'min': -2 * np.pi,
+                                'max': 2 * np.pi,
+                                'step': 0.5 * np.pi,
+                                'dec': 3,
+                                'default': 0.0
+                            },
+                            'mu': {
+                                'min': self.signal.X[0],
+                                'max': self.signal.X[-1],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
+                            },
+                            'sigma': {
+                                'min': 0.0,
+                                'max': self.signal.X[-1] - self.signal.X[0],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': self.signal.X[-1] - self.signal.X[0]
+                            }
+                        },
+                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2) * np.cos(2 * np.pi * {} * (x - {}))',
+                        'argument_keys': ['A', 'mu', 'sigma', 'f', 'phi'],
+                        'vector': True
                     }
                 }
 
@@ -250,9 +320,9 @@ class GetFunction(QtWidgets.QDialog):
                                 'default': 0.0
                             }
                         },
-                        'function_string': '{} * np.exp(np.complex(0, -2 * np.pi * {} * (x - {})))',
+                        'function_string': '{} * np.exp(-2 * np.pi * {} * (x - {}) * 1j)',
                         'argument_keys': ['A', 'f', 'phi'],
-                        'vector': False
+                        'vector': True
                     },
                     'cosine': {
                         'params': {
@@ -278,9 +348,79 @@ class GetFunction(QtWidgets.QDialog):
                                 'default': 0.0
                             }
                         },
-                        'function_string': '{} * np.exp(np.complex(0, 2 * np.pi * {} * (x - {})))',
+                        'function_string': '{} * np.exp(2 * np.pi * {} * (x - {}) * 1j)',
                         'argument_keys': ['A', 'f', 'phi'],
-                        'vector': False
+                        'vector': True
+                    },
+                    'complex morlet wavelet': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'f': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 1.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'phi': {
+                                'min': -2 * np.pi,
+                                'max': 2 * np.pi,
+                                'step': 0.5 * np.pi,
+                                'dec': 3,
+                                'default': 0.0
+                            },
+                            'mu': {
+                                'min': self.signal.X[0],
+                                'max': self.signal.X[-1],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
+                            },
+                            'sigma': {
+                                'min': 0.0,
+                                'max': self.signal.X[-1] - self.signal.X[0],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': self.signal.X[-1] - self.signal.X[0]
+                            }
+                        },
+                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2 + 2 * np.pi * {} * (x - {}) * 1j)',
+                        'argument_keys': ['A', 'mu', 'sigma', 'f', 'phi'],
+                        'vector': True
+                    },
+                    'pulse': {
+                        'params': {
+                            'A': {
+                                'min': -1000.0,
+                                'max': 1000.0,
+                                'step': 10.0,
+                                'dec': 1,
+                                'default': 666.0
+                            },
+                            'mu': {
+                                'min': self.signal.X[0],
+                                'max': self.signal.X[-1],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
+                            },
+                            'sigma': {
+                                'min': 0.0,
+                                'max': self.signal.X[-1] - self.signal.X[0],
+                                'step': 1.0,
+                                'dec': 3,
+                                'default': self.signal.X[-1] - self.signal.X[0]
+                            }
+                        },
+                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2 - 0.5 * ((x - {}) / {}) ** 2 * 1j)',
+                        'argument_keys': ['A', 'mu', 'sigma', 'mu', 'sigma'],
+                        'vector': True
                     }
                 }
 

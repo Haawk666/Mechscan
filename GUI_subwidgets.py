@@ -59,7 +59,7 @@ class InputSignalList(QtWidgets.QGroupBox):
             self.system_interface.update_info()
 
     def btn_del_trigger(self):
-        pass
+        index = self.list.currentIndex()
 
     def btn_up_trigger(self):
         pass
@@ -109,11 +109,9 @@ class OutputSignalList(QtWidgets.QGroupBox):
         self.setLayout(layout)
 
     def btn_add_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
-        if filename[0]:
-            signal = Signal.TimeSignal.static_load(filename[0])
-            self.system_interface.system.add_output_signal(signal)
-            self.list.addItem(signal.name())
+        name = QtWidgets.QInputDialog.getText(self, 'Set name', 'Name')
+        if name[1] and not name[0] == '':
+            self.list.addItem(str(name[0]))
             self.system_interface.update_info()
 
     def btn_del_trigger(self):

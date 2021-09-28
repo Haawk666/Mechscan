@@ -37,11 +37,6 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def populate_menu(self):
 
-        generate = self.menu.addMenu('Generate')
-        generate.addAction(GUI_subwidgets.Action('Time domain', self, trigger_func=self.menu_generate_time_trigger))
-        generate.addAction(GUI_subwidgets.Action('Frequency domain', self, trigger_func=self.menu_generate_frequency_trigger))
-        generate.addAction(GUI_subwidgets.Action('Time-frequency domain', self, trigger_func=self.menu_generate_time_frequency_trigger))
-
         self.menu.addAction(GUI_subwidgets.Action('New', self, trigger_func=self.menu_new_trigger))
 
         self.menu.addAction(GUI_subwidgets.Action('Save', self, trigger_func=self.menu_save_trigger))
@@ -76,7 +71,7 @@ class SignalsInterface(QtWidgets.QWidget):
         edit.addAction(GUI_subwidgets.Action('Crop', self, trigger_func=self.menu_crop_trigger))
         edit.addAction(GUI_subwidgets.Action('Resample', self, trigger_func=self.menu_resample_trigger))
 
-        self.menu.addAction(GUI_subwidgets.Action('Functions', self, trigger_func=self.menu_combine_trigger))
+        self.menu.addAction(GUI_subwidgets.Action('Functions', self, trigger_func=self.menu_functions_trigger))
 
     def build_layout(self):
 
@@ -105,127 +100,6 @@ class SignalsInterface(QtWidgets.QWidget):
         for interface in self.signal_interfaces:
             interface.config = self.config
             interface.update_info()
-
-    def menu_generate_time_trigger(self):
-        signal_interface = SignalInterface(config=self.config)
-        wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
-        if wizard.complete:
-
-            signal = signal_interface.signal
-            if signal is not None:
-                function_wiz = GUI_signal_dialogs.GetFunction(signal=signal)
-                if function_wiz.complete:
-                    iterations = signal.N
-                    progress_window = GUI_subwidgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
-                    if signal.dimensions == 1:
-                        def func(x):
-                            return eval(function_wiz.params['function_string'])
-                    elif signal.dimensions == 2:
-                        def func(x_1, x_2):
-                            return eval(function_wiz.params['function_string'])
-                    else:
-                        raise Exception('Not implemented!')
-
-                    signal_interface.signal = sp.evaluate(
-                        signal,
-                        func,
-                        method=function_wiz.params['method'],
-                        a=function_wiz.params['a'],
-                        b=function_wiz.params['b'],
-                        channels=function_wiz.params['channels'],
-                        update=progress_window,
-                        vector=function_wiz.params['vector']
-                    )
-                    progress_window.setValue(iterations + 1)
-                    signal_interface.update_info()
-                    self.add_interface(signal_interface)
-
-    def menu_generate_frequency_trigger(self):
-        signal_interface = SignalInterface(config=self.config)
-        wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
-        if wizard.complete:
-
-            signal = sp.fft(signal_interface.signal)
-
-            if signal is not None:
-                function_wiz = GUI_signal_dialogs.GetFunction(signal=signal)
-                if function_wiz.complete:
-                    iterations = signal.N
-                    progress_window = GUI_subwidgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
-                    if signal.dimensions == 1:
-                        def func(x):
-                            return eval(function_wiz.params['function_string'])
-                    elif signal.dimensions == 2:
-                        def func(x_1, x_2):
-                            return eval(function_wiz.params['function_string'])
-                    else:
-                        raise Exception('Not implemented!')
-
-                    signal_interface.signal = sp.evaluate(
-                        signal,
-                        func,
-                        method=function_wiz.params['method'],
-                        a=function_wiz.params['a'],
-                        b=function_wiz.params['b'],
-                        channels=function_wiz.params['channels'],
-                        update=progress_window,
-                        vector=function_wiz.params['vector']
-                    )
-                    progress_window.setValue(iterations + 1)
-                    signal_interface.update_info()
-                    self.add_interface(signal_interface)
-
-    def menu_generate_time_frequency_trigger(self):
-        signal_interface = SignalInterface(config=self.config)
-        wizard = GUI_signal_dialogs.NewTimeSignal(ui_object=signal_interface)
-        if wizard.complete:
-            signal = signal_interface.signal
-
-            # params:
-            x_start = [signal.x_start, -signal.f_s / 2]
-            x_end = [signal.x_start + signal.delta_x * (signal.n - 1), signal.f_s / 2]
-            delta_x = [signal.delta_x, signal.n - 1]
-            if signal.bit_depth in [1, 2, 8, 16, 32]:
-                bit_depth = 64
-            else:
-                bit_depth = 128
-
-            signal = ss.TimeFrequencySignal(
-                x_start=x_start,
-                x_end=x_end,
-                delta_x=delta_x,
-                bit_depth=bit_depth,
-                codomain='complex',
-                channels=signal.channels
-            )
-
-            if signal is not None:
-                function_wiz = GUI_signal_dialogs.GetFunction(signal=signal)
-                if function_wiz.complete:
-                    iterations = signal.N
-                    progress_window = GUI_subwidgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
-                    if signal.dimensions == 1:
-                        def func(x):
-                            return eval(function_wiz.params['function_string'])
-                    elif signal.dimensions == 2:
-                        def func(x_1, x_2):
-                            return eval(function_wiz.params['function_string'])
-                    else:
-                        raise Exception('Not implemented!')
-
-                    signal_interface.signal = sp.evaluate(
-                        signal,
-                        func,
-                        method=function_wiz.params['method'],
-                        a=function_wiz.params['a'],
-                        b=function_wiz.params['b'],
-                        channels=function_wiz.params['channels'],
-                        update=progress_window,
-                        vector=function_wiz.params['vector']
-                    )
-                    progress_window.setValue(iterations + 1)
-                    signal_interface.update_info()
-                    self.add_interface(signal_interface)
 
     def menu_new_trigger(self):
         signal_interface = SignalInterface(config=self.config)
@@ -367,7 +241,7 @@ class SignalsInterface(QtWidgets.QWidget):
                 interface.update_info()
                 self.add_interface(interface)
 
-    def menu_combine_trigger(self):
+    def menu_functions_trigger(self):
         index = self.tabs.currentIndex()
         if index >= 0:
             signal = self.signal_interfaces[index].signal

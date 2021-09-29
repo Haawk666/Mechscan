@@ -199,7 +199,7 @@ def get_function_map(signal):
                     'args': ['x_1', 'x_2'],
                     'kwargs': dict(),
                     'function': custom_R2,
-                    'vector': True
+                    'vector': False
                 }
             }
 
@@ -210,7 +210,7 @@ def get_function_map(signal):
                     'args': ['x_1', 'x_2'],
                     'kwargs': dict(),
                     'function': custom_R2,
-                    'vector': True
+                    'vector': False
                 }
             }
 

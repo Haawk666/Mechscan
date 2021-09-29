@@ -100,7 +100,7 @@ def evaluate(signal, function, kwargs, method='overwrite', a=None, b=None, chann
         values = np.zeros((signal.Y.shape[0], signal.Y.shape[1]), dtype=signal.Y.dtype)
 
         if vector:
-            values[:, :] = function(signal.x[0], signal.X[1], **kwargs).astype(signal.Y.dtype)
+            values[:, :] = function(signal.X[0], signal.X[1], **kwargs).astype(signal.Y.dtype)
             if update is not None:
                 update.setValue(signal.n[0] * signal.n[1])
         else:

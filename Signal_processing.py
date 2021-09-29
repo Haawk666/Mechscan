@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None, update=None, vector=False):
+def evaluate(signal, function, kwargs, method='overwrite', a=None, b=None, channels=None, update=None, vector=False):
     """Assumes that the function output matches the signal type!"""
 
     start_time = time.time()
@@ -71,13 +71,13 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
     if signal.dimensions == 1:
 
         if vector:
-            values = function(signal.X).astype(signal.Y.dtype)
+            values = function(signal.X, **kwargs).astype(signal.Y.dtype)
             if update is not None:
                 update.setValue(signal.n - 1)
         else:
             values = np.zeros((signal.Y.shape[0]), dtype=signal.Y.dtype)
             for k in range(signal.n):
-                values[k] = function(signal.X[k])
+                values[k] = function(signal.X[k], **kwargs)
                 if update is not None:
                     update.setValue(k)
 
@@ -99,12 +99,16 @@ def evaluate(signal, function, method='overwrite', a=None, b=None, channels=None
 
         values = np.zeros((signal.Y.shape[0], signal.Y.shape[1]), dtype=signal.Y.dtype)
 
-        for i in range(signal.n[0]):
-            for j in range(signal.n[1]):
-
-                values[i, j] = function(signal.X[0][i], signal.X[1][j])
+        if vector:
+            values[:, :] = function(signal.x[0], signal.X[1], **kwargs).astype(signal.Y.dtype)
+            if update is not None:
+                update.setValue(signal.n[0] * signal.n[1])
+        else:
+            for i in range(signal.n[0]):
+                for j in range(signal.n[1]):
+                    values[i, j] = function(signal.X[0][i], signal.X[1][j], **kwargs)
                 if update is not None:
-                    update.setValue(i * j)
+                    update.setValue(i * signal.n[1])
 
         for channel in channels:
 

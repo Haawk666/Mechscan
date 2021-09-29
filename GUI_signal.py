@@ -250,16 +250,15 @@ class SignalsInterface(QtWidgets.QWidget):
                 if function_wiz.complete:
                     iterations = signal.N
                     progress_window = GUI_subwidgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
-                    if signal.dimensions == 1:
-                        def func(x): return eval(function_wiz.params['function_string'])
-                    elif signal.dimensions == 2:
-                        def func(x_1, x_2): return eval(function_wiz.params['function_string'])
-                    else:
-                        raise Exception('Not implemented!')
+
+                    kwargs = dict()
+                    for key, value in function_wiz.params['kwargs'].items():
+                        kwargs[key] = value
 
                     self.signal_interfaces[index].signal = sp.evaluate(
                         signal,
-                        func,
+                        function_wiz.params['function'],
+                        kwargs,
                         method=function_wiz.params['method'],
                         a=function_wiz.params['a'],
                         b=function_wiz.params['b'],

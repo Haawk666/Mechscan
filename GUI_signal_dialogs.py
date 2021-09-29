@@ -10,6 +10,7 @@ import numpy as np
 # Internals
 import GUI_subwidgets
 import Signal as ss
+import functions
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -23,10 +24,8 @@ class GetFunction(QtWidgets.QDialog):
         self.setWindowTitle('Functions')
 
         self.signal = signal
-        self.functions = dict()
+        self.functions = functions.get_function_map(self.signal)
         self.params = dict()
-
-        self.collect_functions()
 
         self.complete = False
 
@@ -39,7 +38,6 @@ class GetFunction(QtWidgets.QDialog):
         self.btn_next.clicked.connect(self.btn_next_trigger)
 
         self.cmb_functions = QtWidgets.QComboBox()
-        self.cmb_functions.addItem('custom')
         for key in self.functions:
             self.cmb_functions.addItem(key)
 
@@ -102,337 +100,20 @@ class GetFunction(QtWidgets.QDialog):
         # - Custom:
         self.param_boxes = dict()
         for function, details in self.functions.items():
-            self.param_boxes[function] = dict()
-            for key, value in self.functions[function]['params'].items():
-                self.param_boxes[function][key] = GUI_subwidgets.DoubleSpinBox(
-                    minimum=value['min'],
-                    maximum=value['max'],
-                    step=value['step'],
-                    decimals=value['dec'],
-                    value=value['default']
-                )
+            if not function == 'custom':
+                self.param_boxes[function] = dict()
+                for key, parameter in self.functions[function]['kwargs'].items():
+                    self.param_boxes[function][key] = GUI_subwidgets.DoubleSpinBox(
+                        minimum=parameter.min,
+                        maximum=parameter.max,
+                        step=parameter.step,
+                        decimals=parameter.dec,
+                        value=parameter.default
+                    )
 
         self.build_layout()
 
         self.exec_()
-
-    def collect_functions(self):
-
-        if self.signal.dimensions == 1:
-
-            if self.signal.codomain in ['int', 'float', 'bool_']:
-
-                self.functions = {
-                    'sine': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'f': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 1.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'phi': {
-                                'min': -2 * np.pi,
-                                'max': 2 * np.pi,
-                                'step': 0.5 * np.pi,
-                                'dec': 3,
-                                'default': 0.0
-                            }
-                        },
-                        'function_string': '{} * np.sin(2 * np.pi * {} * (x - {}))',
-                        'argument_keys': ['A', 'f', 'phi'],
-                        'vector': True
-                    },
-                    'cosine': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'f': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 1.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'phi': {
-                                'min': -2 * np.pi,
-                                'max': 2 * np.pi,
-                                'step': 0.5 * np.pi,
-                                'dec': 3,
-                                'default': 0.0
-                            }
-                        },
-                        'function_string': '{} * np.cos(2 * np.pi * {} * (x - {}))',
-                        'argument_keys': ['A', 'f', 'phi'],
-                        'vector': True
-                    },
-                    'pulse': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'mu': {
-                                'min': self.signal.X[0],
-                                'max': self.signal.X[-1],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
-                            },
-                            'sigma': {
-                                'min': 0.0,
-                                'max': self.signal.X[-1] - self.signal.X[0],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': self.signal.X[-1] - self.signal.X[0]
-                            }
-                        },
-                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2)',
-                        'argument_keys': ['A', 'mu', 'sigma'],
-                        'vector': True
-                    },
-                    'linear chirp': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'x_0': {
-                                'min': self.signal.x_start,
-                                'max': self.signal.x_end,
-                                'step': 1.0,
-                                'dec': 2,
-                                'default': self.signal.x_start
-                            },
-                            'x_1': {
-                                'min': self.signal.x_start,
-                                'max': self.signal.x_end,
-                                'step': 1.0,
-                                'dec': 2,
-                                'default': self.signal.x_end
-                            },
-                            'f_0': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 0.0
-                            },
-                            'f_1': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            }
-                        },
-                        'function_string': '{} * np.sin(2 * np.pi * ((({} - {}) / ({} - {})) * x + {} - (({} - {}) / ({} - {})) * {}) * x)',
-                        'argument_keys': ['A', 'f_1', 'f_0', 'x_1', 'x_0', 'f_0', 'f_1', 'f_0', 'x_1', 'x_0', 'x_0'],
-                        'vector': True
-                    },
-                    'morlet wavelet': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'f': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 1.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'phi': {
-                                'min': -2 * np.pi,
-                                'max': 2 * np.pi,
-                                'step': 0.5 * np.pi,
-                                'dec': 3,
-                                'default': 0.0
-                            },
-                            'mu': {
-                                'min': self.signal.X[0],
-                                'max': self.signal.X[-1],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
-                            },
-                            'sigma': {
-                                'min': 0.0,
-                                'max': self.signal.X[-1] - self.signal.X[0],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': self.signal.X[-1] - self.signal.X[0]
-                            }
-                        },
-                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2) * np.cos(2 * np.pi * {} * (x - {}))',
-                        'argument_keys': ['A', 'mu', 'sigma', 'f', 'phi'],
-                        'vector': True
-                    }
-                }
-
-            else:
-
-                self.functions = {
-                    'sine': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'f': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 1.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'phi': {
-                                'min': -2 * np.pi,
-                                'max': 2 * np.pi,
-                                'step': 0.5 * np.pi,
-                                'dec': 3,
-                                'default': 0.0
-                            }
-                        },
-                        'function_string': '{} * np.exp(-2 * np.pi * {} * (x - {}) * 1j)',
-                        'argument_keys': ['A', 'f', 'phi'],
-                        'vector': True
-                    },
-                    'cosine': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'f': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 1.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'phi': {
-                                'min': -2 * np.pi,
-                                'max': 2 * np.pi,
-                                'step': 0.5 * np.pi,
-                                'dec': 3,
-                                'default': 0.0
-                            }
-                        },
-                        'function_string': '{} * np.exp(2 * np.pi * {} * (x - {}) * 1j)',
-                        'argument_keys': ['A', 'f', 'phi'],
-                        'vector': True
-                    },
-                    'complex morlet wavelet': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'f': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 1.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'phi': {
-                                'min': -2 * np.pi,
-                                'max': 2 * np.pi,
-                                'step': 0.5 * np.pi,
-                                'dec': 3,
-                                'default': 0.0
-                            },
-                            'mu': {
-                                'min': self.signal.X[0],
-                                'max': self.signal.X[-1],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
-                            },
-                            'sigma': {
-                                'min': 0.0,
-                                'max': self.signal.X[-1] - self.signal.X[0],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': self.signal.X[-1] - self.signal.X[0]
-                            }
-                        },
-                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2 + 2 * np.pi * {} * (x - {}) * 1j)',
-                        'argument_keys': ['A', 'mu', 'sigma', 'f', 'phi'],
-                        'vector': True
-                    },
-                    'pulse': {
-                        'params': {
-                            'A': {
-                                'min': -1000.0,
-                                'max': 1000.0,
-                                'step': 10.0,
-                                'dec': 1,
-                                'default': 666.0
-                            },
-                            'mu': {
-                                'min': self.signal.X[0],
-                                'max': self.signal.X[-1],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': (self.signal.X[-1] - self.signal.X[0]) / 2
-                            },
-                            'sigma': {
-                                'min': 0.0,
-                                'max': self.signal.X[-1] - self.signal.X[0],
-                                'step': 1.0,
-                                'dec': 3,
-                                'default': self.signal.X[-1] - self.signal.X[0]
-                            }
-                        },
-                        'function_string': '{} * np.exp(- 0.5 * ((x - {}) / {}) ** 2 - 0.5 * ((x - {}) / {}) ** 2 * 1j)',
-                        'argument_keys': ['A', 'mu', 'sigma', 'mu', 'sigma'],
-                        'vector': True
-                    }
-                }
-
-        else:
-
-            if self.signal.codomain in ['int', 'float', 'bool_']:
-
-                self.functions = dict()
-
-            else:
-
-                self.functions = dict()
 
     def build_layout(self):
 
@@ -522,9 +203,9 @@ class GetFunction(QtWidgets.QDialog):
                     self.stack.removeWidget(self.stack.widget(3))
                 param_grid = QtWidgets.QGridLayout()
                 row = 0
-                for param, properties in self.functions[function]['params'].items():
-                    param_grid.addWidget(QtWidgets.QLabel('{}: '.format(param)), row, 0)
-                    param_grid.addWidget(self.param_boxes[function][param], row, 1)
+                for key, parameter in self.functions[function]['kwargs'].items():
+                    param_grid.addWidget(QtWidgets.QLabel('{}: '.format(key)), row, 0)
+                    param_grid.addWidget(self.param_boxes[function][key], row, 1)
                     row += 1
                 param_widget = QtWidgets.QWidget()
                 param_widget.setLayout(param_grid)
@@ -554,17 +235,16 @@ class GetFunction(QtWidgets.QDialog):
             channels = [int(channels) - 1]
         self.params['channels'] = channels
 
-        function = self.cmb_functions.currentText()
+        function_key = self.cmb_functions.currentText()
 
-        if function == 'custom':
-            self.params['function_string'] = self.box_custom.text()
-        else:
-            args = []
-            for key in self.functions[function]['argument_keys']:
-                args.append(self.param_boxes[function][key].value())
-            self.params['function_string'] = self.functions[function]['function_string'].format(*tuple(args))
-
-        self.params['vector'] = self.functions[function]['vector']
+        self.params['vector'] = self.functions[function_key]['vector']
+        self.params['kwargs'] = dict()
+        for key, value in self.functions[function_key]['kwargs'].items():
+            self.params['kwargs'][key] = self.param_boxes[function_key][key].value()
+        if function_key == 'custom':
+            self.params['kwargs']['string'] = self.box_custom.text()
+        self.params['function'] = self.functions[function_key]['function']
+        self.params['args'] = self.functions[function_key]['args']
 
 
 class NewTimeSignal(QtWidgets.QDialog):

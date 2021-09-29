@@ -7,7 +7,7 @@ import logging
 # 3rd party
 import numpy as np
 # Internals
-
+import Functions as f
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -109,5 +109,177 @@ def get_default_settings_string():
     return settings_string
 
 
+def get_function_map(signal):
+
+    if signal.dimensions == 1:
+
+        if signal.codomain in ['int', 'float', 'bool_']:
+
+            functions = {
+                'custom': {
+                    'args': ['x'],
+                    'kwargs': dict(),
+                    'function': f.custom_R,
+                    'vector': True
+                },
+                'sine': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0),
+                    },
+                    'function': f.sine_RR,
+                    'vector': True
+                },
+                'cosine': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0),
+                    },
+                    'function': f.cosine_RR,
+                    'vector': True
+                },
+                'pulse': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'mu': Parameter(signal.X[0], signal.X[-1], 1.0, 3, (signal.X[-1] - signal.X[0]) / 2),
+                        'sigma': Parameter(0.0, signal.X[-1] - signal.X[0], 1.0, 3, signal.X[-1] - signal.X[0]),
+                    },
+                    'function': f.gauss_RR,
+                    'vector': True
+                },
+                'linear chirp': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'x_0': Parameter(signal.x_start, signal.x_end, 1.0, 2, signal.x_start),
+                        'x_1': Parameter(signal.x_start, signal.x_end, 1.0, 2, signal.x_end),
+                        'f_0': Parameter(0.0, 10000.0, 10.0, 1, 0.0),
+                        'f_1': Parameter(0.0, 10000.0, 10.0, 1, 666.0)
+                    },
+                    'function': f.linear_chirp_RR,
+                    'vector': True
+                },
+                'morlet wavelet': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'mu': Parameter(signal.X[0], signal.X[-1], 1.0, 3, (signal.X[-1] - signal.X[0]) / 2),
+                        'sigma': Parameter(0.0, signal.X[-1] - signal.X[0], 1.0, 3, signal.X[-1] - signal.X[0]),
+                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0)
+                    },
+                    'function': f.morlet_wavelet_RR,
+                    'vector': True
+                }
+            }
+
+        else:
+
+            functions = {
+                'custom': {
+                    'args': ['x'],
+                    'kwargs': dict(),
+                    'function': f.custom_R,
+                    'vector': True
+                },
+                'sine': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0),
+                    },
+                    'function': f.sine_RC,
+                    'vector': True
+                },
+                'cosine': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0),
+                    },
+                    'function': f.cosine_RC,
+                    'vector': True
+                },
+                'complex morlet wavelet': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'mu': Parameter(signal.X[0], signal.X[-1], 1.0, 3, (signal.X[-1] - signal.X[0]) / 2),
+                        'sigma': Parameter(0.0, signal.X[-1] - signal.X[0], 1.0, 3, signal.X[-1] - signal.X[0]),
+                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0)
+                    },
+                    'function': f.morlet_wavelet_RC,
+                    'vector': True
+                },
+                'pulse': {
+                    'args': ['x'],
+                    'kwargs': {
+                        'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'mu': Parameter(signal.X[0], signal.X[-1], 1.0, 3, (signal.X[-1] - signal.X[0]) / 2),
+                        'sigma': Parameter(0.0, signal.X[-1] - signal.X[0], 1.0, 3, signal.X[-1] - signal.X[0]),
+                    },
+                    'function': f.gauss_RC,
+                    'vector': True
+                }
+            }
+
+    elif signal.dimensions == 2:
+
+        if signal.codomain in ['int', 'float', 'bool_']:
+
+            functions = {
+                'custom': {
+                    'args': ['x_1', 'x_2'],
+                    'kwargs': dict(),
+                    'function': f.custom_R2,
+                    'vector': False
+                }
+            }
+
+        else:
+
+            functions = {
+                'custom': {
+                    'args': ['x_1', 'x_2'],
+                    'kwargs': dict(),
+                    'function': f.custom_R2,
+                    'vector': False
+                }
+            }
+
+    else:
+
+        if signal.codomain in ['int', 'float', 'bool_']:
+
+            functions = dict()
+
+        else:
+
+            functions = dict()
+
+    return functions
+
+
+class Parameter:
+
+    def __init__(self, min, max, step, dec, default, value=None):
+
+        self.min = min
+        self.max = max
+        self.step = step
+        self.dec = dec
+        self.default = default
+        if value is None:
+            self.value = self.default
+        else:
+            self.value = value
 
 

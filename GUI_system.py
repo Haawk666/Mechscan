@@ -7,8 +7,9 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets
 # Internals
-import GUI_subwidgets
+import GUI_elements
 import GUI_system_dialogs
+import GUI_system_widgets
 import System
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -34,12 +35,12 @@ class SystemsInterface(QtWidgets.QWidget):
 
     def populate_menu(self):
 
-        self.menu.addAction(GUI_subwidgets.Action('New', self, trigger_func=self.menu_new_trigger))
+        self.menu.addAction(GUI_elements.Action('New', self, trigger_func=self.menu_new_trigger))
 
-        self.menu.addAction(GUI_subwidgets.Action('Save', self, trigger_func=self.menu_save_trigger))
-        self.menu.addAction(GUI_subwidgets.Action('Load', self, trigger_func=self.menu_load_trigger))
-        self.menu.addAction(GUI_subwidgets.Action('Close', self, trigger_func=self.menu_close_trigger))
-        self.menu.addAction(GUI_subwidgets.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
+        self.menu.addAction(GUI_elements.Action('Save', self, trigger_func=self.menu_save_trigger))
+        self.menu.addAction(GUI_elements.Action('Load', self, trigger_func=self.menu_load_trigger))
+        self.menu.addAction(GUI_elements.Action('Close', self, trigger_func=self.menu_close_trigger))
+        self.menu.addAction(GUI_elements.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
 
     def build_layout(self):
 
@@ -120,13 +121,14 @@ class SystemInterface(QtWidgets.QWidget):
 
         self.system = None
 
-        self.btn_simulate = GUI_subwidgets.MediumButton('Simulate', self, trigger_func=self.simulate_trigger)
+        self.btn_simulate = GUI_elements.MediumButton('Simulate', self, trigger_func=self.simulate_trigger)
 
-        self.graphs = QtWidgets.QTabWidget()
-        self.graphs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
+        self.system_scene = GUI_system_widgets.SystemScene(system_interface=self)
+        self.system_view = QtWidgets.QGraphicsView()
+        self.system_view.setScene(self.system_scene)
 
-        self.input_widget = GUI_subwidgets.InputSignalList('Input signals', system_interface=self)
-        self.output_widget = GUI_subwidgets.OutputSignalList('Output signals', system_interface=self)
+        self.input_widget = GUI_system_widgets.InputSignalList('Input signals', system_interface=self)
+        self.output_widget = GUI_system_widgets.OutputSignalList('Output signals', system_interface=self)
 
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')
@@ -153,12 +155,12 @@ class SystemInterface(QtWidgets.QWidget):
         panel_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.graphs)
+        layout.addWidget(self.system_view)
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
     def plot_system(self):
-        self.graphs.clear()
+        pass
 
     def update_info(self):
         if self.system:
@@ -167,7 +169,7 @@ class SystemInterface(QtWidgets.QWidget):
             key_string = ''
             value_string = ''
         else:
-            self.graphs.clear()
+            # self.system_scene.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')
 

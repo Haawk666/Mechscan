@@ -8,9 +8,9 @@ import logging
 from PyQt5 import QtWidgets
 import numpy as np
 # Internals
-import GUI_subwidgets
+import GUI_elements
 import Signal as ss
-import functions
+import Library
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -24,7 +24,7 @@ class GetFunction(QtWidgets.QDialog):
         self.setWindowTitle('Functions')
 
         self.signal = signal
-        self.functions = functions.get_function_map(self.signal)
+        self.functions = Library.get_function_map(self.signal)
         self.params = dict()
 
         self.complete = False
@@ -62,14 +62,14 @@ class GetFunction(QtWidgets.QDialog):
         for d in range(self.signal.dimensions):
             self.range_widgets.append(dict())
             if self.signal.dimensions == 1:
-                self.range_widgets[-1]['from'] = GUI_subwidgets.DoubleSpinBox(
+                self.range_widgets[-1]['from'] = GUI_elements.DoubleSpinBox(
                     minimum=self.signal.x_start,
                     maximum=self.signal.x_end,
                     step=1.0,
                     decimals=3,
                     value=self.signal.x_start
                 )
-                self.range_widgets[-1]['to'] = GUI_subwidgets.DoubleSpinBox(
+                self.range_widgets[-1]['to'] = GUI_elements.DoubleSpinBox(
                     minimum=self.signal.x_start,
                     maximum=self.signal.x_end,
                     step=1.0,
@@ -77,14 +77,14 @@ class GetFunction(QtWidgets.QDialog):
                     value=self.signal.x_end
                 )
             else:
-                self.range_widgets[-1]['from'] = GUI_subwidgets.DoubleSpinBox(
+                self.range_widgets[-1]['from'] = GUI_elements.DoubleSpinBox(
                     minimum=self.signal.x_start[d],
                     maximum=self.signal.x_end[d],
                     step=1.0,
                     decimals=3,
                     value=self.signal.x_start[d]
                 )
-                self.range_widgets[-1]['to'] = GUI_subwidgets.DoubleSpinBox(
+                self.range_widgets[-1]['to'] = GUI_elements.DoubleSpinBox(
                     minimum=self.signal.x_start[d],
                     maximum=self.signal.x_end[d],
                     step=1.0,
@@ -103,7 +103,7 @@ class GetFunction(QtWidgets.QDialog):
             if not function == 'custom':
                 self.param_boxes[function] = dict()
                 for key, parameter in self.functions[function]['kwargs'].items():
-                    self.param_boxes[function][key] = GUI_subwidgets.DoubleSpinBox(
+                    self.param_boxes[function][key] = GUI_elements.DoubleSpinBox(
                         minimum=parameter.min,
                         maximum=parameter.max,
                         step=parameter.step,
@@ -729,54 +729,4 @@ class GetWaveletParams(QtWidgets.QDialog):
         self.close()
         self.complete = True
 
-
-class GetAlpha(QtWidgets.QDialog):
-
-    def __init__(self, *args):
-        super().__init__(*args)
-
-        self.setWindowTitle('Set window size')
-
-        self.complete = False
-        self.alpha = 0.5
-
-        self.btn_cancel = QtWidgets.QPushButton('Cancel')
-        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
-        self.btn_next = QtWidgets.QPushButton('Transform')
-        self.btn_next.clicked.connect(self.btn_next_trigger)
-
-        self.box_alpha = QtWidgets.QDoubleSpinBox()
-        self.box_alpha.setDecimals(3)
-        self.box_alpha.setSingleStep(1.0)
-        self.box_alpha.setMinimum(0.0)
-        self.box_alpha.setMaximum(10.0)
-        self.box_alpha.setValue(0.1)
-
-        self.build_layout()
-        self.exec_()
-
-    def build_layout(self):
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.btn_cancel)
-        btn_layout.addWidget(self.btn_next)
-        btn_layout.addStretch()
-
-        grid = QtWidgets.QGridLayout()
-        grid.addWidget(QtWidgets.QLabel('Alpha: '), 0, 0)
-        grid.addWidget(self.box_alpha, 0, 1)
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(grid)
-        layout.addLayout(btn_layout)
-
-        self.setLayout(layout)
-
-    def btn_cancel_trigger(self):
-        self.close()
-
-    def btn_next_trigger(self):
-        self.alpha = self.box_alpha.value()
-        self.close()
-        self.complete = True
 

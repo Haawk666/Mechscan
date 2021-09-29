@@ -7,124 +7,10 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets, QtGui
 # Internals
-import Signal
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-
-
-class InputSignalList(QtWidgets.QGroupBox):
-
-    def __init__(self, *args, system_interface=None):
-        super().__init__(*args)
-
-        self.system_interface = system_interface
-
-        self.data_map = []
-
-        self.list = QtWidgets.QListWidget()
-        self.btn_add = MediumButton('Add', self, trigger_func=self.btn_add_trigger)
-        self.btn_del = MediumButton('Del', self, trigger_func=self.btn_del_trigger)
-        self.btn_up = MediumButton('^', self, trigger_func=self.btn_up_trigger)
-        self.btn_down = MediumButton('v', self, trigger_func=self.btn_down_trigger)
-        self.btn_edit = MediumButton('Edit', self, trigger_func=self.btn_edit_trigger)
-
-        self.build_layout()
-
-    def build_layout(self):
-        btn_1_layout = QtWidgets.QHBoxLayout()
-        btn_1_layout.addWidget(self.btn_add)
-        btn_1_layout.addWidget(self.btn_edit)
-        btn_1_layout.addWidget(self.btn_del)
-        btn_1_layout.addStretch()
-
-        btn_2_layout = QtWidgets.QHBoxLayout()
-        btn_2_layout.addWidget(self.btn_up)
-        btn_2_layout.addWidget(self.btn_down)
-        btn_2_layout.addStretch()
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(btn_1_layout)
-        layout.addWidget(self.list)
-        layout.addLayout(btn_2_layout)
-
-        self.setLayout(layout)
-
-    def btn_add_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
-        if filename[0]:
-            signal = Signal.TimeSignal.static_load(filename[0])
-            self.system_interface.system.add_input_signal(signal)
-            self.list.addItem(signal.name())
-            self.system_interface.update_info()
-
-    def btn_del_trigger(self):
-        index = self.list.currentIndex()
-
-    def btn_up_trigger(self):
-        pass
-
-    def btn_down_trigger(self):
-        pass
-
-    def btn_edit_trigger(self):
-        pass
-
-
-class OutputSignalList(QtWidgets.QGroupBox):
-
-    def __init__(self, *args, system_interface=None):
-        super().__init__(*args)
-
-        self.system_interface = system_interface
-
-        self.data_map = []
-
-        self.list = QtWidgets.QListWidget()
-        self.btn_add = MediumButton('Add', self, trigger_func=self.btn_add_trigger)
-        self.btn_del = MediumButton('Del', self, trigger_func=self.btn_del_trigger)
-        self.btn_up = MediumButton('^', self, trigger_func=self.btn_up_trigger)
-        self.btn_down = MediumButton('v', self, trigger_func=self.btn_down_trigger)
-        self.btn_edit = MediumButton('Edit', self, trigger_func=self.btn_edit_trigger)
-
-        self.build_layout()
-
-    def build_layout(self):
-        btn_1_layout = QtWidgets.QHBoxLayout()
-        btn_1_layout.addWidget(self.btn_add)
-        btn_1_layout.addWidget(self.btn_edit)
-        btn_1_layout.addWidget(self.btn_del)
-        btn_1_layout.addStretch()
-
-        btn_2_layout = QtWidgets.QHBoxLayout()
-        btn_2_layout.addWidget(self.btn_up)
-        btn_2_layout.addWidget(self.btn_down)
-        btn_2_layout.addStretch()
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(btn_1_layout)
-        layout.addWidget(self.list)
-        layout.addLayout(btn_2_layout)
-
-        self.setLayout(layout)
-
-    def btn_add_trigger(self):
-        name = QtWidgets.QInputDialog.getText(self, 'Set name', 'Name')
-        if name[1] and not name[0] == '':
-            self.list.addItem(str(name[0]))
-            self.system_interface.update_info()
-
-    def btn_del_trigger(self):
-        pass
-
-    def btn_up_trigger(self):
-        pass
-
-    def btn_down_trigger(self):
-        pass
-
-    def btn_edit_trigger(self):
-        pass
 
 
 class DoubleSpinBox(QtWidgets.QDoubleSpinBox):
@@ -283,3 +169,4 @@ class VerSeparator(QtWidgets.QFrame):
 
         self.setFrameShape(QtWidgets.QFrame.VLine)
         self.setFrameShadow(QtWidgets.QFrame.Sunken)
+

@@ -5,7 +5,7 @@
 # standard library
 import logging
 # 3rd party
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 # Internals
 import GUI_elements
 import Signal
@@ -16,13 +16,14 @@ logger.setLevel(logging.DEBUG)
 
 class SystemComponentInput(QtWidgets.QGraphicsItemGroup):
 
-    def __init__(self, *args, system_interface=None, id=0, brush=QtGui.QBrush(QtGui.QColor(0, 0, 0))):
+    def __init__(self, *args, scene=None, id=0, brush=QtGui.QBrush(QtGui.QColor(0, 0, 0))):
         super().__init__(*args)
 
         self.component_id = id
+        self.designation = 'x{}'.format(id)
         self.brush = brush
 
-        self.system_interface = system_interface
+        self.scene = scene
 
         self.build_component()
 
@@ -34,10 +35,31 @@ class SystemComponentInput(QtWidgets.QGraphicsItemGroup):
         for item in self.childItems():
             self.removeFromGroup(item)
 
-        box = QtWidgets.QGraphicsRectItem()
-        box.setRect(0, 0, 10, 10)
+        triangle = QtWidgets.QGraphicsPolygonItem(QtGui.QPolygonF([
+            QtCore.QPointF(0, 0),
+            QtCore.QPointF(0, 20),
+            QtCore.QPointF(20, 10),
+            QtCore.QPointF(0, 0)
+        ]))
+        triangle.setBrush(self.scene.brushes['input_brush'])
 
-        self.addToGroup(box)
+        node = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
+        node.setBrush(self.scene.brushes['node_brush'])
+        node.pen().setWidth(0)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width())
+        label.setY(10 - rect.height() / 2)
+
+        # box = QtWidgets.QGraphicsRectItem()
+        # box.setRect(0, 0, 10, 10)
+
+        self.addToGroup(triangle)
+        self.addToGroup(node)
+        self.addToGroup(label)
         self.setZValue(1)
 
 
@@ -50,7 +72,14 @@ class SystemScene(QtWidgets.QGraphicsScene):
 
         self.brushes = {
             'background': QtGui.QBrush(QtGui.QColor(45, 45, 45)),
-            'input_brush': QtGui.QBrush(QtGui.QColor(0, 0, 0))
+            'input_brush': QtGui.QBrush(QtGui.QColor(20, 200, 20)),
+            'node_brush': QtGui.QBrush(QtGui.QColor(20, 20, 200))
+        }
+        self.pens = {
+            'label_pen': QtGui.QPen(QtGui.QColor(0, 0, 0)).setWidth(1)
+        }
+        self.fonts = {
+            'label_font': QtGui.QFont('Helvetica [Cronyx]', 5)
         }
 
         self.pens = dict()
@@ -60,7 +89,7 @@ class SystemScene(QtWidgets.QGraphicsScene):
         self.components = []
 
     def add_component_input(self):
-        component = SystemComponentInput(system_interface=self.system_interface)
+        component = SystemComponentInput(scene=self, id=len(self.components))
         self.add_component(component)
 
     def add_component(self, component):
@@ -79,6 +108,48 @@ class SystemScene(QtWidgets.QGraphicsScene):
     def assert_id(self):
         for c, component in enumerate(self.components):
             component.component_id = c
+
+
+class SystemView(QtWidgets.QGraphicsView):
+    """An adaptation of QtWidgets.QGraphicsView that supports zooming"""
+
+    def __init__(self, *args, system_interface=None):
+        super().__init__(*args)
+        self.system_interface = system_interface
+
+    def wheelEvent(self, event):
+
+        modifier = QtWidgets.QApplication.keyboardModifiers()
+        if modifier == QtCore.Qt.ControlModifier:
+
+            # Zoom Factor
+            zoom_in_factor = 1.25
+            zoom_out_factor = 1 / zoom_in_factor
+
+            # Set Anchors
+            self.setTransformationAnchor(QtWidgets.QGraphicsView.NoAnchor)
+            self.setResizeAnchor(QtWidgets.QGraphicsView.NoAnchor)
+
+            # Save the scene pos
+            oldPos = self.mapToScene(event.pos())
+
+            # Zoom
+            if event.angleDelta().y() > 0:
+                zoomFactor = zoom_in_factor
+            else:
+                zoomFactor = zoom_out_factor
+            self.scale(zoomFactor, zoomFactor)
+
+            # Get the new position
+            newPos = self.mapToScene(event.pos())
+
+            # Move scene to old position
+            delta = newPos - oldPos
+            self.translate(delta.x(), delta.y())
+
+        else:
+
+            super().wheelEvent(event)
 
 
 class InputSignalList(QtWidgets.QGroupBox):

@@ -124,7 +124,7 @@ class SystemInterface(QtWidgets.QWidget):
         self.btn_simulate = GUI_elements.MediumButton('Simulate', self, trigger_func=self.simulate_trigger)
 
         self.system_scene = GUI_system_widgets.SystemScene(system_interface=self)
-        self.system_view = QtWidgets.QGraphicsView()
+        self.system_view = GUI_system_widgets.SystemView(system_interface=self)
         self.system_view.setScene(self.system_scene)
 
         self.input_widget = GUI_system_widgets.InputSignalList('Input signals', system_interface=self)

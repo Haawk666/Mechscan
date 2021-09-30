@@ -42,6 +42,14 @@ class SystemsInterface(QtWidgets.QWidget):
         self.menu.addAction(GUI_elements.Action('Close', self, trigger_func=self.menu_close_trigger))
         self.menu.addAction(GUI_elements.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
 
+        self.menu.addSeparator()
+
+        components = self.menu.addMenu('Components')
+        components.addAction(GUI_elements.Action('Output node', self, trigger_func=self.menu_components_output))
+        components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
+
+        self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
+
     def build_layout(self):
 
         layout = QtWidgets.QVBoxLayout()
@@ -111,6 +119,30 @@ class SystemsInterface(QtWidgets.QWidget):
         self.system_interfaces = []
         self.tabs.clear()
 
+    def menu_components_output(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_output()
+
+    def menu_components_add(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_add()
+
+    def menu_connect_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            wiz = GUI_system_dialogs.NewConnector(system_interface=self.system_interfaces[index])
+            if wiz.complete:
+                scene = self.system_interfaces[index].system_scene
+                node_1 = scene.components[wiz.params['component_1_id']].nodes[wiz.params['node_1_id']]
+                node_2 = scene.components[wiz.params['component_2_id']].nodes[wiz.params['node_2_id']]
+                scene.add_connector(node_1, node_2)
+
 
 class SystemInterface(QtWidgets.QWidget):
 
@@ -128,7 +160,6 @@ class SystemInterface(QtWidgets.QWidget):
         self.system_view.setScene(self.system_scene)
 
         self.input_widget = GUI_system_widgets.InputSignalList('Input signals', system_interface=self)
-        self.output_widget = GUI_system_widgets.OutputSignalList('Output signals', system_interface=self)
 
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')
@@ -151,7 +182,6 @@ class SystemInterface(QtWidgets.QWidget):
         panel_layout = QtWidgets.QHBoxLayout()
         panel_layout.addLayout(info_layout)
         panel_layout.addWidget(self.input_widget)
-        panel_layout.addWidget(self.output_widget)
         panel_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()

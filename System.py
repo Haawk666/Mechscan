@@ -13,11 +13,19 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class Node:
+
+    def __init__(self):
+        pass
+
+
 class System:
 
     def __init__(self):
         self.input_signals = []
         self.output_signals = []
+        self.components = []
+        self.connectors = []
         self.system_type = 'generic'
         self.path = None
 
@@ -26,6 +34,9 @@ class System:
 
     def add_output_signal(self, signal):
         self.output_signals.append(signal)
+
+    def add_connector(self, connector):
+        self.connectors.append(connector)
 
     def name(self):
         if self.path is None:
@@ -80,7 +91,5 @@ class SystemLTI:
     @staticmethod
     def static_load(path_string):
         pass
-
-
 
 

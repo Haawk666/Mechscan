@@ -175,6 +175,15 @@ class Signal(ABC):
 
         sounddevice.play(self.Y[:, channel - 1], self.f_s)
 
+    def get_nearest_sample_index(self, x):
+        residual = np.absolute(x - self.X[0])
+        residual_index = 0
+        for k, t in enumerate(self.X):
+            if np.absolute(x - t) < residual:
+                residual = np.absolute(x - t)
+                residual_index = k
+        return residual_index
+
 
 class MultiSignal(ABC):
 
@@ -359,6 +368,15 @@ class MultiSignal(ABC):
     def play(self, channel=1):
 
         sounddevice.play(self.Y[:, 0, channel - 1], self.f_s[0])
+
+    def get_nearest_sample_index(self, x, axis=0):
+        residual = np.absolute(x - self.X[axis][0])
+        residual_index = 0
+        for k, t in enumerate(self.X[axis]):
+            if np.absolute(x - t) < residual:
+                residual = np.absolute(x - t)
+                residual_index = k
+        return residual_index
 
 
 class TimeSignal(Signal):

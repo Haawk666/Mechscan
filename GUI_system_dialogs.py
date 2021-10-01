@@ -47,8 +47,10 @@ class NewConnector(QtWidgets.QDialog):
     def populate_cmbs(self):
 
         for component in self.system_interface.system_scene.components:
-            self.cmb_component_1.addItem(component.designation)
-            self.cmb_component_2.addItem(component.designation)
+            if not component.type == 'output':
+                self.cmb_component_1.addItem(component.designation)
+            if not component.type == 'input':
+                self.cmb_component_2.addItem(component.designation)
 
         self.update_node_1()
         self.update_node_2()

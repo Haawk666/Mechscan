@@ -32,7 +32,7 @@ def simulate(system):
                     if in_node.signal is None:
                         in_complete = False
                 if in_complete:
-                    component.transfer()
+                    system.components[c].transfer()
                     completed_components[c] = 0
         for c, connector in enumerate(system.connectors):
             if completed_connectors[c] == 1:
@@ -51,7 +51,7 @@ def simulate(system):
 
     result = []
     for component in system.components:
-        if component.type == 'out':
+        if component.type == 'output':
             result.append(component.in_nodes[0].signal)
 
     return result

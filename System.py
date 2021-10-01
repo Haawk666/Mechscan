@@ -11,9 +11,34 @@ import numpy as np
 import h5py
 # Internals
 import Signal
+import System_processing
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class ComponentSystem:
+
+    def __init__(self, system):
+        self.system = system
+        self.in_nodes = []
+        self.out_nodes = []
+        self.type = 'system'
+        for component in self.system.components:
+            if component.type == 'input':
+                self.in_nodes.append(Node())
+            if component.type == 'output':
+                self.out_nodes.append(Node())
+
+    def transfer(self):
+        k = 0
+        for c, component in enumerate(self.system.components):
+            if component.type == 'input':
+                self.system.components[c].signal = self.in_nodes[k].signal
+                k += 1
+        out_signals = System_processing.simulate(self.system)
+        for i, signal in enumerate(out_signals):
+            self.out_nodes[i].signal = signal
 
 
 class ComponentSplitter:
@@ -92,6 +117,9 @@ class System:
         self.connectors = []
         self.system_type = 'generic'
         self.path = None
+
+    def add_system(self, system):
+        self.components.append(ComponentSystem(system))
 
     def add_input_signal(self, signal):
         self.components.append(ComponentInput(signal))

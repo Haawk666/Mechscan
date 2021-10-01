@@ -33,6 +33,58 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
         pass
 
 
+class SystemComponentSystem(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0, inputs=1, outputs=1):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'sys{}'.format(id)
+        self.inputs = inputs
+        self.outputs = outputs
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        height = max([20, 10 * self.inputs, 10 * self.outputs])
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, height)
+        box.setBrush(self.scene.brushes['system_brush'])
+
+        for o in range(self.outputs):
+
+            node = QtWidgets.QGraphicsEllipseItem(17.5, 10 * o + 2.5, 5, 5)
+            node.setBrush(self.scene.brushes['node_brush'])
+            node.pen().setWidth(0)
+            self.out_nodes.append(node)
+
+        for i in range(self.inputs):
+
+            node = QtWidgets.QGraphicsEllipseItem(-2.5, 10 * i + 2.5, 5, 5)
+            node.setBrush(self.scene.brushes['node_brush'])
+            node.pen().setWidth(0)
+            self.in_nodes.append(node)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        for node in self.in_nodes:
+            self.addToGroup(node)
+        for node in self.out_nodes:
+            self.addToGroup(node)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
 class SystemComponentAdd(SystemComponent):
 
     def __init__(self, *args, scene=None, id=0):
@@ -246,7 +298,8 @@ class SystemScene(QtWidgets.QGraphicsScene):
             'input_brush': QtGui.QBrush(QtGui.QColor(20, 200, 20)),
             'output_brush': QtGui.QBrush(QtGui.QColor(200, 20, 20)),
             'node_brush': QtGui.QBrush(QtGui.QColor(20, 20, 200)),
-            'add_brush': QtGui.QBrush(QtGui.QColor(120, 120, 120))
+            'add_brush': QtGui.QBrush(QtGui.QColor(120, 120, 120)),
+            'system_brush': QtGui.QBrush(QtGui.QColor(20, 120, 120))
         }
         self.pens = {
             'label_pen': QtGui.QPen(QtGui.QColor(0, 0, 0), 1),
@@ -260,6 +313,10 @@ class SystemScene(QtWidgets.QGraphicsScene):
 
         self.components = []
         self.connectors = []
+
+    def add_component_system(self, inputs, outputs):
+        component = SystemComponentSystem(scene=self, id=len(self.components), inputs=inputs, outputs=outputs)
+        self.add_component(component)
 
     def add_component_add(self):
         component = SystemComponentAdd(scene=self, id=len(self.components))

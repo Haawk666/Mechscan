@@ -46,6 +46,8 @@ class SystemsInterface(QtWidgets.QWidget):
         self.menu.addSeparator()
 
         components = self.menu.addMenu('Components')
+        components.addAction(GUI_elements.Action('System', self, trigger_func=self.menu_components_system))
+        components.addSeparator()
         components.addAction(GUI_elements.Action('Output node', self, trigger_func=self.menu_components_output))
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
@@ -108,7 +110,7 @@ class SystemsInterface(QtWidgets.QWidget):
                     self.tabs.setTabText(index, system_interface.system.name())
 
     def menu_load_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
         if filename[0]:
             system_interface = SystemInterface(config=self.config)
             system_interface.system = System.System.static_load(filename[0])
@@ -125,6 +127,22 @@ class SystemsInterface(QtWidgets.QWidget):
     def menu_close_all_trigger(self):
         self.system_interfaces = []
         self.tabs.clear()
+
+    def menu_components_system(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
+            if filename[0]:
+                system = System.System.static_load(filename[0])
+                inputs = 0
+                outputs = 0
+                for component in system.components:
+                    if component.type == 'input':
+                        inputs += 1
+                    if component.type == 'output':
+                        outputs += 1
+                self.system_interfaces[index].system_scene.add_component_system(inputs, outputs)
+                self.system_interfaces[index].system.add_system(system)
 
     def menu_components_output(self):
         index = self.tabs.currentIndex()

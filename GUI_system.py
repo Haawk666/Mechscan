@@ -11,7 +11,9 @@ import GUI_elements
 import GUI_system_dialogs
 import GUI_system_widgets
 import System
+import System_2
 import System_processing
+import Signal
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -46,9 +48,10 @@ class SystemsInterface(QtWidgets.QWidget):
         self.menu.addSeparator()
 
         components = self.menu.addMenu('Components')
+        components.addAction(GUI_elements.Action('Input', self, trigger_func=self.menu_components_input))
+        components.addAction(GUI_elements.Action('Output', self, trigger_func=self.menu_components_output))
         components.addAction(GUI_elements.Action('System', self, trigger_func=self.menu_components_system))
         components.addSeparator()
-        components.addAction(GUI_elements.Action('Output node', self, trigger_func=self.menu_components_output))
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
 
@@ -56,6 +59,7 @@ class SystemsInterface(QtWidgets.QWidget):
 
         self.menu.addSeparator()
 
+        self.menu.addAction(GUI_elements.Action('Calculate', self, trigger_func=self.menu_calculate_trigger))
         self.menu.addAction(GUI_elements.Action('Simulate', self, trigger_func=self.menu_simulate_trigger))
 
     def build_layout(self):
@@ -91,7 +95,7 @@ class SystemsInterface(QtWidgets.QWidget):
         wizard = GUI_system_dialogs.NewSystem()
         if wizard.complete:
             if wizard.params['type'] == 'empty':
-                system_interface.system = System.System()
+                system_interface.system = System_2.System()
             elif wizard.params['type'] == 'LTI':
                 system_interface.system = System.SystemLTI()
             else:
@@ -113,8 +117,7 @@ class SystemsInterface(QtWidgets.QWidget):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
         if filename[0]:
             system_interface = SystemInterface(config=self.config)
-            system_interface.system = System.System.static_load(filename[0])
-            system_interface.update_info()
+            system_interface.system = System_2.System.static_load(filename[0])
             system_interface.plot_system()
             self.add_interface(system_interface)
 
@@ -127,6 +130,25 @@ class SystemsInterface(QtWidgets.QWidget):
     def menu_close_all_trigger(self):
         self.system_interfaces = []
         self.tabs.clear()
+
+    def menu_components_input(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
+                if filename[0]:
+                    signal = Signal.TimeSignal.static_load(filename[0])
+                    self.system_interfaces[index].system_scene.add_component_input()
+                    self.system_interfaces[index].system.add_input(signal)
+
+    def menu_components_output(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_output()
+                self.system_interfaces[index].system.add_output()
 
     def menu_components_system(self):
         index = self.tabs.currentIndex()
@@ -144,21 +166,13 @@ class SystemsInterface(QtWidgets.QWidget):
                 self.system_interfaces[index].system_scene.add_component_system(inputs, outputs)
                 self.system_interfaces[index].system.add_system(system)
 
-    def menu_components_output(self):
-        index = self.tabs.currentIndex()
-        if index >= 0:
-            system = self.system_interfaces[index].system
-            if system is not None:
-                self.system_interfaces[index].system_scene.add_component_output()
-                self.system_interfaces[index].system.add_output_signal()
-
     def menu_components_add(self):
         index = self.tabs.currentIndex()
         if index >= 0:
             system = self.system_interfaces[index].system
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_add()
-                self.system_interfaces[index].system.add_adder()
+                self.system_interfaces[index].system.add_add()
 
     def menu_components_split(self):
         index = self.tabs.currentIndex()
@@ -166,7 +180,7 @@ class SystemsInterface(QtWidgets.QWidget):
             system = self.system_interfaces[index].system
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_split()
-                self.system_interfaces[index].system.add_splitter()
+                self.system_interfaces[index].system.add_split()
 
     def menu_connect_trigger(self):
         index = self.tabs.currentIndex()
@@ -183,11 +197,21 @@ class SystemsInterface(QtWidgets.QWidget):
                 scene.add_connector(node_1, node_2)
                 self.system_interfaces[index].system.add_connector(((a, i), (b, j)))
 
-    def menu_simulate_trigger(self):
+    def menu_calculate_trigger(self):
         index = self.tabs.currentIndex()
         if index >= 0:
             system = self.system_interfaces[index].system
-            out_signals = System_processing.simulate(system)
+            out_signals = System_processing.calculate(system)
+            for s, signal in enumerate(out_signals):
+                filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
+                if filename[0]:
+                    signal.save(filename[0])
+
+    def menu_simulate_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            progress_window = GUI_elements.ProgressDialog('Simulating...', 'Cancel', 0, 100, self)
+            out_signals = System_processing.simulate(self.system_interfaces[index].system, update=progress_window)
             for s, signal in enumerate(out_signals):
                 filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
                 if filename[0]:
@@ -203,7 +227,7 @@ class SystemInterface(QtWidgets.QWidget):
 
         self.system = None
 
-        self.btn_simulate = GUI_elements.MediumButton('Simulate', self, trigger_func=self.simulate_trigger)
+        self.btn_simulate = GUI_elements.MediumButton('Simulate', self)
 
         self.system_scene = GUI_system_widgets.SystemScene(system_interface=self)
         self.system_view = GUI_system_widgets.SystemView(system_interface=self)
@@ -243,12 +267,11 @@ class SystemInterface(QtWidgets.QWidget):
         for component in self.system.components:
             if component.type == 'input':
                 self.system_scene.add_component_input()
-                self.input_widget.list.addItem(component.signal.name())
             elif component.type == 'output':
                 self.system_scene.add_component_output()
-            elif component.type == 'adder':
+            elif component.type == 'add':
                 self.system_scene.add_component_add()
-            elif component.type == 'splitter':
+            elif component.type == 'split':
                 self.system_scene.add_component_split()
         for connector in self.system.connectors:
             a = connector[0][0]
@@ -261,15 +284,12 @@ class SystemInterface(QtWidgets.QWidget):
 
     def update_info(self):
         if self.system:
-            meta_data = self.system.info()
+            meta_data = ''
             key_string = ''
             value_string = ''
         else:
             # self.system_scene.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')
-
-    def simulate_trigger(self):
-        pass
 
 

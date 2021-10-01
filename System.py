@@ -248,6 +248,7 @@ class System:
         return signals
 
     def pad_signals(self):
+        system_axis = None
         x_start = None
         x_end = None
         for s, input_signal in enumerate(self.input_signals()):
@@ -275,6 +276,9 @@ class System:
                     end_index = new_signal.get_nearest_sample_index(component.signal.X[-1])
                     new_signal.Y[start_index:end_index, :] = component.signal.Y[:, :]
                     self.components[c].signal = new_signal
+                    system_axis = copy.deepcopy(new_signal.X)
+
+        return system_axis
 
 
 class SystemLTI:

@@ -56,14 +56,14 @@ class NewConnector(QtWidgets.QDialog):
     def update_node_1(self):
         index = self.cmb_component_1.currentIndex()
         self.cmb_node_1.clear()
-        for i, node in enumerate(self.system_interface.system_scene.components[index].nodes):
-            self.cmb_node_1.addItem('node {}'.format(i))
+        for i, node in enumerate(self.system_interface.system.components[index].out_nodes):
+            self.cmb_node_1.addItem('output node {}'.format(i))
 
     def update_node_2(self):
         index = self.cmb_component_2.currentIndex()
         self.cmb_node_2.clear()
-        for i, node in enumerate(self.system_interface.system_scene.components[index].nodes):
-            self.cmb_node_2.addItem('node {}'.format(i))
+        for i, node in enumerate(self.system_interface.system.components[index].in_nodes):
+            self.cmb_node_2.addItem('input node {}'.format(i))
 
     def build_layout(self):
         btn_layout = QtWidgets.QHBoxLayout()

@@ -20,7 +20,8 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
         super().__init__(*args)
         self.component_id = id
         self.scene = scene
-        self.nodes = []
+        self.in_nodes = []
+        self.out_nodes = []
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
 
@@ -43,7 +44,8 @@ class SystemComponentAdd(SystemComponent):
 
         for item in self.childItems():
             self.removeFromGroup(item)
-        self.nodes = []
+        self.in_nodes = []
+        self.out_nodes = []
 
         box = QtWidgets.QGraphicsRectItem()
         box.setRect(0, 0, 20, 20)
@@ -52,17 +54,17 @@ class SystemComponentAdd(SystemComponent):
         node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 2.5, 5, 5)
         node_1.setBrush(self.scene.brushes['node_brush'])
         node_1.pen().setWidth(0)
-        self.nodes.append(node_1)
+        self.in_nodes.append(node_1)
 
         node_2 = QtWidgets.QGraphicsEllipseItem(-2.5, 12.5, 5, 5)
         node_2.setBrush(self.scene.brushes['node_brush'])
         node_2.pen().setWidth(0)
-        self.nodes.append(node_2)
+        self.in_nodes.append(node_2)
 
         node_3 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
         node_3.setBrush(self.scene.brushes['node_brush'])
         node_3.pen().setWidth(0)
-        self.nodes.append(node_3)
+        self.out_nodes.append(node_3)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
         label.setText('{}'.format(self.designation))
@@ -90,7 +92,8 @@ class SystemComponentOutput(SystemComponent):
 
         for item in self.childItems():
             self.removeFromGroup(item)
-        self.nodes = []
+        self.in_nodes = []
+        self.out_nodes = []
 
         circle = QtWidgets.QGraphicsEllipseItem(0, 0, 20, 20)
         circle.setBrush(self.scene.brushes['output_brush'])
@@ -98,7 +101,7 @@ class SystemComponentOutput(SystemComponent):
         node = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
         node.setBrush(self.scene.brushes['node_brush'])
         node.pen().setWidth(0)
-        self.nodes.append(node)
+        self.in_nodes.append(node)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
         label.setText('{}'.format(self.designation))
@@ -124,7 +127,8 @@ class SystemComponentInput(SystemComponent):
 
         for item in self.childItems():
             self.removeFromGroup(item)
-        self.nodes = []
+        self.in_nodes = []
+        self.out_nodes = []
 
         triangle = QtWidgets.QGraphicsPolygonItem(QtGui.QPolygonF([
             QtCore.QPointF(0, 0),
@@ -137,7 +141,7 @@ class SystemComponentInput(SystemComponent):
         node = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
         node.setBrush(self.scene.brushes['node_brush'])
         node.pen().setWidth(0)
-        self.nodes.append(node)
+        self.out_nodes.append(node)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
         label.setText('{}'.format(self.designation))
@@ -217,9 +221,10 @@ class SystemScene(QtWidgets.QGraphicsScene):
         component = SystemComponentOutput(scene=self, id=len(self.components))
         self.add_component(component)
 
-    def add_component_input(self):
+    def add_component_input(self, signal):
         component = SystemComponentInput(scene=self, id=len(self.components))
         self.add_component(component)
+        self.system_interface.system.add_input_signal(signal)
 
     def add_component(self, component):
         self.components.append(component)
@@ -330,9 +335,8 @@ class InputSignalList(QtWidgets.QGroupBox):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
         if filename[0]:
             signal = Signal.TimeSignal.static_load(filename[0])
-            self.system_interface.system.add_input_signal(signal)
             self.list.addItem(signal.name())
-            self.system_interface.system_scene.add_component_input()
+            self.system_interface.system_scene.add_component_input(signal)
             self.system_interface.update_info()
 
     def btn_del_trigger(self):

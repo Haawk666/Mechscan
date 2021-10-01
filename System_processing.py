@@ -4,12 +4,9 @@
 
 # standard library
 import logging
-import random
+import copy
 # 3rd party
-from PyQt5 import QtWidgets
-import numpy as np
-import wave
-import h5py
+
 # Internals
 import Signal
 # Instantiate logger:
@@ -20,40 +17,45 @@ logger.setLevel(logging.DEBUG)
 def simulate(system):
 
     # Pad input signals
-    x_start = None
-    x_end = None
-    for s, input_signal in enumerate(system.input_signals):
-        if s == 0:
-            x_start = input_signal.X[0]
-            x_end = input_signal.X[-1]
-        else:
-            if input_signal.X[0] < x_start:
-                x_start = input_signal.X[0]
-            if input_signal.X[-1] > x_end:
-                x_end = input_signal.X[-1]
-    padded_signals = []
-    for input_signal in system.input_signals:
-        if not input_signal.X[0] == x_start or not input_signal.X[-1] == x_end:
-            new_signal = Signal.TimeSignal(
-                x_start=x_start,
-                x_end=x_end,
-                delta_x=input_signal.delta_x,
-                bit_depth=input_signal.bit_depth,
-                codomain=input_signal.codomain,
-                channels=input_signal.channels,
-                units=input_signal.units
-            )
-            start_index = new_signal.get_nearest_sample_index(input_signal.X[0])
-            end_index = new_signal.get_nearest_sample_index(input_signal.X[-1])
-            new_signal.Y[start_index:end_index, :] = input_signal.Y[:, :]
-            padded_signals.append(new_signal)
-        else:
-            padded_signals.append(input_signal)
+    system.pad_signals()
 
     # Forward propagation
-    completed_connectors = [0] * len(system.connectors)
-    for connector in system.connectors:
-        pass
+    completed_connectors = [1] * len(system.connectors)
+    completed_components = [1] * len(system.components)
+    simulating = True
+    previous_sum = 0
+    while simulating:
+        for c, component in enumerate(system.components):
+            if completed_components[c] == 1:
+                in_complete = True
+                for in_node in component.in_nodes:
+                    if in_node.signal is None:
+                        in_complete = False
+                if in_complete:
+                    component.transfer()
+                    completed_components[c] = 0
+        for c, connector in enumerate(system.connectors):
+            if completed_connectors[c] == 1:
+                ((a, i), (b, j)) = connector
+                if system.components[a].out_nodes[i].signal is not None:
+                    system.components[b].in_nodes[j].signal = copy.deepcopy(system.components[a].out_nodes[i].signal)
+                    completed_connectors[c] = 0
+        current_sum = sum(completed_connectors) + sum(completed_components)
+        print(current_sum)
+        if current_sum == 0:
+            simulating = False
+        if current_sum == previous_sum:
+            simulating = False
+        else:
+            previous_sum = current_sum
+
+    result = []
+    for component in system.components:
+        if component.type == 'out':
+            result.append(component.in_nodes[0].signal)
+
+    return result
+
 
 
 

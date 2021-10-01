@@ -11,6 +11,7 @@ import GUI_elements
 import GUI_system_dialogs
 import GUI_system_widgets
 import System
+import System_processing
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -49,6 +50,10 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
+
+        self.menu.addSeparator()
+
+        self.menu.addAction(GUI_elements.Action('Simulate', self, trigger_func=self.menu_simulate_trigger))
 
     def build_layout(self):
 
@@ -125,6 +130,7 @@ class SystemsInterface(QtWidgets.QWidget):
             system = self.system_interfaces[index].system
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_output()
+                self.system_interfaces[index].system.add_output_signal()
 
     def menu_components_add(self):
         index = self.tabs.currentIndex()
@@ -132,16 +138,32 @@ class SystemsInterface(QtWidgets.QWidget):
             system = self.system_interfaces[index].system
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_add()
+                self.system_interfaces[index].system.add_adder()
 
     def menu_connect_trigger(self):
         index = self.tabs.currentIndex()
         if index >= 0:
             wiz = GUI_system_dialogs.NewConnector(system_interface=self.system_interfaces[index])
             if wiz.complete:
+                a = wiz.params['component_1_id']
+                b = wiz.params['component_2_id']
+                i = wiz.params['node_1_id']
+                j = wiz.params['node_2_id']
                 scene = self.system_interfaces[index].system_scene
-                node_1 = scene.components[wiz.params['component_1_id']].nodes[wiz.params['node_1_id']]
-                node_2 = scene.components[wiz.params['component_2_id']].nodes[wiz.params['node_2_id']]
+                node_1 = scene.components[a].out_nodes[i]
+                node_2 = scene.components[b].in_nodes[j]
                 scene.add_connector(node_1, node_2)
+                self.system_interfaces[index].system.add_connector(((a, i), (b, j)))
+
+    def menu_simulate_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            out_signals = System_processing.simulate(system)
+            for s, signal in enumerate(out_signals):
+                filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
+                if filename[0]:
+                    signal.save(filename[0])
 
 
 class SystemInterface(QtWidgets.QWidget):

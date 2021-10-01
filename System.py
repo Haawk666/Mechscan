@@ -4,13 +4,32 @@
 
 # standard library
 import logging
+import copy
+import pathlib
 # 3rd party
 import numpy as np
+import h5py
 # Internals
 import Signal
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class ComponentSplitter:
+
+    def __init__(self):
+
+        self.in_nodes = [Node()]
+        self.out_nodes = [Node(), Node()]
+        self.type = 'splitter'
+
+    def transfer(self):
+        signal_1 = self.in_nodes[0].signal
+        signal_2 = copy.deepcopy(signal_1)
+        signal_3 = copy.deepcopy(signal_1)
+        self.out_nodes[0].signal = signal_2
+        self.out_nodes[1].signal = signal_3
 
 
 class ComponentAdder:
@@ -75,13 +94,16 @@ class System:
         self.path = None
 
     def add_input_signal(self, signal):
-        self.components.append(ComponentInput(signal=signal))
+        self.components.append(ComponentInput(signal))
 
     def add_output_signal(self):
         self.components.append(ComponentOutput())
 
     def add_adder(self):
         self.components.append(ComponentAdder())
+
+    def add_splitter(self):
+        self.components.append(ComponentSplitter())
 
     def add_connector(self, connector):
         self.connectors.append(connector)
@@ -96,14 +118,99 @@ class System:
         return ''
 
     def save(self, path_string):
-        pass
+
+        self.path = pathlib.Path(path_string)
+
+        with h5py.File(path_string, 'w') as f:
+
+            f.attrs['system_type'] = self.system_type
+
+            f.attrs['num_components'] = len(self.components)
+            f.attrs['num_connectors'] = len(self.connectors)
+
+            for c, component in enumerate(self.components):
+                f.attrs['component_{}'.format(c)] = component.type
+
+                if component.type == 'input':
+
+                    f.create_dataset('component_{}_X'.format(c), data=component.signal.X)
+                    f.attrs['component_{}_f_s'.format(c)] = component.signal.f_s
+                    f.attrs['component_{}_delta_x'.format(c)] = component.signal.delta_x
+                    f.attrs['component_{}_n'.format(c)] = component.signal.n
+                    f.create_dataset('component_{}_Y'.format(c), data=component.signal.Y)
+
+                    f.attrs['component_{}_type_id'.format(c)] = component.signal.type_id
+                    f.attrs['component_{}_codomain'.format(c)] = component.signal.codomain
+                    f.attrs['component_{}_channels'.format(c)] = component.signal.channels
+                    f.attrs['component_{}_dimensions'.format(c)] = component.signal.dimensions
+                    f.attrs['component_{}_bit_depth'.format(c)] = component.signal.bit_depth
+                    f.attrs['component_{}_signal_type'.format(c)] = component.signal.signal_type
+                    f.attrs['component_{}_N'.format(c)] = component.signal.N
+                    f.attrs['component_{}_x_unit'.format(c)] = component.signal.units[0]
+                    f.attrs['component_{}_y_unit'.format(c)] = component.signal.units[1]
+                    f.attrs['component_{}_path'.format(c)] = str(component.signal.path)
+
+            for c, connector in enumerate(self.connectors):
+                f.attrs['connector_{}_a'.format(c)] = connector[0][0]
+                f.attrs['connector_{}_i'.format(c)] = connector[0][1]
+                f.attrs['connector_{}_b'.format(c)] = connector[1][0]
+                f.attrs['connector_{}_j'.format(c)] = connector[1][1]
 
     def load(self, path_string):
-        pass
+
+        self.path = pathlib.Path(path_string)
+
+        with h5py.File(path_string, 'r') as f:
+
+            self.components = []
+            self.connectors = []
+            self.system_type = 'generic'
+
+            num_components = int(f.attrs['num_components'])
+            num_connectors = int(f.attrs['num_connectors'])
+
+            for c in range(num_components):
+                component_type = f.attrs['component_{}'.format(c)]
+                if component_type == 'input':
+                    signal = Signal.TimeSignal()
+                    signal.type_id = int(f.attrs['component_{}_type_id'.format(c)])
+                    signal.codomain = f.attrs['component_{}_codomain'.format(c)]
+                    signal.channels = int(f.attrs['component_{}_channels'.format(c)])
+                    signal.dimensions = int(f.attrs['component_{}_dimensions'.format(c)])
+                    signal.bit_depth = int(f.attrs['component_{}_bit_depth'.format(c)])
+                    signal.signal_type = str(f.attrs['component_{}_signal_type'.format(c)])
+                    signal.N = int(f.attrs['component_{}_N'.format(c)])
+                    signal.units = [f.attrs['component_{}_x_unit'.format(c)], f.attrs['component_{}_y_unit'.format(c)]]
+                    signal.X = f['component_{}_X'.format(c)][()]
+                    signal.f_s = f.attrs['component_{}_f_s'.format(c)]
+                    signal.delta_x = float(f.attrs['component_{}_delta_x'.format(c)])
+                    signal.x_start = signal.X[0]
+                    signal.x_end = signal.X[-1]
+                    signal.n = int(f.attrs['component_{}_n'.format(c)])
+                    signal.Y = f['component_{}_Y'.format(c)][()]
+                    signal.path = pathlib.Path(f.attrs['component_{}_path'.format(c)])
+                    self.add_input_signal(signal)
+                elif component_type == 'adder':
+                    self.add_adder()
+                elif component_type == 'splitter':
+                    self.add_splitter()
+                elif component_type == 'output':
+                    self.add_output_signal()
+                else:
+                    raise TypeError('Unknown signal type')
+
+            for c in range(num_connectors):
+                a = f.attrs['connector_{}_a'.format(c)]
+                i = f.attrs['connector_{}_i'.format(c)]
+                b = f.attrs['connector_{}_b'.format(c)]
+                j = f.attrs['connector_{}_j'.format(c)]
+                self.add_connector(((a, i), (b, j)))
 
     @staticmethod
     def static_load(path_string):
-        pass
+        system = System()
+        system.load(path_string=path_string)
+        return system
 
     def input_signals(self):
         signals = []

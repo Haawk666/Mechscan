@@ -48,6 +48,7 @@ class SystemsInterface(QtWidgets.QWidget):
         components = self.menu.addMenu('Components')
         components.addAction(GUI_elements.Action('Output node', self, trigger_func=self.menu_components_output))
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
+        components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
 
@@ -112,6 +113,7 @@ class SystemsInterface(QtWidgets.QWidget):
             system_interface = SystemInterface(config=self.config)
             system_interface.system = System.System.static_load(filename[0])
             system_interface.update_info()
+            system_interface.plot_system()
             self.add_interface(system_interface)
 
     def menu_close_trigger(self):
@@ -139,6 +141,14 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_add()
                 self.system_interfaces[index].system.add_adder()
+
+    def menu_components_split(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_split()
+                self.system_interfaces[index].system.add_splitter()
 
     def menu_connect_trigger(self):
         index = self.tabs.currentIndex()
@@ -212,11 +222,27 @@ class SystemInterface(QtWidgets.QWidget):
         self.setLayout(layout)
 
     def plot_system(self):
-        pass
+        for component in self.system.components:
+            if component.type == 'input':
+                self.system_scene.add_component_input()
+                self.input_widget.list.addItem(component.signal.name())
+            elif component.type == 'output':
+                self.system_scene.add_component_output()
+            elif component.type == 'adder':
+                self.system_scene.add_component_add()
+            elif component.type == 'splitter':
+                self.system_scene.add_component_split()
+        for connector in self.system.connectors:
+            a = connector[0][0]
+            b = connector[1][0]
+            i = connector[0][1]
+            j = connector[1][1]
+            node_1 = self.system_scene.components[a].out_nodes[i]
+            node_2 = self.system_scene.components[b].in_nodes[j]
+            self.system_scene.add_connector(node_1, node_2)
 
     def update_info(self):
         if self.system:
-            self.plot_system()
             meta_data = self.system.info()
             key_string = ''
             value_string = ''
@@ -227,13 +253,5 @@ class SystemInterface(QtWidgets.QWidget):
 
     def simulate_trigger(self):
         pass
-
-
-
-
-
-
-
-
 
 

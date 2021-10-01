@@ -81,6 +81,54 @@ class SystemComponentAdd(SystemComponent):
         self.setZValue(1)
 
 
+class SystemComponentSplit(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'splt{}'.format(id)
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, 20)
+        box.setBrush(self.scene.brushes['add_brush'])
+
+        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
+        node_1.setBrush(self.scene.brushes['node_brush'])
+        node_1.pen().setWidth(0)
+        self.in_nodes.append(node_1)
+
+        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 2.5, 5, 5)
+        node_2.setBrush(self.scene.brushes['node_brush'])
+        node_2.pen().setWidth(0)
+        self.out_nodes.append(node_2)
+
+        node_3 = QtWidgets.QGraphicsEllipseItem(17.5, 12.5, 5, 5)
+        node_3.setBrush(self.scene.brushes['node_brush'])
+        node_3.pen().setWidth(0)
+        self.out_nodes.append(node_3)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        self.addToGroup(node_1)
+        self.addToGroup(node_2)
+        self.addToGroup(node_3)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
 class SystemComponentOutput(SystemComponent):
 
     def __init__(self, *args, scene=None, id=0):
@@ -217,14 +265,17 @@ class SystemScene(QtWidgets.QGraphicsScene):
         component = SystemComponentAdd(scene=self, id=len(self.components))
         self.add_component(component)
 
+    def add_component_split(self):
+        component = SystemComponentSplit(scene=self, id=len(self.components))
+        self.add_component(component)
+
     def add_component_output(self):
         component = SystemComponentOutput(scene=self, id=len(self.components))
         self.add_component(component)
 
-    def add_component_input(self, signal):
+    def add_component_input(self):
         component = SystemComponentInput(scene=self, id=len(self.components))
         self.add_component(component)
-        self.system_interface.system.add_input_signal(signal)
 
     def add_component(self, component):
         self.components.append(component)
@@ -336,7 +387,8 @@ class InputSignalList(QtWidgets.QGroupBox):
         if filename[0]:
             signal = Signal.TimeSignal.static_load(filename[0])
             self.list.addItem(signal.name())
-            self.system_interface.system_scene.add_component_input(signal)
+            self.system_interface.system_scene.add_component_input()
+            self.system_interface.system.add_input_signal(signal)
             self.system_interface.update_info()
 
     def btn_del_trigger(self):

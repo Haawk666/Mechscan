@@ -6,7 +6,6 @@
 import logging
 import pathlib
 from abc import ABC
-from dataclasses import dataclass
 import random
 # 3rd party
 import numpy as np

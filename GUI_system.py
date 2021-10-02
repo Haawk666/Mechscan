@@ -11,7 +11,6 @@ import GUI_elements
 import GUI_system_dialogs
 import GUI_system_widgets
 import System
-import System_2
 import System_processing
 import Signal
 # Instantiate logger:
@@ -98,9 +97,7 @@ class SystemsInterface(QtWidgets.QWidget):
         wizard = GUI_system_dialogs.NewSystem()
         if wizard.complete:
             if wizard.params['type'] == 'empty':
-                system_interface.system = System_2.System()
-            elif wizard.params['type'] == 'LTI':
-                system_interface.system = System.SystemLTI()
+                system_interface.system = System.System()
             else:
                 system_interface.system = System.System()
             system_interface.update_info()
@@ -120,7 +117,7 @@ class SystemsInterface(QtWidgets.QWidget):
         filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
         if filename[0]:
             system_interface = SystemInterface(config=self.config)
-            system_interface.system = System_2.System.static_load(filename[0])
+            system_interface.system = System.System.static_load(filename[0])
             system_interface.plot_system()
             self.add_interface(system_interface)
 
@@ -158,7 +155,7 @@ class SystemsInterface(QtWidgets.QWidget):
         if index >= 0:
             filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
             if filename[0]:
-                system = System_2.System.static_load(filename[0])
+                system = System.System.static_load(filename[0])
                 inputs = 0
                 outputs = 0
                 for component in system.components:

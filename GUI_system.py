@@ -54,6 +54,7 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addSeparator()
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
+        components.addAction(GUI_elements.Action('Sum', self, trigger_func=self.menu_components_sum))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
 
@@ -181,6 +182,14 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_split()
                 self.system_interfaces[index].system.add_split()
+
+    def menu_components_sum(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_sum()
+                self.system_interfaces[index].system.add_sum()
 
     def menu_connect_trigger(self):
         index = self.tabs.currentIndex()

@@ -114,6 +114,9 @@ class System:
     def add_split(self):
         self.components.append(SysSplit())
 
+    def add_sum(self):
+        self.components.append(SysSum())
+
     def add_connector(self, connector):
         self.connectors.append(connector)
 
@@ -235,4 +238,15 @@ class SysSplit:
         self.out_nodes[1].value = self.in_nodes[0].value
 
 
+class SysSum:
+
+    def __init__(self):
+        self.in_nodes = [Node()]
+        self.out_nodes = [Node()]
+        self.type = 'sum'
+        self.memory = 0
+
+    def transfer(self):
+        self.out_nodes[0].value = self.in_nodes[0].value + self.memory
+        self.memory = self.out_nodes[0].value
 

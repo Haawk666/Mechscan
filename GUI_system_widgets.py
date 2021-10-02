@@ -223,6 +223,90 @@ class SystemComponentSum(SystemComponent):
         self.setZValue(1)
 
 
+class SystemComponentDelay(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = '1/z{}'.format(id)
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, 20)
+        box.setBrush(self.scene.brushes['add_brush'])
+
+        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
+        node_1.setBrush(self.scene.brushes['node_brush'])
+        node_1.pen().setWidth(0)
+        self.in_nodes.append(node_1)
+
+        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
+        node_2.setBrush(self.scene.brushes['node_brush'])
+        node_2.pen().setWidth(0)
+        self.out_nodes.append(node_2)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        self.addToGroup(node_1)
+        self.addToGroup(node_2)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
+class SystemComponentScale(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'K{}'.format(id)
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, 20)
+        box.setBrush(self.scene.brushes['add_brush'])
+
+        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
+        node_1.setBrush(self.scene.brushes['node_brush'])
+        node_1.pen().setWidth(0)
+        self.in_nodes.append(node_1)
+
+        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
+        node_2.setBrush(self.scene.brushes['node_brush'])
+        node_2.pen().setWidth(0)
+        self.out_nodes.append(node_2)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        self.addToGroup(node_1)
+        self.addToGroup(node_2)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
 class SystemComponentOutput(SystemComponent):
 
     def __init__(self, *args, scene=None, id=0):
@@ -372,6 +456,14 @@ class SystemScene(QtWidgets.QGraphicsScene):
         component = SystemComponentSum(scene=self, id=len(self.components))
         self.add_component(component)
 
+    def add_component_delay(self):
+        component = SystemComponentDelay(scene=self, id=len(self.components))
+        self.add_component(component)
+
+    def add_component_scale(self):
+        component = SystemComponentScale(scene=self, id=len(self.components))
+        self.add_component(component)
+
     def add_component_output(self):
         component = SystemComponentOutput(scene=self, id=len(self.components))
         self.add_component(component)
@@ -446,64 +538,4 @@ class SystemView(QtWidgets.QGraphicsView):
         else:
 
             super().wheelEvent(event)
-
-
-class InputSignalList(QtWidgets.QGroupBox):
-
-    def __init__(self, *args, system_interface=None):
-        super().__init__(*args)
-
-        self.system_interface = system_interface
-
-        self.data_map = []
-
-        self.list = QtWidgets.QListWidget()
-        self.btn_add = GUI_elements.MediumButton('Add', self, trigger_func=self.btn_add_trigger)
-        self.btn_del = GUI_elements.MediumButton('Del', self, trigger_func=self.btn_del_trigger)
-        self.btn_up = GUI_elements.MediumButton('^', self, trigger_func=self.btn_up_trigger)
-        self.btn_down = GUI_elements.MediumButton('v', self, trigger_func=self.btn_down_trigger)
-        self.btn_edit = GUI_elements.MediumButton('Edit', self, trigger_func=self.btn_edit_trigger)
-
-        self.build_layout()
-
-    def build_layout(self):
-        btn_1_layout = QtWidgets.QHBoxLayout()
-        btn_1_layout.addWidget(self.btn_add)
-        btn_1_layout.addWidget(self.btn_edit)
-        btn_1_layout.addWidget(self.btn_del)
-        btn_1_layout.addStretch()
-
-        btn_2_layout = QtWidgets.QHBoxLayout()
-        btn_2_layout.addWidget(self.btn_up)
-        btn_2_layout.addWidget(self.btn_down)
-        btn_2_layout.addStretch()
-
-        layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(btn_1_layout)
-        layout.addWidget(self.list)
-        layout.addLayout(btn_2_layout)
-
-        self.setLayout(layout)
-
-    def btn_add_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
-        if filename[0]:
-            signal = Signal.TimeSignal.static_load(filename[0])
-            self.list.addItem(signal.name())
-            self.system_interface.system_scene.add_component_input()
-            self.system_interface.system.add_input_signal(signal)
-            self.system_interface.update_info()
-
-    def btn_del_trigger(self):
-        index = self.list.currentIndex()
-
-    def btn_up_trigger(self):
-        pass
-
-    def btn_down_trigger(self):
-        pass
-
-    def btn_edit_trigger(self):
-        pass
-
 

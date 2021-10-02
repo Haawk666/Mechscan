@@ -102,6 +102,9 @@ class System:
         self.system_axis = copy.deepcopy(self.get_input_components(get_index=False)[0].signal.X)
         return self.system_axis
 
+    def add_system(self, system):
+        self.components.append(SysSystem(system))
+
     def add_input(self, signal):
         self.components.append(SysInput(signal))
 
@@ -116,6 +119,12 @@ class System:
 
     def add_sum(self):
         self.components.append(SysSum())
+
+    def add_delay(self):
+        self.components.append(SysDelay())
+
+    def add_scale(self, coefficient):
+        self.components.append(SysScale(coefficient))
 
     def add_connector(self, connector):
         self.connectors.append(connector)
@@ -135,6 +144,10 @@ class System:
                 f.attrs['component_{}'.format(c)] = component.type
                 if component.type == 'input':
                     f.attrs['component_{}_path'.format(c)] = str(component.signal.path)
+                elif component.type == 'scale':
+                    f.attrs['component_{}_coefficient'.format(c)] = component.coefficient
+                elif component.type == 'system':
+                    f.attrs['component_{}_path'.format(c)] = str(component.system.path)
 
             for c, connector in enumerate(self.connectors):
                 f.attrs['connector_{}_a'.format(c)] = connector[0][0]
@@ -161,12 +174,22 @@ class System:
                 if component_type == 'input':
                     signal = Signal.TimeSignal.static_load(f.attrs['component_{}_path'.format(c)])
                     self.add_input(signal)
+                elif component_type == 'system':
+                    system = System.static_load(f.attrs['component_{}_path'.format(c)])
+                    self.add_system(system)
+                elif component_type == 'scale':
+                    coefficient = float(f.attrs['component_{}_coefficient'.format(c)])
+                    self.add_scale(coefficient)
                 elif component_type == 'add':
                     self.add_add()
                 elif component_type == 'split':
                     self.add_split()
                 elif component_type == 'output':
                     self.add_output()
+                elif component_type == 'sum':
+                    self.add_sum()
+                elif component_type == 'delay':
+                    self.add_delay()
                 else:
                     raise TypeError('Unknown signal type')
 
@@ -188,6 +211,43 @@ class Node:
 
     def __init__(self):
         self.value = 0
+
+
+class SysSystem:
+
+    def __init__(self, system):
+
+        self.system = system
+        self.in_nodes = []
+        self.out_nodes = []
+        self.type = 'system'
+        for input_component in self.system.get_input_components():
+            c = input_component[0]
+            self.system.components[c].signal = None
+            self.in_nodes.append(Node())
+        for output_component in self.system.get_output_components():
+            c = output_component[0]
+            self.system.components[c].signal = None
+            self.out_nodes.append(Node())
+
+    def transfer(self):
+
+        for i, input_component in enumerate(self.system.get_input_components()):
+            c = input_component[0]
+            self.system.components[c].out_nodes[0].value = self.in_nodes[i].value
+        for c, connector in enumerate(self.system.connectors):
+            ((a, i), (b, j)) = connector
+            self.system.components[b].in_nodes[j].value = self.system.components[a].out_nodes[i].value
+        for c, component in enumerate(self.system.components):
+            if component.type == 'output':
+                pass
+            elif component.type == 'input':
+                pass
+            else:
+                component.transfer()
+        for i, output_component in enumerate(self.system.get_output_components()):
+            c = output_component[0]
+            self.out_nodes[i].value = self.system.components[c].in_nodes[0].value
 
 
 class SysInput:
@@ -249,4 +309,29 @@ class SysSum:
     def transfer(self):
         self.out_nodes[0].value = self.in_nodes[0].value + self.memory
         self.memory = self.out_nodes[0].value
+
+
+class SysDelay:
+
+    def __init__(self):
+        self.in_nodes = [Node()]
+        self.out_nodes = [Node()]
+        self.type = 'delay'
+        self.memory = 0
+
+    def transfer(self):
+        self.out_nodes[0].value = self.memory
+        self.memory = self.in_nodes[0].value
+
+
+class SysScale:
+
+    def __init__(self, coefficient):
+        self.in_nodes = [Node()]
+        self.out_nodes = [Node()]
+        self.type = 'scale'
+        self.coefficient = coefficient
+
+    def transfer(self):
+        self.out_nodes[0].value = self.coefficient * self.in_nodes[0].value
 

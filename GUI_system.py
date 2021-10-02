@@ -55,6 +55,8 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
         components.addAction(GUI_elements.Action('Sum', self, trigger_func=self.menu_components_sum))
+        components.addAction(GUI_elements.Action('Delay', self, trigger_func=self.menu_components_delay))
+        components.addAction(GUI_elements.Action('Scale', self, trigger_func=self.menu_components_scale))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
 
@@ -156,7 +158,7 @@ class SystemsInterface(QtWidgets.QWidget):
         if index >= 0:
             filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load system", '', "")
             if filename[0]:
-                system = System.System.static_load(filename[0])
+                system = System_2.System.static_load(filename[0])
                 inputs = 0
                 outputs = 0
                 for component in system.components:
@@ -190,6 +192,24 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_sum()
                 self.system_interfaces[index].system.add_sum()
+
+    def menu_components_delay(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_delay()
+                self.system_interfaces[index].system.add_delay()
+
+    def menu_components_scale(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                get_const = GUI_system_dialogs.GetCoefficient()
+                if get_const.complete:
+                    self.system_interfaces[index].system_scene.add_component_scale()
+                    self.system_interfaces[index].system.add_scale(get_const.params['coefficient'])
 
     def menu_connect_trigger(self):
         index = self.tabs.currentIndex()
@@ -242,8 +262,6 @@ class SystemInterface(QtWidgets.QWidget):
         self.system_view = GUI_system_widgets.SystemView(system_interface=self)
         self.system_view.setScene(self.system_scene)
 
-        self.input_widget = GUI_system_widgets.InputSignalList('Input signals', system_interface=self)
-
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')
 
@@ -264,7 +282,6 @@ class SystemInterface(QtWidgets.QWidget):
 
         panel_layout = QtWidgets.QHBoxLayout()
         panel_layout.addLayout(info_layout)
-        panel_layout.addWidget(self.input_widget)
         panel_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
@@ -282,6 +299,18 @@ class SystemInterface(QtWidgets.QWidget):
                 self.system_scene.add_component_add()
             elif component.type == 'split':
                 self.system_scene.add_component_split()
+            elif component.type == 'sum':
+                self.system_scene.add_component_sum()
+            elif component.type == 'delay':
+                self.system_scene.add_component_delay()
+            elif component.type == 'scale':
+                self.system_scene.add_component_scale()
+            elif component.type == 'system':
+                inputs = len(component.in_nodes)
+                outputs = len(component.out_nodes)
+                self.system_scene.add_component_system(inputs, outputs)
+            else:
+                raise TypeError('Unknown component type!')
         for connector in self.system.connectors:
             a = connector[0][0]
             b = connector[1][0]

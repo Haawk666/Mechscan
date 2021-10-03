@@ -10,8 +10,7 @@ import numpy as np
 import pyqtgraph as pg
 # Internals
 import GUI_elements
-import Signal
-import Signal_processing
+from MechSys import Signal_processing, Signal
 import GUI_signal_dialogs
 # Instantiate logger:
 logger = logging.getLogger(__name__)

@@ -6,10 +6,9 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
-import numpy as np
 # Internals
 import GUI_elements
-import Signal as ss
+from MechSys import Signal as ss
 import Library
 # Instantiate logger:
 logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ import time
 # 3rd party
 import numpy as np
 # Internals
-import Signal as ss
+from MechSys import Signal
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -141,7 +141,7 @@ def fft(time_signal):
         bit_depth = 128
     Y_f = np.fft.fftshift(np.fft.fft(time_signal.Y, axis=0)).astype(eval('np.complex{}'.format(bit_depth)))
     X_f = np.linspace(-time_signal.f_s / 2.0, time_signal.f_s / 2.0, num=Y_f.shape[0], dtype=np.float64)
-    frequency_signal = ss.FrequencySignal.from_data(X_f, Y_f)
+    frequency_signal = Signal.FrequencySignal.from_data(X_f, Y_f)
     frequency_signal.time_signal = time_signal
     return frequency_signal
 
@@ -166,7 +166,7 @@ def ifft(frequency_signal):
         else:
             bit_depth = 8 * Y.dtype.itemsize
 
-    time_signal = ss.TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain='int', channels=frequency_signal.channels)
+    time_signal = Signal.TimeSignal(x_start=x_start, x_end=x_end, delta_x=delta_x, bit_depth=bit_depth, codomain='int', channels=frequency_signal.channels)
     time_signal.Y = Y.astype(time_signal.Y.dtype)
     return time_signal
 
@@ -223,7 +223,7 @@ def gabor_transform(time_signal, window_size=0.1, window_function='Hann', delta_
             if update is not None:
                 update.setValue(channel * N[0] + i)
 
-    time_frequency_signal = ss.TimeFrequencySignal.from_data([tau, freq], Y_g)
+    time_frequency_signal = Signal.TimeFrequencySignal.from_data([tau, freq], Y_g)
     time_frequency_signal.time_signal = time_signal
 
     report = {
@@ -278,7 +278,7 @@ def wavelet_transform(time_signal, window_size=1.0, window_function='Morlet', de
 
     X = np.linspace(0.0, time_signal.delta_x * (alpha_n - 1), num=alpha_n, dtype=np.float64)
 
-    morlet_wavelet = ss.TimeSignal.from_data(X, window_function_values)
+    morlet_wavelet = Signal.TimeSignal.from_data(X, window_function_values)
 
     # # Transform sample space:
     # x_start = [time_signal.X[0], -time_signal.f_s / 2]

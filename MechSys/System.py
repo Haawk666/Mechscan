@@ -6,10 +6,11 @@
 import logging
 import copy
 import pathlib
+from abc import ABC
 # 3rd party
 import h5py
 # Internals
-import Signal
+from MechSys import Signal
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -142,6 +143,9 @@ class System:
 
             for c, component in enumerate(self.components):
                 f.attrs['component_{}'.format(c)] = component.type
+                f.attrs['component_{}_pos_x'.format(c)] = component.x
+                f.attrs['component_{}_pos_y'.format(c)] = component.y
+                f.attrs['component_{}_pos_r'.format(c)] = component.r
                 if component.type == 'input':
                     f.attrs['component_{}_path'.format(c)] = str(component.signal.path)
                 elif component.type == 'scale':
@@ -192,6 +196,9 @@ class System:
                     self.add_delay()
                 else:
                     raise TypeError('Unknown signal type')
+                self.components[c].x = float(f.attrs['component_{}_pos_x'.format(c)])
+                self.components[c].y = float(f.attrs['component_{}_pos_y'.format(c)])
+                self.components[c].r = float(f.attrs['component_{}_pos_r'.format(c)])
 
             for c in range(num_connectors):
                 a = f.attrs['connector_{}_a'.format(c)]
@@ -213,13 +220,23 @@ class Node:
         self.value = 0
 
 
-class SysSystem:
+class SysComponent(ABC):
 
-    def __init__(self, system):
-
-        self.system = system
+    def __init__(self):
         self.in_nodes = []
         self.out_nodes = []
+        self.type = 'abstract'
+        self.x = 0
+        self.y = 0
+        self.r = 0
+
+
+class SysSystem(SysComponent):
+
+    def __init__(self, system):
+        super().__init__()
+
+        self.system = system
         self.type = 'system'
         for input_component in self.system.get_input_components():
             c = input_component[0]
@@ -250,12 +267,11 @@ class SysSystem:
             self.out_nodes[i].value = self.system.components[c].in_nodes[0].value
 
 
-class SysInput:
+class SysInput(SysComponent):
 
     def __init__(self, signal):
-
+        super().__init__()
         self.signal = signal
-        self.in_nodes = []
         self.out_nodes = [Node()]
         self.type = 'input'
 
@@ -263,21 +279,22 @@ class SysInput:
         self.out_nodes[0].value = self.signal.Y[k, 0]
 
 
-class SysOutput:
+class SysOutput(SysComponent):
 
     def __init__(self):
+        super().__init__()
         self.signal = None
         self.in_nodes = [Node()]
-        self.out_nodes = []
         self.type = 'output'
 
     def transfer(self, k):
         self.signal.Y[k, 0] = self.in_nodes[0].value
 
 
-class SysAdd:
+class SysAdd(SysComponent):
 
     def __init__(self):
+        super().__init__()
         self.in_nodes = [Node(), Node()]
         self.out_nodes = [Node()]
         self.type = 'add'
@@ -286,9 +303,10 @@ class SysAdd:
         self.out_nodes[0].value = self.in_nodes[0].value + self.in_nodes[1].value
 
 
-class SysSplit:
+class SysSplit(SysComponent):
 
     def __init__(self):
+        super().__init__()
         self.in_nodes = [Node()]
         self.out_nodes = [Node(), Node()]
         self.type = 'split'
@@ -298,9 +316,10 @@ class SysSplit:
         self.out_nodes[1].value = self.in_nodes[0].value
 
 
-class SysSum:
+class SysSum(SysComponent):
 
     def __init__(self):
+        super().__init__()
         self.in_nodes = [Node()]
         self.out_nodes = [Node()]
         self.type = 'sum'
@@ -311,9 +330,10 @@ class SysSum:
         self.memory = self.out_nodes[0].value
 
 
-class SysDelay:
+class SysDelay(SysComponent):
 
     def __init__(self):
+        super().__init__()
         self.in_nodes = [Node()]
         self.out_nodes = [Node()]
         self.type = 'delay'
@@ -324,9 +344,10 @@ class SysDelay:
         self.memory = self.in_nodes[0].value
 
 
-class SysScale:
+class SysScale(SysComponent):
 
     def __init__(self, coefficient):
+        super().__init__()
         self.in_nodes = [Node()]
         self.out_nodes = [Node()]
         self.type = 'scale'

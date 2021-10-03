@@ -28,6 +28,16 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
         self.scene.update_connectors()
         super(QtWidgets.QGraphicsItemGroup, self).mouseReleaseEvent(event)
 
+    def keyPressEvent(self, event):
+        modifier = QtWidgets.QApplication.keyboardModifiers()
+        key = event.key()
+        if self.isSelected():
+            if key == QtCore.Qt.Key_R:
+                if modifier == QtCore.Qt.ShiftModifier:
+                    self.setRotation(self.rotation() + self.scene.system_interface.config.getfloat('Systems', 'Rotation_increment_(r)'))
+                else:
+                    self.setRotation(self.rotation() + self.scene.system_interface.config.getfloat('Systems', 'Rotation_increment_(r)'))
+
     def build_component(self):
         pass
 

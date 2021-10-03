@@ -10,9 +10,8 @@ from PyQt5 import QtWidgets
 import GUI_elements
 import GUI_system_dialogs
 import GUI_system_widgets
-import System
-import System_processing
-import Signal
+from MechSys import System_processing, Signal, System
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -110,6 +109,10 @@ class SystemsInterface(QtWidgets.QWidget):
             if system_interface.system:
                 filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save signal", '', "")
                 if filename[0]:
+                    for c, component in enumerate(self.system_interfaces[index].system.components):
+                        component.x = system_interface.system_scene.components[c].scenePos().x()
+                        component.y = system_interface.system_scene.components[c].scenePos().y()
+                        component.r = system_interface.system_scene.components[c].rotation()
                     system_interface.system.save(filename[0])
                     self.tabs.setTabText(index, system_interface.system.name())
 
@@ -308,6 +311,8 @@ class SystemInterface(QtWidgets.QWidget):
                 self.system_scene.add_component_system(inputs, outputs)
             else:
                 raise TypeError('Unknown component type!')
+            self.system_scene.components[-1].setPos(component.x, component.y)
+            self.system_scene.components[-1].setRotation(component.r)
         for connector in self.system.connectors:
             a = connector[0][0]
             b = connector[1][0]

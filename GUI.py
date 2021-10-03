@@ -6,14 +6,13 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
-import numpy as np
 # Internals
 import GUI_elements
 import GUI_dialogs
 import GUI_signal
 import GUI_system
 import Library
-import Signal
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -106,6 +105,8 @@ class MainUI(QtWidgets.QMainWindow):
             value = self.config.get(*args)
         elif type_ == 'bool':
             value = self.config.getboolean(*args)
+        elif type_ == 'float':
+            value = self.config.getfloat(*args)
         else:
             value = self.config.get(*args)
 

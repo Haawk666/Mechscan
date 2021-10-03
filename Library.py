@@ -7,7 +7,8 @@ import logging
 # 3rd party
 import numpy as np
 # Internals
-import Functions as f
+from MechSys import Functions as f
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -83,6 +84,14 @@ def get_settings_map():
                 'type': 'string',
                 'default': 'Interpolate',
                 'options': ['Interpolate', 'Resample']
+            },
+            'Rotation_increment_(r)': {
+                'type': 'float',
+                'default': 90.0,
+                'min': 0.1,
+                'max': 180.0,
+                'step': 1.0,
+                'dec': 1
             }
         }
     }

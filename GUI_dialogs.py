@@ -7,7 +7,7 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets
 # Internals
-
+import GUI_elements
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -84,6 +84,23 @@ class SetOptions(QtWidgets.QDialog):
 
                             group_layout.addWidget(item_widget)
 
+                        elif properties_properties['type'] == 'float':
+
+                            item_widget = QtWidgets.QDoubleSpinBox()
+                            item_widget.setMinimum(properties_properties['min'])
+                            item_widget.setMaximum(properties_properties['max'])
+                            item_widget.setSingleStep(properties_properties['step'])
+                            item_widget.setDecimals(properties_properties['dec'])
+                            item_widget.setValue(properties_properties['current'])
+
+                            item_layout = QtWidgets.QHBoxLayout()
+                            item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item_item.replace('_', ' '))))
+                            item_layout.addWidget(item_widget)
+
+                            self.widgets[section][item][item_item] = item_widget
+
+                            group_layout.addLayout(item_layout)
+
                         else:
 
                             raise Exception('Unknown setting type!')
@@ -120,6 +137,23 @@ class SetOptions(QtWidgets.QDialog):
                         self.widgets[section][item] = item_widget
 
                         tab_layout.addWidget(item_widget)
+
+                    elif properties['type'] == 'float':
+
+                        item_widget = QtWidgets.QDoubleSpinBox()
+                        item_widget.setMinimum(properties['min'])
+                        item_widget.setMaximum(properties['max'])
+                        item_widget.setSingleStep(properties['step'])
+                        item_widget.setDecimals(properties['dec'])
+                        item_widget.setValue(properties['current'])
+
+                        self.widgets[section][item] = item_widget
+
+                        item_layout = QtWidgets.QHBoxLayout()
+                        item_layout.addWidget(QtWidgets.QLabel('{}: '.format(item.replace('_', ' '))))
+                        item_layout.addWidget(item_widget)
+
+                        tab_layout.addLayout(item_layout)
 
                     else:
 
@@ -161,6 +195,8 @@ class SetOptions(QtWidgets.QDialog):
                         self.settings_map[section][item]['current'] = self.widgets[section][item].currentText()
                     elif properties['type'] == 'bool':
                         self.settings_map[section][item]['current'] = self.widgets[section][item].isChecked()
+                    elif properties['type'] == 'float':
+                        self.settings_map[section][item]['current'] = self.widgets[section][item].value()
                     else:
                         raise Exception('Unknown type!')
 

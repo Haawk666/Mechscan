@@ -13,6 +13,20 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class Node(QtWidgets.QGraphicsPolygonItem):
+
+    def __init__(self, x, y, brush):
+        super().__init__(QtGui.QPolygonF([
+            QtCore.QPointF(0, 0),
+            QtCore.QPointF(0, 5),
+            QtCore.QPointF(5, 2.5),
+            QtCore.QPointF(0, 0)
+        ]))
+        self.setPos(QtCore.QPointF(x, y))
+        self.setBrush(brush)
+        self.pen().setWidth(0)
+
+
 class SystemComponent(QtWidgets.QGraphicsItemGroup):
 
     def __init__(self, *args, scene=None, id=0):
@@ -27,16 +41,6 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
     def mouseReleaseEvent(self, event):
         self.scene.update_connectors()
         super(QtWidgets.QGraphicsItemGroup, self).mouseReleaseEvent(event)
-
-    def keyPressEvent(self, event):
-        modifier = QtWidgets.QApplication.keyboardModifiers()
-        key = event.key()
-        if self.isSelected():
-            if key == QtCore.Qt.Key_R:
-                if modifier == QtCore.Qt.ShiftModifier:
-                    self.setRotation(self.rotation() + self.scene.system_interface.config.getfloat('Systems', 'Rotation_increment_(r)'))
-                else:
-                    self.setRotation(self.rotation() + self.scene.system_interface.config.getfloat('Systems', 'Rotation_increment_(r)'))
 
     def build_component(self):
         pass
@@ -65,17 +69,11 @@ class SystemComponentSystem(SystemComponent):
         box.setBrush(self.scene.brushes['system_brush'])
 
         for o in range(self.outputs):
-
-            node = QtWidgets.QGraphicsEllipseItem(17.5, 10 * o + 2.5, 5, 5)
-            node.setBrush(self.scene.brushes['node_brush'])
-            node.pen().setWidth(0)
+            node = Node(17.5, 10 * o + 2.5, self.scene.brushes['node_brush'])
             self.out_nodes.append(node)
 
         for i in range(self.inputs):
-
-            node = QtWidgets.QGraphicsEllipseItem(-2.5, 10 * i + 2.5, 5, 5)
-            node.setBrush(self.scene.brushes['node_brush'])
-            node.pen().setWidth(0)
+            node = Node(-2.5, 10 * i + 2.5, self.scene.brushes['node_brush'])
             self.in_nodes.append(node)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -112,19 +110,13 @@ class SystemComponentAdd(SystemComponent):
         box.setRect(0, 0, 20, 20)
         box.setBrush(self.scene.brushes['add_brush'])
 
-        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 2.5, 5, 5)
-        node_1.setBrush(self.scene.brushes['node_brush'])
-        node_1.pen().setWidth(0)
+        node_1 = Node(-2.5, 2.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node_1)
 
-        node_2 = QtWidgets.QGraphicsEllipseItem(-2.5, 12.5, 5, 5)
-        node_2.setBrush(self.scene.brushes['node_brush'])
-        node_2.pen().setWidth(0)
+        node_2 = Node(-2.5, 12.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node_2)
 
-        node_3 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
-        node_3.setBrush(self.scene.brushes['node_brush'])
-        node_3.pen().setWidth(0)
+        node_3 = Node(17.5, 7.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node_3)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -160,19 +152,13 @@ class SystemComponentSplit(SystemComponent):
         box.setRect(0, 0, 20, 20)
         box.setBrush(self.scene.brushes['add_brush'])
 
-        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
-        node_1.setBrush(self.scene.brushes['node_brush'])
-        node_1.pen().setWidth(0)
+        node_1 = Node(-2.5, 7.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node_1)
 
-        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 2.5, 5, 5)
-        node_2.setBrush(self.scene.brushes['node_brush'])
-        node_2.pen().setWidth(0)
+        node_2 = Node(17.5, 2.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node_2)
 
-        node_3 = QtWidgets.QGraphicsEllipseItem(17.5, 12.5, 5, 5)
-        node_3.setBrush(self.scene.brushes['node_brush'])
-        node_3.pen().setWidth(0)
+        node_3 = Node(17.5, 12.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node_3)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -208,14 +194,10 @@ class SystemComponentSum(SystemComponent):
         box.setRect(0, 0, 20, 20)
         box.setBrush(self.scene.brushes['add_brush'])
 
-        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
-        node_1.setBrush(self.scene.brushes['node_brush'])
-        node_1.pen().setWidth(0)
+        node_1 = Node(-2.5, 7.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node_1)
 
-        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
-        node_2.setBrush(self.scene.brushes['node_brush'])
-        node_2.pen().setWidth(0)
+        node_2 = Node(17.5, 7.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node_2)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -250,14 +232,10 @@ class SystemComponentDelay(SystemComponent):
         box.setRect(0, 0, 20, 20)
         box.setBrush(self.scene.brushes['add_brush'])
 
-        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
-        node_1.setBrush(self.scene.brushes['node_brush'])
-        node_1.pen().setWidth(0)
+        node_1 = Node(-2.5, 7.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node_1)
 
-        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
-        node_2.setBrush(self.scene.brushes['node_brush'])
-        node_2.pen().setWidth(0)
+        node_2 = Node(17.5, 7.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node_2)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -274,7 +252,7 @@ class SystemComponentDelay(SystemComponent):
         self.setZValue(1)
 
 
-class SystemComponentScale(SystemComponent):
+class SystemComponentGain(SystemComponent):
 
     def __init__(self, *args, scene=None, id=0):
         super().__init__(*args, scene=scene, id=id)
@@ -292,14 +270,10 @@ class SystemComponentScale(SystemComponent):
         box.setRect(0, 0, 20, 20)
         box.setBrush(self.scene.brushes['add_brush'])
 
-        node_1 = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
-        node_1.setBrush(self.scene.brushes['node_brush'])
-        node_1.pen().setWidth(0)
+        node_1 = Node(-2.5, 7.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node_1)
 
-        node_2 = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
-        node_2.setBrush(self.scene.brushes['node_brush'])
-        node_2.pen().setWidth(0)
+        node_2 = Node(17.5, 7.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node_2)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -333,9 +307,7 @@ class SystemComponentOutput(SystemComponent):
         circle = QtWidgets.QGraphicsEllipseItem(0, 0, 20, 20)
         circle.setBrush(self.scene.brushes['output_brush'])
 
-        node = QtWidgets.QGraphicsEllipseItem(-2.5, 7.5, 5, 5)
-        node.setBrush(self.scene.brushes['node_brush'])
-        node.pen().setWidth(0)
+        node = Node(-2.5, 7.5, self.scene.brushes['node_brush'])
         self.in_nodes.append(node)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -347,6 +319,43 @@ class SystemComponentOutput(SystemComponent):
 
         self.addToGroup(circle)
         self.addToGroup(node)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
+class SystemComponentFunction(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'f{}'.format(id)
+        self.build_component()
+
+    def build_component(self):
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, 20)
+        box.setBrush(self.scene.brushes['add_brush'])
+
+        node_1 = Node(-2.5, 7.5, self.scene.brushes['node_brush'])
+        self.in_nodes.append(node_1)
+
+        node_2 = Node(17.5, 7.5, self.scene.brushes['node_brush'])
+        self.out_nodes.append(node_2)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        self.addToGroup(node_1)
+        self.addToGroup(node_2)
         self.addToGroup(label)
         self.setZValue(1)
 
@@ -373,9 +382,7 @@ class SystemComponentInput(SystemComponent):
         ]))
         triangle.setBrush(self.scene.brushes['input_brush'])
 
-        node = QtWidgets.QGraphicsEllipseItem(17.5, 7.5, 5, 5)
-        node.setBrush(self.scene.brushes['node_brush'])
-        node.pen().setWidth(0)
+        node = Node(17.5, 7.5, self.scene.brushes['node_brush'])
         self.out_nodes.append(node)
 
         label = QtWidgets.QGraphicsSimpleTextItem()
@@ -405,7 +412,7 @@ class SystemConnector(QtWidgets.QGraphicsItemGroup):
         self.build_connector()
 
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable, False)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, False)
 
     def build_connector(self):
 
@@ -469,8 +476,8 @@ class SystemScene(QtWidgets.QGraphicsScene):
         component = SystemComponentDelay(scene=self, id=len(self.components))
         self.add_component(component)
 
-    def add_component_scale(self):
-        component = SystemComponentScale(scene=self, id=len(self.components))
+    def add_component_gain(self):
+        component = SystemComponentGain(scene=self, id=len(self.components))
         self.add_component(component)
 
     def add_component_output(self):
@@ -479,6 +486,10 @@ class SystemScene(QtWidgets.QGraphicsScene):
 
     def add_component_input(self):
         component = SystemComponentInput(scene=self, id=len(self.components))
+        self.add_component(component)
+
+    def add_component_function(self):
+        component = SystemComponentFunction(scene=self, id=len(self.components))
         self.add_component(component)
 
     def add_component(self, component):
@@ -506,6 +517,17 @@ class SystemScene(QtWidgets.QGraphicsScene):
     def assert_id(self):
         for c, component in enumerate(self.components):
             component.component_id = c
+
+    def keyPressEvent(self, event):
+        modifier = QtWidgets.QApplication.keyboardModifiers()
+        for component in self.components:
+            if component.isSelected():
+                if event.key() == QtCore.Qt.Key_R:
+                    if modifier == QtCore.Qt.ShiftModifier:
+                        component.setRotation(component.rotation() - self.system_interface.config.getfloat('Systems', 'Rotation_increment_(r)'))
+                    else:
+                        component.setRotation(component.rotation() + self.system_interface.config.getfloat('Systems', 'Rotation_increment_(r)'))
+        self.update_connectors()
 
 
 class SystemView(QtWidgets.QGraphicsView):

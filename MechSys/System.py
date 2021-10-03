@@ -25,6 +25,32 @@ class System:
         self.components = []
         self.connectors = []
 
+    def __str__(self):
+        meta_data = self.info()
+        info_string = ''
+        for key, value in meta_data.items():
+            info_string += '{}: {}\n'.format(key, value)
+        return info_string
+
+    def info(self):
+        inputs = 0
+        outputs = 0
+        for component in self.components:
+            if component.type == 'input':
+                inputs += 1
+            elif component.type == 'output':
+                outputs += 1
+
+        meta_data = {
+            'type': self.type,
+            'inputs': inputs,
+            'outputs': outputs,
+            'components': len(self.components),
+            'connections': len(self.connectors),
+        }
+
+        return meta_data
+
     def name(self):
         if self.path is None:
             return 'New'
@@ -124,8 +150,11 @@ class System:
     def add_delay(self):
         self.components.append(SysDelay())
 
-    def add_scale(self, coefficient):
-        self.components.append(SysScale(coefficient))
+    def add_gain(self, coefficient):
+        self.components.append(SysGain(coefficient))
+
+    def add_function(self, function_string):
+        self.components.append(SysFunction(function_string))
 
     def add_connector(self, connector):
         self.connectors.append(connector)
@@ -152,6 +181,8 @@ class System:
                     f.attrs['component_{}_coefficient'.format(c)] = component.coefficient
                 elif component.type == 'system':
                     f.attrs['component_{}_path'.format(c)] = str(component.system.path)
+                elif component.type == 'function':
+                    f.attrs['component_{}_function'.format(c)] = str(component.function_string)
 
             for c, connector in enumerate(self.connectors):
                 f.attrs['connector_{}_a'.format(c)] = connector[0][0]
@@ -183,7 +214,10 @@ class System:
                     self.add_system(system)
                 elif component_type == 'scale':
                     coefficient = float(f.attrs['component_{}_coefficient'.format(c)])
-                    self.add_scale(coefficient)
+                    self.add_gain(coefficient)
+                elif component_type == 'function':
+                    function_string = f.attrs['component_{}_function'.format(c)]
+                    self.add_function(function_string)
                 elif component_type == 'add':
                     self.add_add()
                 elif component_type == 'split':
@@ -344,15 +378,35 @@ class SysDelay(SysComponent):
         self.memory = self.in_nodes[0].value
 
 
-class SysScale(SysComponent):
+class SysGain(SysComponent):
 
     def __init__(self, coefficient):
         super().__init__()
         self.in_nodes = [Node()]
         self.out_nodes = [Node()]
-        self.type = 'scale'
+        self.type = 'gain'
         self.coefficient = coefficient
 
     def transfer(self):
         self.out_nodes[0].value = self.coefficient * self.in_nodes[0].value
+
+
+class SysFunction(SysComponent):
+
+    def __init__(self, function_string):
+        super().__init__()
+        self.in_nodes = [Node()]
+        self.out_nodes = [Node()]
+        self.type = 'function'
+        self.function_string = function_string
+
+    def function(self, x):
+        return eval(self.function_string)
+
+    def transfer(self):
+        self.out_nodes[0].value = self.function(self.in_nodes[0].value)
+
+
+
+
 

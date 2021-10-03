@@ -54,7 +54,8 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
         components.addAction(GUI_elements.Action('Sum', self, trigger_func=self.menu_components_sum))
         components.addAction(GUI_elements.Action('Delay', self, trigger_func=self.menu_components_delay))
-        components.addAction(GUI_elements.Action('Scale', self, trigger_func=self.menu_components_scale))
+        components.addAction(GUI_elements.Action('Scale', self, trigger_func=self.menu_components_gain))
+        components.addAction(GUI_elements.Action('Function', self, trigger_func=self.menu_components_function))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
 
@@ -122,6 +123,7 @@ class SystemsInterface(QtWidgets.QWidget):
             system_interface = SystemInterface(config=self.config)
             system_interface.system = System.System.static_load(filename[0])
             system_interface.plot_system()
+            system_interface.update_info()
             self.add_interface(system_interface)
 
     def menu_close_trigger(self):
@@ -144,6 +146,7 @@ class SystemsInterface(QtWidgets.QWidget):
                     signal = Signal.TimeSignal.static_load(filename[0])
                     self.system_interfaces[index].system_scene.add_component_input()
                     self.system_interfaces[index].system.add_input(signal)
+                    self.system_interfaces[index].update_info()
 
     def menu_components_output(self):
         index = self.tabs.currentIndex()
@@ -152,6 +155,7 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_output()
                 self.system_interfaces[index].system.add_output()
+                self.system_interfaces[index].update_info()
 
     def menu_components_system(self):
         index = self.tabs.currentIndex()
@@ -168,6 +172,7 @@ class SystemsInterface(QtWidgets.QWidget):
                         outputs += 1
                 self.system_interfaces[index].system_scene.add_component_system(inputs, outputs)
                 self.system_interfaces[index].system.add_system(system)
+                self.system_interfaces[index].update_info()
 
     def menu_components_add(self):
         index = self.tabs.currentIndex()
@@ -176,6 +181,7 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_add()
                 self.system_interfaces[index].system.add_add()
+                self.system_interfaces[index].update_info()
 
     def menu_components_split(self):
         index = self.tabs.currentIndex()
@@ -184,6 +190,7 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_split()
                 self.system_interfaces[index].system.add_split()
+                self.system_interfaces[index].update_info()
 
     def menu_components_sum(self):
         index = self.tabs.currentIndex()
@@ -192,6 +199,7 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_sum()
                 self.system_interfaces[index].system.add_sum()
+                self.system_interfaces[index].update_info()
 
     def menu_components_delay(self):
         index = self.tabs.currentIndex()
@@ -200,16 +208,29 @@ class SystemsInterface(QtWidgets.QWidget):
             if system is not None:
                 self.system_interfaces[index].system_scene.add_component_delay()
                 self.system_interfaces[index].system.add_delay()
+                self.system_interfaces[index].update_info()
 
-    def menu_components_scale(self):
+    def menu_components_gain(self):
         index = self.tabs.currentIndex()
         if index >= 0:
             system = self.system_interfaces[index].system
             if system is not None:
                 get_const = GUI_system_dialogs.GetCoefficient()
                 if get_const.complete:
-                    self.system_interfaces[index].system_scene.add_component_scale()
-                    self.system_interfaces[index].system.add_scale(get_const.params['coefficient'])
+                    self.system_interfaces[index].system_scene.add_component_gain()
+                    self.system_interfaces[index].system.add_gain(get_const.params['coefficient'])
+                    self.system_interfaces[index].update_info()
+
+    def menu_components_function(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                get_func = GUI_system_dialogs.GetFunctionString()
+                if get_func.complete:
+                    self.system_interfaces[index].system_scene.add_component_function()
+                    self.system_interfaces[index].system.add_function(get_func.params['function_string'])
+                    self.system_interfaces[index].update_info()
 
     def menu_connect_trigger(self):
         index = self.tabs.currentIndex()
@@ -225,6 +246,7 @@ class SystemsInterface(QtWidgets.QWidget):
                 node_2 = scene.components[b].in_nodes[j]
                 scene.add_connector(node_1, node_2)
                 self.system_interfaces[index].system.add_connector(((a, i), (b, j)))
+                self.system_interfaces[index].update_info()
 
     def menu_calculate_trigger(self):
         index = self.tabs.currentIndex()
@@ -303,8 +325,8 @@ class SystemInterface(QtWidgets.QWidget):
                 self.system_scene.add_component_sum()
             elif component.type == 'delay':
                 self.system_scene.add_component_delay()
-            elif component.type == 'scale':
-                self.system_scene.add_component_scale()
+            elif component.type == 'gain':
+                self.system_scene.add_component_gain()
             elif component.type == 'system':
                 inputs = len(component.in_nodes)
                 outputs = len(component.out_nodes)
@@ -324,9 +346,14 @@ class SystemInterface(QtWidgets.QWidget):
 
     def update_info(self):
         if self.system:
-            meta_data = ''
+            meta_data = self.system.info()
             key_string = ''
             value_string = ''
+            for key, value in meta_data.items():
+                key_string += '{}:    \n'.format(key)
+                value_string += '{}\n'.format(value)
+            self.lbl_info_keys.setText(key_string)
+            self.lbl_info_values.setText(value_string)
         else:
             # self.system_scene.clear()
             self.lbl_info_keys.setText('')

@@ -56,7 +56,7 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
         components.addAction(GUI_elements.Action('Sum', self, trigger_func=self.menu_components_sum))
         components.addAction(GUI_elements.Action('Delay', self, trigger_func=self.menu_components_delay))
-        components.addAction(GUI_elements.Action('gain', self, trigger_func=self.menu_components_gain))
+        components.addAction(GUI_elements.Action('Gain', self, trigger_func=self.menu_components_gain))
         components.addAction(GUI_elements.Action('Function', self, trigger_func=self.menu_components_function))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))

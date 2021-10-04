@@ -7,7 +7,7 @@ import logging
 # 3rd party
 
 # Internals
-import Graphs
+from MechSys import Graphs
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -37,10 +37,10 @@ def simulate(system, update=None):
         for node in component.out_nodes:
             node.value = 0
 
-    # Get graph
+    # Build graph
     graph = Graphs.Digraph()
     for c, component in enumerate(system.components):
-        graph.vertices.append(graph.vertices(c))
+        graph.vertices.append(Graphs.Vertex(c))
     for c, connector in enumerate(system.connectors):
         graph.vertices[connector[0][0]].out_neighbourhood.append(connector[1][0])
 

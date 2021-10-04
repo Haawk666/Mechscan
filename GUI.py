@@ -84,8 +84,8 @@ class MainUI(QtWidgets.QMainWindow):
         self.setCentralWidget(self.tabs)
 
     def menu_debug_trigger(self):
-        signal = Signal.TimeSignal.static_load('10Hz')
-        result = Signal.TimeSignal.static_load('lti_result_2')
+        signal = Signal.TimeSignal.static_load('Signals/10Hz')
+        result = Signal.TimeSignal.static_load('Signals/lti_result_2')
 
         b_0 = 0.5
         b_1 = 0.8

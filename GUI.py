@@ -6,13 +6,14 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
+import numpy as np
 # Internals
 import GUI_elements
 import GUI_dialogs
 import GUI_signal
 import GUI_system
 import Library
-
+from MechSys import Signal
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -83,7 +84,26 @@ class MainUI(QtWidgets.QMainWindow):
         self.setCentralWidget(self.tabs)
 
     def menu_debug_trigger(self):
-        pass
+        signal = Signal.TimeSignal.static_load('10Hz')
+        result = Signal.TimeSignal.static_load('lti_result_2')
+
+        b_0 = 0.5
+        b_1 = 0.8
+        b_2 = 1.1
+        a_1 = 0.1
+        a_2 = 0.4
+        calculation = []
+        for k in range(300):
+            if k == 0:
+                y = b_0 * signal.Y[k, 0]
+            elif k == 1:
+                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] - a_1 * calculation[k - 1]
+            else:
+                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] + b_2 * signal.Y[k - 2, 0] - a_1 * calculation[k - 1] - a_2 * calculation[k - 2]
+            calculation.append(int(np.round(y, decimals=0)))
+
+        for k in range(300):
+            print('{} | {} | {} | {}'.format(k, signal.Y[k, 0], result.Y[k, 0], calculation[k]))
 
     def menu_settings_trigger(self):
         current_settings_map = self.get_current_settings_map()

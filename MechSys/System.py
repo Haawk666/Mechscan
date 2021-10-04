@@ -141,6 +141,15 @@ class System:
     def add_add(self):
         self.components.append(SysAdd())
 
+    def add_addn(self, n):
+        self.components.append(SysAddN(n))
+
+    def add_multiply(self):
+        self.components.append(SysMultiply())
+
+    def add_multiplyn(self, n):
+        self.components.append(SysMultiplyN(n))
+
     def add_split(self):
         self.components.append(SysSplit())
 
@@ -177,12 +186,16 @@ class System:
                 f.attrs['component_{}_pos_r'.format(c)] = component.r
                 if component.type == 'input':
                     f.attrs['component_{}_path'.format(c)] = str(component.signal.path)
-                elif component.type == 'scale':
+                elif component.type == 'gain':
                     f.attrs['component_{}_coefficient'.format(c)] = component.coefficient
                 elif component.type == 'system':
                     f.attrs['component_{}_path'.format(c)] = str(component.system.path)
                 elif component.type == 'function':
                     f.attrs['component_{}_function'.format(c)] = str(component.function_string)
+                elif component.type == 'addn':
+                    f.attrs['component_{}_n'.format(c)] = component.n
+                elif component.type == 'multiplyn':
+                    f.attrs['component_{}_n'.format(c)] = component.n
 
             for c, connector in enumerate(self.connectors):
                 f.attrs['connector_{}_a'.format(c)] = connector[0][0]
@@ -212,14 +225,22 @@ class System:
                 elif component_type == 'system':
                     system = System.static_load(f.attrs['component_{}_path'.format(c)])
                     self.add_system(system)
-                elif component_type == 'scale':
+                elif component_type == 'gain':
                     coefficient = float(f.attrs['component_{}_coefficient'.format(c)])
                     self.add_gain(coefficient)
                 elif component_type == 'function':
                     function_string = f.attrs['component_{}_function'.format(c)]
                     self.add_function(function_string)
+                elif component_type == 'addn':
+                    n = f.attrs['component_{}_n'.format(c)]
+                    self.add_addn(n)
+                elif component_type == 'multiplyn':
+                    n = f.attrs['component_{}_n'.format(c)]
+                    self.add_multiplyn(n)
                 elif component_type == 'add':
                     self.add_add()
+                elif component_type == 'multiply':
+                    self.add_multiply()
                 elif component_type == 'split':
                     self.add_split()
                 elif component_type == 'output':
@@ -335,6 +356,49 @@ class SysAdd(SysComponent):
 
     def transfer(self):
         self.out_nodes[0].value = self.in_nodes[0].value + self.in_nodes[1].value
+
+
+class SysAddN(SysComponent):
+
+    def __init__(self, n):
+        super().__init__()
+        for i in range(n):
+            self.in_nodes.append(Node())
+        self.out_nodes = [Node()]
+        self.type = 'addn'
+        self.n = n
+
+    def transfer(self):
+        self.out_nodes[0].value = 0
+        for in_node in self.in_nodes:
+            self.out_nodes[0].value += in_node.value
+
+
+class SysMultiply(SysComponent):
+
+    def __init__(self):
+        super().__init__()
+        self.in_nodes = [Node(), Node()]
+        self.out_nodes = [Node()]
+        self.type = 'multiply'
+
+    def transfer(self):
+        self.out_nodes[0].value = self.in_nodes[0].value * self.in_nodes[1].value
+
+
+class SysMultiplyN(SysComponent):
+
+    def __init__(self, n):
+        super().__init__()
+        self.in_nodes = [Node(), Node()]
+        self.out_nodes = [Node()]
+        self.type = 'multiplyn'
+        self.n = n
+
+    def transfer(self):
+        self.out_nodes[0].value = 0
+        for node in self.in_nodes:
+            self.out_nodes[0].value *= node.value
 
 
 class SysSplit(SysComponent):

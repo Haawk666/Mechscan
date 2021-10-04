@@ -13,6 +13,128 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class ComponentProperties(QtWidgets.QDialog):
+
+    def __init__(self, *args, sys_component=None, scene_component=None, scene=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Component properties')
+
+        self.sys_component = sys_component
+        self.scene_component = scene_component
+        self.scene = scene
+        self.complete = False
+        self.params = dict()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Apply')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.btn_change_signal = QtWidgets.QPushButton('Change')
+        self.btn_change_signal.clicked.connect(self.btn_change_signal_trigger)
+        self.btn_change_function = QtWidgets.QPushButton('Change')
+        self.btn_change_function.clicked.connect(self.btn_change_function_trigger)
+        self.btn_change_coefficient = QtWidgets.QPushButton('Change')
+        self.btn_change_coefficient.clicked.connect(self.btn_change_coefficient_trigger)
+
+        self.lbl_type = QtWidgets.QLabel('{}'.format(sys_component.type))
+        self.lbl_inputs = QtWidgets.QLabel('{}'.format(len(sys_component.in_nodes)))
+        self.lbl_outputs = QtWidgets.QLabel('{}'.format(len(sys_component.out_nodes)))
+
+        self.lin_designation = QtWidgets.QLineEdit()
+        self.lin_designation.setText(self.scene_component.designation)
+
+        self.lbl_signal_path = QtWidgets.QLabel('')
+        self.lbl_n = QtWidgets.QLabel('')
+        self.lbl_coefficient = QtWidgets.QLabel('')
+        self.lbl_function = QtWidgets.QLabel('')
+
+        if self.sys_component.type == 'input':
+            self.lbl_signal_path = QtWidgets.QLabel('{}'.format(sys_component.signal.path))
+        if self.sys_component.type == 'gain':
+            self.lbl_coefficient = QtWidgets.QLabel('{}'.format(sys_component.coefficient))
+        if self.sys_component.type == 'function':
+            self.lbl_function = QtWidgets.QLabel('{}'.format(sys_component.function_string))
+
+        self.build_layout()
+
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        grid = QtWidgets.QGridLayout()
+        grid.addWidget(QtWidgets.QLabel('Component type: '), 0, 0)
+        grid.addWidget(self.lbl_type, 0, 1)
+        grid.addWidget(QtWidgets.QLabel('Inputs: '), 1, 0)
+        grid.addWidget(self.lbl_inputs, 1, 1)
+        grid.addWidget(QtWidgets.QLabel('Outputs: '), 2, 0)
+        grid.addWidget(self.lbl_outputs, 2, 1)
+        grid.addWidget(QtWidgets.QLabel('Designation: '), 3, 0)
+        grid.addWidget(self.lin_designation, 3, 1)
+
+        if self.sys_component.type == 'input':
+            grid.addWidget(QtWidgets.QLabel('Signal: '), 4, 0)
+            grid.addWidget(self.lbl_signal_path, 4, 1)
+            grid.addWidget(self.btn_change_signal, 4, 2)
+        elif self.sys_component.type == 'gain':
+            grid.addWidget(QtWidgets.QLabel('Gain: '), 4, 0)
+            grid.addWidget(self.lbl_coefficient, 4, 1)
+            grid.addWidget(self.btn_change_coefficient, 4, 2)
+        elif self.sys_component.type == 'function':
+            grid.addWidget(QtWidgets.QLabel('Function: '), 4, 0)
+            grid.addWidget(self.lbl_function, 4, 1)
+            grid.addWidget(self.btn_change_function, 4, 2)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(grid)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_change_signal_trigger(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
+        if filename[0]:
+            self.lbl_signal_path.setText(filename[0])
+
+    def btn_change_function_trigger(self):
+        wiz = GetFunctionString()
+        if wiz.complete:
+            self.lbl_function.setText(wiz.params['function_string'])
+
+    def btn_change_coefficient_trigger(self):
+        wiz = GetCoefficient()
+        if wiz.complete:
+            self.lbl_coefficient.setText(str(wiz.params['coefficient']))
+
+    def btn_next_trigger(self):
+        designation = self.lin_designation.text()
+        for component in self.scene.components:
+            if component.designation == designation and not component.component_id == self.scene_component.component_id:
+                msg = QtWidgets.QMessageBox()
+                msg.setText('Invalid designation!')
+                msg.exec()
+                break
+        else:
+            self.params['designation'] = designation
+            if self.sys_component.type == 'input':
+                self.params['signal_path'] = self.lbl_signal_path.text()
+            if self.sys_component.type == 'gain':
+                self.params['coefficient'] = float(self.lbl_coefficient.text())
+            if self.sys_component.type == 'function':
+                self.params['function_string'] = self.lbl_function.text()
+            self.complete = True
+            self.close()
+
+
 class NewConnector(QtWidgets.QDialog):
 
     def __init__(self, *args, system_interface=None):
@@ -217,6 +339,60 @@ class GetCoefficient(QtWidgets.QDialog):
 
     def gen_params(self):
         self.params['coefficient'] = self.box_coefficient.value()
+
+
+class GetN(QtWidgets.QDialog):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.setWindowTitle('Set number of inputs to add')
+
+        self.complete = False
+        self.params = dict()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Ok')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.box_n = QtWidgets.QSpinBox()
+        self.box_n.setMinimum(2)
+        self.box_n.setMaximum(10)
+        self.box_n.setSingleStep(1)
+        self.box_n.setValue(3)
+
+        self.build_layout()
+
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        base_grid = QtWidgets.QGridLayout()
+        base_grid.addWidget(QtWidgets.QLabel('Coefficient: '), 0, 0)
+        base_grid.addWidget(self.box_n, 0, 1)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(base_grid)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        self.gen_params()
+        self.complete = True
+        self.close()
+
+    def gen_params(self):
+        self.params['n'] = self.box_n.value()
 
 
 class GetFunctionString(QtWidgets.QDialog):

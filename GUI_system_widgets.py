@@ -7,7 +7,8 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets, QtGui, QtCore
 # Internals
-
+import GUI_system_dialogs
+from MechSys import Signal
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -31,6 +32,7 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
 
     def __init__(self, *args, scene=None, id=0):
         super().__init__(*args)
+        self.designation = 'generic'
         self.component_id = id
         self.scene = scene
         self.in_nodes = []
@@ -41,6 +43,19 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
     def mouseReleaseEvent(self, event):
         self.scene.update_connectors()
         super(QtWidgets.QGraphicsItemGroup, self).mouseReleaseEvent(event)
+
+    def contextMenuEvent(self, event):
+        menu = QtWidgets.QMenu()
+        properties_action = QtWidgets.QAction('Properties', None)
+        properties_action.triggered.connect(self.properties)
+        menu.addAction(properties_action)
+        menu.exec_(event.screenPos())
+
+    def properties(self):
+        wiz = GUI_system_dialogs.ComponentProperties(sys_component=self.scene.system_interface.system.components[self.component_id], scene_component=self, scene=self.scene)
+        if wiz.complete:
+            params = wiz.params
+            self.designation = params['designation']
 
     def build_component(self):
         pass
@@ -130,6 +145,135 @@ class SystemComponentAdd(SystemComponent):
         self.addToGroup(node_1)
         self.addToGroup(node_2)
         self.addToGroup(node_3)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
+class SystemComponentAddN(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0, n=2):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'addn{}'.format(id)
+        self.n = n
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        height = max([20, 10 * self.n])
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, height)
+        box.setBrush(self.scene.brushes['system_brush'])
+
+        node = Node(17.5, 2.5, self.scene.brushes['node_brush'])
+        self.out_nodes.append(node)
+
+        for i in range(self.n):
+            node = Node(-2.5, 10 * i + 2.5, self.scene.brushes['node_brush'])
+            self.in_nodes.append(node)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        for node in self.in_nodes:
+            self.addToGroup(node)
+        for node in self.out_nodes:
+            self.addToGroup(node)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
+class SystemComponentMultiply(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'mul{}'.format(id)
+        self.build_component()
+
+    def build_component(self):
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, 20)
+        box.setBrush(self.scene.brushes['add_brush'])
+
+        node_1 = Node(-2.5, 2.5, self.scene.brushes['node_brush'])
+        self.in_nodes.append(node_1)
+
+        node_2 = Node(-2.5, 12.5, self.scene.brushes['node_brush'])
+        self.in_nodes.append(node_2)
+
+        node_3 = Node(17.5, 7.5, self.scene.brushes['node_brush'])
+        self.out_nodes.append(node_3)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        self.addToGroup(node_1)
+        self.addToGroup(node_2)
+        self.addToGroup(node_3)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
+class SystemComponentMultiplyN(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0, n=2):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'muln{}'.format(id)
+        self.n = n
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        height = max([20, 10 * self.n])
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, height)
+        box.setBrush(self.scene.brushes['system_brush'])
+
+        node = Node(17.5, 2.5, self.scene.brushes['node_brush'])
+        self.out_nodes.append(node)
+
+        for i in range(self.n):
+            node = Node(-2.5, 10 * i + 2.5, self.scene.brushes['node_brush'])
+            self.in_nodes.append(node)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        for node in self.in_nodes:
+            self.addToGroup(node)
+        for node in self.out_nodes:
+            self.addToGroup(node)
         self.addToGroup(label)
         self.setZValue(1)
 
@@ -259,6 +403,13 @@ class SystemComponentGain(SystemComponent):
         self.designation = 'K{}'.format(id)
         self.build_component()
 
+    def properties(self):
+        wiz = GUI_system_dialogs.ComponentProperties(sys_component=self.scene.system_interface.system.components[self.component_id], scene_component=self, scene=self.scene)
+        if wiz.complete:
+            params = wiz.params
+            self.designation = params['designation']
+            self.scene.system_interface.system.components[self.component_id].coefficient = params['coefficient']
+
     def build_component(self):
 
         for item in self.childItems():
@@ -330,6 +481,13 @@ class SystemComponentFunction(SystemComponent):
         self.designation = 'f{}'.format(id)
         self.build_component()
 
+    def properties(self):
+        wiz = GUI_system_dialogs.ComponentProperties(sys_component=self.scene.system_interface.system.components[self.component_id], scene_component=self, scene=self.scene)
+        if wiz.complete:
+            params = wiz.params
+            self.designation = params['designation']
+            self.scene.system_interface.system.components[self.component_id].function_string = params['function_string']
+
     def build_component(self):
         for item in self.childItems():
             self.removeFromGroup(item)
@@ -366,6 +524,13 @@ class SystemComponentInput(SystemComponent):
         super().__init__(*args, scene=scene, id=id)
         self.designation = 'x{}'.format(id)
         self.build_component()
+
+    def properties(self):
+        wiz = GUI_system_dialogs.ComponentProperties(sys_component=self.scene.system_interface.system.components[self.component_id], scene_component=self, scene=self.scene)
+        if wiz.complete:
+            params = wiz.params
+            self.designation = params['designation']
+            self.scene.system_interface.system.components[self.component_id].signal = Signal.TimeSignal.static_load(params['signal_path'])
 
     def build_component(self):
 
@@ -462,6 +627,18 @@ class SystemScene(QtWidgets.QGraphicsScene):
 
     def add_component_add(self):
         component = SystemComponentAdd(scene=self, id=len(self.components))
+        self.add_component(component)
+
+    def add_component_add_n(self, n):
+        component = SystemComponentAddN(scene=self, id=len(self.components), n=n)
+        self.add_component(component)
+
+    def add_component_multiply(self):
+        component = SystemComponentMultiply(scene=self, id=len(self.components))
+        self.add_component(component)
+
+    def add_component_multiply_n(self, n):
+        component = SystemComponentMultiplyN(scene=self, id=len(self.components), n=n)
         self.add_component(component)
 
     def add_component_split(self):

@@ -11,7 +11,6 @@ import GUI_elements
 import GUI_system_dialogs
 import GUI_system_widgets
 from MechSys import System_processing, Signal, System
-
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -51,17 +50,19 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addAction(GUI_elements.Action('System', self, trigger_func=self.menu_components_system))
         components.addSeparator()
         components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
+        components.addAction(GUI_elements.Action('Add multiple', self, trigger_func=self.menu_components_addn))
+        components.addAction(GUI_elements.Action('Multiply', self, trigger_func=self.menu_components_multiply))
+        components.addAction(GUI_elements.Action('Multiply multiple', self, trigger_func=self.menu_components_multiply_multiple))
         components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
         components.addAction(GUI_elements.Action('Sum', self, trigger_func=self.menu_components_sum))
         components.addAction(GUI_elements.Action('Delay', self, trigger_func=self.menu_components_delay))
-        components.addAction(GUI_elements.Action('Scale', self, trigger_func=self.menu_components_gain))
+        components.addAction(GUI_elements.Action('gain', self, trigger_func=self.menu_components_gain))
         components.addAction(GUI_elements.Action('Function', self, trigger_func=self.menu_components_function))
 
         self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
 
         self.menu.addSeparator()
 
-        self.menu.addAction(GUI_elements.Action('Calculate', self, trigger_func=self.menu_calculate_trigger))
         self.menu.addAction(GUI_elements.Action('Simulate', self, trigger_func=self.menu_simulate_trigger))
 
     def build_layout(self):
@@ -183,6 +184,37 @@ class SystemsInterface(QtWidgets.QWidget):
                 self.system_interfaces[index].system.add_add()
                 self.system_interfaces[index].update_info()
 
+    def menu_components_addn(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                get_n = GUI_system_dialogs.GetN()
+                if get_n.complete:
+                    self.system_interfaces[index].system_scene.add_component_add_n(get_n.params['n'])
+                    self.system_interfaces[index].system.add_addn(get_n.params['n'])
+                    self.system_interfaces[index].update_info()
+
+    def menu_components_multiply(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                self.system_interfaces[index].system_scene.add_component_multiply()
+                self.system_interfaces[index].system.add_multiply()
+                self.system_interfaces[index].update_info()
+
+    def menu_components_multiply_multiple(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            system = self.system_interfaces[index].system
+            if system is not None:
+                get_n = GUI_system_dialogs.GetN()
+                if get_n.complete:
+                    self.system_interfaces[index].system_scene.add_component_multiply_n(get_n.params['n'])
+                    self.system_interfaces[index].system.add_multiplyn(get_n.params['n'])
+                    self.system_interfaces[index].update_info()
+
     def menu_components_split(self):
         index = self.tabs.currentIndex()
         if index >= 0:
@@ -248,25 +280,16 @@ class SystemsInterface(QtWidgets.QWidget):
                 self.system_interfaces[index].system.add_connector(((a, i), (b, j)))
                 self.system_interfaces[index].update_info()
 
-    def menu_calculate_trigger(self):
-        index = self.tabs.currentIndex()
-        if index >= 0:
-            system = self.system_interfaces[index].system
-            out_signals = System_processing.calculate(system)
-            for s, signal in enumerate(out_signals):
-                filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
-                if filename[0]:
-                    signal.save(filename[0])
-
     def menu_simulate_trigger(self):
         index = self.tabs.currentIndex()
         if index >= 0:
             progress_window = GUI_elements.ProgressDialog('Simulating...', 'Cancel', 0, 100, self)
-            out_signals = System_processing.simulate(self.system_interfaces[index].system, update=progress_window)
-            for s, signal in enumerate(out_signals):
-                filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
-                if filename[0]:
-                    signal.save(filename[0])
+            if len(self.system_interfaces[index].system.get_input_components(get_index=False)) > 0 and len(self.system_interfaces[index].system.get_output_components(get_index=False)):
+                out_signals = System_processing.simulate(self.system_interfaces[index].system, update=progress_window)
+                for s, signal in enumerate(out_signals):
+                    filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
+                    if filename[0]:
+                        signal.save(filename[0])
 
 
 class SystemInterface(QtWidgets.QWidget):
@@ -302,8 +325,12 @@ class SystemInterface(QtWidgets.QWidget):
         info_layout.addWidget(self.lbl_info_values)
         info_layout.addStretch()
 
+        outer_info_layout = QtWidgets.QVBoxLayout()
+        outer_info_layout.addLayout(info_layout)
+        outer_info_layout.addStretch()
+
         panel_layout = QtWidgets.QHBoxLayout()
-        panel_layout.addLayout(info_layout)
+        panel_layout.addLayout(outer_info_layout)
         panel_layout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
@@ -331,6 +358,16 @@ class SystemInterface(QtWidgets.QWidget):
                 inputs = len(component.in_nodes)
                 outputs = len(component.out_nodes)
                 self.system_scene.add_component_system(inputs, outputs)
+            elif component.type == 'addn':
+                n = component.n
+                self.system_scene.add_component_add_n(n)
+            elif component.type == 'multiply':
+                self.system_scene.add_component_multiply()
+            elif component.type == 'multiplyn':
+                n = component.n
+                self.system_scene.add_component_multiply_n(n)
+            elif component.type == 'function':
+                self.system_scene.add_component_function()
             else:
                 raise TypeError('Unknown component type!')
             self.system_scene.components[-1].setPos(component.x, component.y)

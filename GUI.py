@@ -85,25 +85,30 @@ class MainUI(QtWidgets.QMainWindow):
 
     def menu_debug_trigger(self):
         signal = Signal.TimeSignal.static_load('Signals/10Hz')
-        result = Signal.TimeSignal.static_load('Signals/lti_result_2')
 
         b_0 = 0.5
         b_1 = 0.8
         b_2 = 1.1
         a_1 = 0.1
         a_2 = 0.4
-        calculation = []
-        for k in range(300):
+        calculation = Signal.TimeSignal(
+            x_start=signal.x_start,
+            x_end=signal.x_end,
+            delta_x=signal.delta_x,
+            bit_depth=signal.bit_depth,
+            codomain=signal.codomain,
+            channels=signal.channels,
+            units=signal.units
+        )
+        for k in range(signal.n):
             if k == 0:
                 y = b_0 * signal.Y[k, 0]
             elif k == 1:
-                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] - a_1 * calculation[k - 1]
+                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] - a_1 * calculation.Y[k - 1, 0]
             else:
-                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] + b_2 * signal.Y[k - 2, 0] - a_1 * calculation[k - 1] - a_2 * calculation[k - 2]
-            calculation.append(int(np.round(y, decimals=0)))
-
-        for k in range(300):
-            print('{} | {} | {} | {}'.format(k, signal.Y[k, 0], result.Y[k, 0], calculation[k]))
+                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] + b_2 * signal.Y[k - 2, 0] - a_1 * calculation.Y[k - 1, 0] - a_2 * calculation.Y[k - 2, 0]
+            calculation.Y[k, 0] = y
+        calculation.save('Signals/calculation')
 
     def menu_settings_trigger(self):
         current_settings_map = self.get_current_settings_map()

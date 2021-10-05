@@ -37,13 +37,6 @@ def simulate(system, update=None):
         for node in component.out_nodes:
             node.value = 0
 
-    # Build graph
-    graph = Graphs.Digraph()
-    for c, component in enumerate(system.components):
-        graph.vertices.append(Graphs.Vertex(c))
-    for c, connector in enumerate(system.connectors):
-        graph.vertices[connector[0][0]].out_neighbourhood.append(connector[1][0])
-
     # Simulate
     for k, x in enumerate(system_axis):
 

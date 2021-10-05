@@ -6,6 +6,7 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
+import numpy as np
 # Internals
 import GUI_elements
 # Instantiate logger:
@@ -233,24 +234,41 @@ class NewConnector(QtWidgets.QDialog):
             self.close()
 
 
-class NewSystem(QtWidgets.QDialog):
+class NewDLTISystem(QtWidgets.QDialog):
 
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.setWindowTitle('New system')
+        self.setWindowTitle('New DLTI')
 
         self.complete = False
         self.stack = QtWidgets.QStackedWidget()
         self.params = dict()
 
-        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel = QtWidgets.QPushButton('Close')
         self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
         self.btn_next = QtWidgets.QPushButton('Ok')
         self.btn_next.clicked.connect(self.btn_next_trigger)
 
         self.cmb_type = QtWidgets.QComboBox()
-        self.cmb_type.addItems(['empty', 'LTI'])
+        self.cmb_type.addItems(['State space'])
+
+        self.box_inputs = QtWidgets.QSpinBox()
+        self.box_inputs.setSingleStep(1)
+        self.box_inputs.setValue(2)
+
+        self.box_outputs = QtWidgets.QSpinBox()
+        self.box_outputs.setSingleStep(1)
+        self.box_outputs.setValue(2)
+
+        self.box_states = QtWidgets.QSpinBox()
+        self.box_states.setSingleStep(1)
+        self.box_states.setValue(2)
+
+        self.A = []
+        self.B = []
+        self.C = []
+        self.D = []
 
         self.build_layout()
 
@@ -270,6 +288,17 @@ class NewSystem(QtWidgets.QDialog):
         base_widget.setLayout(base_grid)
         self.stack.addWidget(base_widget)
 
+        state_grid = QtWidgets.QGridLayout()
+        state_grid.addWidget(QtWidgets.QLabel('Inputs (p): '), 0, 0)
+        state_grid.addWidget(QtWidgets.QLabel('Outputs (q): '), 1, 0)
+        state_grid.addWidget(QtWidgets.QLabel('State variables (n): '), 2, 0)
+        state_grid.addWidget(self.box_inputs, 0, 1)
+        state_grid.addWidget(self.box_outputs, 1, 1)
+        state_grid.addWidget(self.box_states, 2, 1)
+        state_widget = QtWidgets.QWidget()
+        state_widget.setLayout(state_grid)
+        self.stack.addWidget(state_widget)
+
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addWidget(self.stack)
         top_layout.addLayout(btn_layout)
@@ -277,15 +306,129 @@ class NewSystem(QtWidgets.QDialog):
         self.setLayout(top_layout)
 
     def btn_cancel_trigger(self):
-        self.close()
+        current_index = self.stack.currentIndex()
+        if current_index == 0:
+            self.close()
+        elif current_index == 1:
+            self.stack.setCurrentIndex(0)
+            self.btn_cancel.setText('Close')
+        else:
+            self.stack.setCurrentIndex(1)
+            self.stack.removeWidget(self.stack.widget(current_index))
+            self.btn_next.setText('Next')
 
     def btn_next_trigger(self):
-        self.gen_system()
-        self.complete = True
-        self.close()
+        current_index = self.stack.currentIndex()
+        type = self.cmb_type.currentText()
+        if current_index == 0:
+            if type == 'State space':
+                self.stack.setCurrentIndex(1)
+            else:
+                raise NotImplemented('Not implemented yet!')
+            self.btn_cancel.setText('Back')
+        elif current_index == 1:
+            if type == 'State space':
 
-    def gen_system(self):
-        self.params['type'] = self.cmb_type.currentText()
+                p = self.box_inputs.value()
+                q = self.box_outputs.value()
+                n = self.box_states.value()
+
+                grp_A = QtWidgets.QGroupBox('A')
+                grp_B = QtWidgets.QGroupBox('B')
+                grp_C = QtWidgets.QGroupBox('C')
+                grp_D = QtWidgets.QGroupBox('D')
+
+                grid_A = QtWidgets.QGridLayout()
+                grid_B = QtWidgets.QGridLayout()
+                grid_C = QtWidgets.QGridLayout()
+                grid_D = QtWidgets.QGridLayout()
+
+                for i in range(n):
+                    row = []
+                    for j in range(n):
+                        row.append(QtWidgets.QLineEdit('0.0'))
+                        grid_A.addWidget(row[-1], i, j)
+                    self.A.append(row)
+                for i in range(n):
+                    row = []
+                    for j in range(p):
+                        row.append(QtWidgets.QLineEdit('0.0'))
+                        grid_B.addWidget(row[-1], i, j)
+                    self.B.append(row)
+                for i in range(q):
+                    row = []
+                    for j in range(n):
+                        if i == j:
+                            row.append(QtWidgets.QLineEdit('1.0'))
+                        else:
+                            row.append(QtWidgets.QLineEdit('0.0'))
+                        grid_C.addWidget(row[-1], i, j)
+                    self.C.append(row)
+                for i in range(q):
+                    row = []
+                    for j in range(p):
+                        row.append(QtWidgets.QLineEdit('0.0'))
+                        grid_D.addWidget(row[-1], i, j)
+                    self.D.append(row)
+
+                grp_A.setLayout(grid_A)
+                grp_B.setLayout(grid_B)
+                grp_C.setLayout(grid_C)
+                grp_D.setLayout(grid_D)
+
+                layout = QtWidgets.QHBoxLayout()
+                layout.addWidget(grp_A)
+                layout.addWidget(grp_B)
+                layout.addWidget(grp_C)
+                layout.addWidget(grp_D)
+
+                widget = QtWidgets.QWidget()
+                widget.setLayout(layout)
+
+                self.stack.addWidget(widget)
+
+                self.stack.setCurrentIndex(2)
+
+            else:
+                raise NotImplemented('Not implemented yet!')
+            self.btn_next.setText('Generate')
+        else:
+            self.gen_params()
+            self.complete = True
+            self.close()
+
+    def gen_params(self):
+        if self.cmb_type.currentText() == 'State space':
+            p = self.box_inputs.value()
+            q = self.box_outputs.value()
+            n = self.box_states.value()
+
+            A = np.zeros((n, n), dtype=float)
+            B = np.zeros((n, p), dtype=float)
+            C = np.zeros((q, n), dtype=float)
+            D = np.zeros((q, p), dtype=float)
+
+            for i in range(n):
+                for j in range(n):
+                    A[i, j] = float(self.A[i][j].text())
+
+            for i in range(n):
+                for j in range(p):
+                    B[i, j] = float(self.B[i][j].text())
+
+            for i in range(q):
+                for j in range(n):
+                    C[i, j] = float(self.C[i][j].text())
+
+            for i in range(q):
+                for j in range(p):
+                    D[i, j] = float(self.D[i][j].text())
+
+            self.params['type'] = 'state_space'
+            self.params['A'] = A
+            self.params['B'] = B
+            self.params['C'] = C
+            self.params['D'] = D
 
 
 class GetCoefficient(QtWidgets.QDialog):

@@ -7,7 +7,8 @@ import logging
 # 3rd party
 
 # Internals
-from MechSys import Graphs
+from . import Graphs
+from . import System
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -127,6 +128,26 @@ def simulate_2(system, update=None):
         result.append(output_component.signal)
 
     return result
+
+
+def state_system(A, B, C, D):
+
+    n = A.shape[0]
+    (q, p) = D.shape
+
+    system = System.System()
+
+    for i in range(p):
+        system.add_input(None)
+        system.components[-1].x = -20
+        system.components[-1].y = 40 * i
+
+    for o in range(q):
+        system.add_output()
+        system.components[-1].x = 80
+        system.components[-1].y = 40 * o
+
+    return system
 
 
 

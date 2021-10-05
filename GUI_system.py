@@ -35,7 +35,9 @@ class SystemsInterface(QtWidgets.QWidget):
 
     def populate_menu(self):
 
-        self.menu.addAction(GUI_elements.Action('New', self, trigger_func=self.menu_new_trigger))
+        new = self.menu.addMenu('New')
+        new.addAction(GUI_elements.Action('Empty', self, trigger_func=self.menu_new_trigger))
+        new.addAction(GUI_elements.Action('DLTI', self, trigger_func=self.menu_new_dlti_trigger))
 
         self.menu.addAction(GUI_elements.Action('Save', self, trigger_func=self.menu_save_trigger))
         self.menu.addAction(GUI_elements.Action('Load', self, trigger_func=self.menu_load_trigger))
@@ -95,13 +97,25 @@ class SystemsInterface(QtWidgets.QWidget):
 
     def menu_new_trigger(self):
         system_interface = SystemInterface(config=self.config)
-        wizard = GUI_system_dialogs.NewSystem()
+        system_interface.system = System.System()
+        system_interface.update_info()
+        self.add_interface(system_interface)
+
+    def menu_new_dlti_trigger(self):
+        system_interface = SystemInterface(config=self.config)
+        wizard = GUI_system_dialogs.NewDLTISystem()
         if wizard.complete:
-            if wizard.params['type'] == 'empty':
-                system_interface.system = System.System()
+            if wizard.params['type'] == 'state_space':
+                system_interface.system = System_processing.state_system(
+                    wizard.params['A'],
+                    wizard.params['B'],
+                    wizard.params['C'],
+                    wizard.params['D']
+                )
             else:
                 system_interface.system = System.System()
             system_interface.update_info()
+            system_interface.plot_system()
             self.add_interface(system_interface)
 
     def menu_save_trigger(self):

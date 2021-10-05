@@ -285,7 +285,7 @@ class SystemsInterface(QtWidgets.QWidget):
         if index >= 0:
             progress_window = GUI_elements.ProgressDialog('Simulating...', 'Cancel', 0, 100, self)
             if len(self.system_interfaces[index].system.get_input_components(get_index=False)) > 0 and len(self.system_interfaces[index].system.get_output_components(get_index=False)):
-                out_signals = System_processing.simulate(self.system_interfaces[index].system, update=progress_window)
+                out_signals = System_processing.simulate_2(self.system_interfaces[index].system, update=progress_window)
                 for s, signal in enumerate(out_signals):
                     filename = QtWidgets.QFileDialog.getSaveFileName(self, 'save output signal {}'.format(s), '', "")
                     if filename[0]:

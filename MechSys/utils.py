@@ -17,16 +17,18 @@ class Queue:
 
     def __init__(self):
         self.que = []
+        self.processed = []
 
     def __len__(self):
         return len(self.que)
 
     def enqueue(self, i):
-        if i not in self.que:
+        if i not in self.que and i not in self.processed:
             self.que.append(i)
 
     def dequeue(self):
-        return self.que.pop(0)
+        self.processed.append(self.que.pop(0))
+        return self.processed[-1]
 
 
 

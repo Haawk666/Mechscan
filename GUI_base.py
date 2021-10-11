@@ -6,10 +6,11 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
-import numpy as np
 # Internals
-import GUI_elements
-import GUI_dialogs
+import GUI_base_widgets
+import GUI_base_dialogs
+import GUI_data
+import GUI_model
 import GUI_signal
 import GUI_system
 import Library
@@ -50,10 +51,14 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.signals_interface = GUI_signal.SignalsInterface(menu=self.menu, config=self.config)
         self.systems_interface = GUI_system.SystemsInterface(menu=self.menu, config=self.config)
+        self.datasets_interface = GUI_data.DatasetsInterface(menu=self.menu, config=self.config)
+        self.models_interface = GUI_model.ModelsInterface(menu=self.menu, config=self.config)
 
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.addTab(self.signals_interface, 'Signals')
         self.tabs.addTab(self.systems_interface, 'Systems')
+        self.tabs.addTab(self.datasets_interface, 'Data')
+        self.tabs.addTab(self.models_interface, 'Models')
 
         self.build_layout()
 
@@ -73,11 +78,11 @@ class MainUI(QtWidgets.QMainWindow):
 
         app = self.menu.addMenu('App')
 
-        app.addAction(GUI_elements.Action('Debug', self, trigger_func=self.menu_debug_trigger))
+        app.addAction(GUI_base_widgets.Action('Debug', self, trigger_func=self.menu_debug_trigger))
         app.addSeparator()
-        app.addAction(GUI_elements.Action('Settings', self, trigger_func=self.menu_settings_trigger))
+        app.addAction(GUI_base_widgets.Action('Settings', self, trigger_func=self.menu_settings_trigger))
         app.addSeparator()
-        app.addAction(GUI_elements.Action('Exit', self, trigger_func=self.menu_exit_trigger))
+        app.addAction(GUI_base_widgets.Action('Exit', self, trigger_func=self.menu_exit_trigger))
 
     def build_layout(self):
 
@@ -112,7 +117,7 @@ class MainUI(QtWidgets.QMainWindow):
 
     def menu_settings_trigger(self):
         current_settings_map = self.get_current_settings_map()
-        wizard = GUI_dialogs.SetOptions(settings_map=current_settings_map)
+        wizard = GUI_base_dialogs.SetOptions(settings_map=current_settings_map)
         if wizard.complete:
             self.set_current_settings(wizard.settings_map)
             self.signals_interface.update_config(self.config)

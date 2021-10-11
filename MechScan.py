@@ -10,7 +10,7 @@ import sys
 # 3rd party
 from PyQt5 import QtWidgets, QtGui, QtCore
 # Internals
-import GUI
+import GUI_base
 import Library
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -52,6 +52,6 @@ if __name__ == '__main__':
         pass
 
     # Start app
-    program_session = GUI.MainUI(settings_file=config)
+    program_session = GUI_base.MainUI(settings_file=config)
     app.exec_()
 

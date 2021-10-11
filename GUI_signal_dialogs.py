@@ -7,7 +7,7 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets
 # Internals
-import GUI_elements
+import GUI_base_widgets
 from MechSys import Signal as ss
 import Library
 # Instantiate logger:
@@ -61,14 +61,14 @@ class GetFunction(QtWidgets.QDialog):
         for d in range(self.signal.dimensions):
             self.range_widgets.append(dict())
             if self.signal.dimensions == 1:
-                self.range_widgets[-1]['from'] = GUI_elements.DoubleSpinBox(
+                self.range_widgets[-1]['from'] = GUI_base_widgets.DoubleSpinBox(
                     minimum=self.signal.x_start,
                     maximum=self.signal.x_end,
                     step=1.0,
                     decimals=3,
                     value=self.signal.x_start
                 )
-                self.range_widgets[-1]['to'] = GUI_elements.DoubleSpinBox(
+                self.range_widgets[-1]['to'] = GUI_base_widgets.DoubleSpinBox(
                     minimum=self.signal.x_start,
                     maximum=self.signal.x_end,
                     step=1.0,
@@ -76,14 +76,14 @@ class GetFunction(QtWidgets.QDialog):
                     value=self.signal.x_end
                 )
             else:
-                self.range_widgets[-1]['from'] = GUI_elements.DoubleSpinBox(
+                self.range_widgets[-1]['from'] = GUI_base_widgets.DoubleSpinBox(
                     minimum=self.signal.x_start[d],
                     maximum=self.signal.x_end[d],
                     step=1.0,
                     decimals=3,
                     value=self.signal.x_start[d]
                 )
-                self.range_widgets[-1]['to'] = GUI_elements.DoubleSpinBox(
+                self.range_widgets[-1]['to'] = GUI_base_widgets.DoubleSpinBox(
                     minimum=self.signal.x_start[d],
                     maximum=self.signal.x_end[d],
                     step=1.0,
@@ -102,7 +102,7 @@ class GetFunction(QtWidgets.QDialog):
             if not function == 'custom':
                 self.param_boxes[function] = dict()
                 for key, parameter in self.functions[function]['kwargs'].items():
-                    self.param_boxes[function][key] = GUI_elements.DoubleSpinBox(
+                    self.param_boxes[function][key] = GUI_base_widgets.DoubleSpinBox(
                         minimum=parameter.min,
                         maximum=parameter.max,
                         step=parameter.step,

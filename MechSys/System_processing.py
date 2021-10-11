@@ -7,7 +7,7 @@ import logging
 # 3rd party
 
 # Internals
-from . import Graphs
+from . import Graph
 from . import System
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -86,9 +86,9 @@ def simulate_2(system, update=None):
             node.value = 0
 
     # Build graph
-    graph = Graphs.Digraph()
+    graph = Graph.Digraph()
     for c, component in enumerate(system.components):
-        graph.vertices.append(Graphs.Vertex(c))
+        graph.vertices.append(Graph.Vertex(c))
     for c, connector in enumerate(system.connectors):
         graph.vertices[connector[0][0]].add_out_neighbour(connector[1][0])
 

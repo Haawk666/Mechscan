@@ -7,7 +7,7 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets
 # Internals
-import GUI_elements
+import GUI_base_widgets
 import GUI_system_dialogs
 import GUI_system_widgets
 from MechSys import System_processing, Signal, System
@@ -36,36 +36,36 @@ class SystemsInterface(QtWidgets.QWidget):
     def populate_menu(self):
 
         new = self.menu.addMenu('New')
-        new.addAction(GUI_elements.Action('Empty', self, trigger_func=self.menu_new_trigger))
-        new.addAction(GUI_elements.Action('DLTI', self, trigger_func=self.menu_new_dlti_trigger))
+        new.addAction(GUI_base_widgets.Action('Empty', self, trigger_func=self.menu_new_trigger))
+        new.addAction(GUI_base_widgets.Action('DLTI', self, trigger_func=self.menu_new_dlti_trigger))
 
-        self.menu.addAction(GUI_elements.Action('Save', self, trigger_func=self.menu_save_trigger))
-        self.menu.addAction(GUI_elements.Action('Load', self, trigger_func=self.menu_load_trigger))
-        self.menu.addAction(GUI_elements.Action('Close', self, trigger_func=self.menu_close_trigger))
-        self.menu.addAction(GUI_elements.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Save', self, trigger_func=self.menu_save_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Load', self, trigger_func=self.menu_load_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Close', self, trigger_func=self.menu_close_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
 
         self.menu.addSeparator()
 
         components = self.menu.addMenu('Components')
-        components.addAction(GUI_elements.Action('Input', self, trigger_func=self.menu_components_input))
-        components.addAction(GUI_elements.Action('Output', self, trigger_func=self.menu_components_output))
-        components.addAction(GUI_elements.Action('System', self, trigger_func=self.menu_components_system))
+        components.addAction(GUI_base_widgets.Action('Input', self, trigger_func=self.menu_components_input))
+        components.addAction(GUI_base_widgets.Action('Output', self, trigger_func=self.menu_components_output))
+        components.addAction(GUI_base_widgets.Action('System', self, trigger_func=self.menu_components_system))
         components.addSeparator()
-        components.addAction(GUI_elements.Action('Add', self, trigger_func=self.menu_components_add))
-        components.addAction(GUI_elements.Action('Add multiple', self, trigger_func=self.menu_components_addn))
-        components.addAction(GUI_elements.Action('Multiply', self, trigger_func=self.menu_components_multiply))
-        components.addAction(GUI_elements.Action('Multiply multiple', self, trigger_func=self.menu_components_multiply_multiple))
-        components.addAction(GUI_elements.Action('Split', self, trigger_func=self.menu_components_split))
-        components.addAction(GUI_elements.Action('Sum', self, trigger_func=self.menu_components_sum))
-        components.addAction(GUI_elements.Action('Delay', self, trigger_func=self.menu_components_delay))
-        components.addAction(GUI_elements.Action('Gain', self, trigger_func=self.menu_components_gain))
-        components.addAction(GUI_elements.Action('Function', self, trigger_func=self.menu_components_function))
+        components.addAction(GUI_base_widgets.Action('Add', self, trigger_func=self.menu_components_add))
+        components.addAction(GUI_base_widgets.Action('Add multiple', self, trigger_func=self.menu_components_addn))
+        components.addAction(GUI_base_widgets.Action('Multiply', self, trigger_func=self.menu_components_multiply))
+        components.addAction(GUI_base_widgets.Action('Multiply multiple', self, trigger_func=self.menu_components_multiply_multiple))
+        components.addAction(GUI_base_widgets.Action('Split', self, trigger_func=self.menu_components_split))
+        components.addAction(GUI_base_widgets.Action('Sum', self, trigger_func=self.menu_components_sum))
+        components.addAction(GUI_base_widgets.Action('Delay', self, trigger_func=self.menu_components_delay))
+        components.addAction(GUI_base_widgets.Action('Gain', self, trigger_func=self.menu_components_gain))
+        components.addAction(GUI_base_widgets.Action('Function', self, trigger_func=self.menu_components_function))
 
-        self.menu.addAction(GUI_elements.Action('Connect', self, trigger_func=self.menu_connect_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Connect', self, trigger_func=self.menu_connect_trigger))
 
         self.menu.addSeparator()
 
-        self.menu.addAction(GUI_elements.Action('Simulate', self, trigger_func=self.menu_simulate_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Simulate', self, trigger_func=self.menu_simulate_trigger))
 
     def build_layout(self):
 
@@ -297,7 +297,7 @@ class SystemsInterface(QtWidgets.QWidget):
     def menu_simulate_trigger(self):
         index = self.tabs.currentIndex()
         if index >= 0:
-            progress_window = GUI_elements.ProgressDialog('Simulating...', 'Cancel', 0, 100, self)
+            progress_window = GUI_base_widgets.ProgressDialog('Simulating...', 'Cancel', 0, 100, self)
             if len(self.system_interfaces[index].system.get_input_components(get_index=False)) > 0 and len(self.system_interfaces[index].system.get_output_components(get_index=False)):
                 out_signals = System_processing.simulate(self.system_interfaces[index].system, update=progress_window)
                 for s, signal in enumerate(out_signals):
@@ -315,7 +315,7 @@ class SystemInterface(QtWidgets.QWidget):
 
         self.system = None
 
-        self.btn_simulate = GUI_elements.MediumButton('Simulate', self)
+        self.btn_simulate = GUI_base_widgets.MediumButton('Simulate', self)
 
         self.system_scene = GUI_system_widgets.SystemScene(system_interface=self)
         self.system_view = GUI_system_widgets.SystemView(system_interface=self)

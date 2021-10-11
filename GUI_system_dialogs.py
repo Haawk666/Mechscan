@@ -8,7 +8,7 @@ import logging
 from PyQt5 import QtWidgets
 import numpy as np
 # Internals
-import GUI_elements
+import GUI_base_widgets
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -446,7 +446,7 @@ class GetCoefficient(QtWidgets.QDialog):
         self.btn_next = QtWidgets.QPushButton('Ok')
         self.btn_next.clicked.connect(self.btn_next_trigger)
 
-        self.box_coefficient = GUI_elements.DoubleSpinBox(
+        self.box_coefficient = GUI_base_widgets.DoubleSpinBox(
             minimum=-10000.0,
             maximum=10000.0,
             step=1.0,

@@ -7,7 +7,7 @@ import logging
 # 3rd party
 from PyQt5 import QtWidgets
 # Internals
-import GUI_elements
+import GUI_base_widgets
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

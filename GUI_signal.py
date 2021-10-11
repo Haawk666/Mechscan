@@ -9,7 +9,7 @@ from PyQt5 import QtWidgets
 import numpy as np
 import pyqtgraph as pg
 # Internals
-import GUI_elements
+import GUI_base_widgets
 from MechSys import Signal_processing, Signal
 import GUI_signal_dialogs
 # Instantiate logger:
@@ -36,41 +36,41 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def populate_menu(self):
 
-        self.menu.addAction(GUI_elements.Action('New', self, trigger_func=self.menu_new_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('New', self, trigger_func=self.menu_new_trigger))
 
-        self.menu.addAction(GUI_elements.Action('Save', self, trigger_func=self.menu_save_trigger))
-        self.menu.addAction(GUI_elements.Action('Load', self, trigger_func=self.menu_load_trigger))
-        self.menu.addAction(GUI_elements.Action('Close', self, trigger_func=self.menu_close_trigger))
-        self.menu.addAction(GUI_elements.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Save', self, trigger_func=self.menu_save_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Load', self, trigger_func=self.menu_load_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Close', self, trigger_func=self.menu_close_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Close all', self, trigger_func=self.menu_close_all_trigger))
 
         self.menu.addSeparator()
 
-        self.menu.addAction(GUI_elements.Action('Import', self, trigger_func=self.menu_import_trigger))
-        self.menu.addAction(GUI_elements.Action('Export', self, trigger_func=self.menu_export_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Import', self, trigger_func=self.menu_import_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Export', self, trigger_func=self.menu_export_trigger))
 
         self.menu.addSeparator()
 
         transforms = self.menu.addMenu('Transforms')
-        transforms.addAction(GUI_elements.Action('Fast Fourier Transform', self, trigger_func=self.menu_FFT_trigger))
-        transforms.addAction(GUI_elements.Action('Gabor transform', self, trigger_func=self.menu_gabor_trigger))
-        transforms.addAction(GUI_elements.Action('Wavelet transform', self, trigger_func=self.menu_wavelet_trigger))
-        transforms.addAction(GUI_elements.Action('Z-transform', self, trigger_func=self.menu_z_trigger))
-        transforms.addAction(GUI_elements.Action('Laplace transform', self, trigger_func=self.menu_laplace_trigger))
+        transforms.addAction(GUI_base_widgets.Action('Fast Fourier Transform', self, trigger_func=self.menu_FFT_trigger))
+        transforms.addAction(GUI_base_widgets.Action('Gabor transform', self, trigger_func=self.menu_gabor_trigger))
+        transforms.addAction(GUI_base_widgets.Action('Wavelet transform', self, trigger_func=self.menu_wavelet_trigger))
+        transforms.addAction(GUI_base_widgets.Action('Z-transform', self, trigger_func=self.menu_z_trigger))
+        transforms.addAction(GUI_base_widgets.Action('Laplace transform', self, trigger_func=self.menu_laplace_trigger))
 
         filters = self.menu.addMenu('Filters/effects')
-        filters.addAction(GUI_elements.Action('Low pass', self, trigger_func=self.menu_low_pass_trigger))
-        filters.addAction(GUI_elements.Action('High pass', self, trigger_func=self.menu_high_pass_trigger))
-        filters.addAction(GUI_elements.Action('Band pass', self, trigger_func=self.menu_band_pass_trigger))
-        filters.addAction(GUI_elements.Action('Cut-off', self, trigger_func=self.menu_cut_trigger))
-        filters.addAction(GUI_elements.Action('Compression', self, trigger_func=self.menu_compression_trigger))
+        filters.addAction(GUI_base_widgets.Action('Low pass', self, trigger_func=self.menu_low_pass_trigger))
+        filters.addAction(GUI_base_widgets.Action('High pass', self, trigger_func=self.menu_high_pass_trigger))
+        filters.addAction(GUI_base_widgets.Action('Band pass', self, trigger_func=self.menu_band_pass_trigger))
+        filters.addAction(GUI_base_widgets.Action('Cut-off', self, trigger_func=self.menu_cut_trigger))
+        filters.addAction(GUI_base_widgets.Action('Compression', self, trigger_func=self.menu_compression_trigger))
 
         edit = self.menu.addMenu('Edit')
-        edit.addAction(GUI_elements.Action('Scale', self, trigger_func=self.menu_scale_trigger))
-        edit.addAction(GUI_elements.Action('Shift', self, trigger_func=self.menu_shift_trigger))
-        edit.addAction(GUI_elements.Action('Crop', self, trigger_func=self.menu_crop_trigger))
-        edit.addAction(GUI_elements.Action('Resample', self, trigger_func=self.menu_resample_trigger))
+        edit.addAction(GUI_base_widgets.Action('Scale', self, trigger_func=self.menu_scale_trigger))
+        edit.addAction(GUI_base_widgets.Action('Shift', self, trigger_func=self.menu_shift_trigger))
+        edit.addAction(GUI_base_widgets.Action('Crop', self, trigger_func=self.menu_crop_trigger))
+        edit.addAction(GUI_base_widgets.Action('Resample', self, trigger_func=self.menu_resample_trigger))
 
-        self.menu.addAction(GUI_elements.Action('Functions', self, trigger_func=self.menu_functions_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Functions', self, trigger_func=self.menu_functions_trigger))
 
     def build_layout(self):
 
@@ -171,7 +171,7 @@ class SignalsInterface(QtWidgets.QWidget):
                         delta_tau_n = int(np.round(params['delta_tau'] / signal.delta_x, decimals=0))
                         N = int(np.round(signal.N / delta_tau_n - 1, decimals=0))
                         iterations = signal.channels * N
-                        progress_window = GUI_elements.ProgressDialog('Transforming...', 'Cancel', 0, iterations, self)
+                        progress_window = GUI_base_widgets.ProgressDialog('Transforming...', 'Cancel', 0, iterations, self)
                         self.add_signal(Signal_processing.gabor_transform(
                             signal,
                             window_size=params['window_length'],
@@ -248,7 +248,7 @@ class SignalsInterface(QtWidgets.QWidget):
                 function_wiz = GUI_signal_dialogs.GetFunction(signal=signal)
                 if function_wiz.complete:
                     iterations = signal.N
-                    progress_window = GUI_elements.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
+                    progress_window = GUI_base_widgets.ProgressDialog('Evaluating...', '', 0, iterations + 1, self)
 
                     kwargs = dict()
                     for key, value in function_wiz.params['kwargs'].items():
@@ -281,7 +281,7 @@ class SignalInterface(QtWidgets.QWidget):
 
         self.signal = None
 
-        self.btn_play = GUI_elements.MediumButton('Play', self, trigger_func=self.play_trigger)
+        self.btn_play = GUI_base_widgets.MediumButton('Play', self, trigger_func=self.play_trigger)
 
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')

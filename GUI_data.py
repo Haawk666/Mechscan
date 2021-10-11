@@ -11,6 +11,7 @@ import pyqtgraph as pg
 # Internals
 import GUI_base_widgets
 import GUI_data_dialogs
+import GUI_data_widgets
 from MechSys import Data, Data_processing
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -100,7 +101,19 @@ class DatasetsInterface(QtWidgets.QWidget):
         self.tabs.clear()
 
     def menu_import_trigger(self):
-        pass
+        data_interface = DatasetInterface(config=self.config)
+        wizard = GUI_data_dialogs.Import(ui_object=data_interface)
+        if wizard.complete:
+            if wizard.params['type'] == 'CSV':
+                print('type: {}'.format(wizard.params['type']))
+                data = Data.Dataset.import_csv(wizard.params['path'])
+            elif wizard.params['type'] == 'Pandas':
+                data = Data.Dataset.import_panda(wizard.params['path'])
+            else:
+                raise NotImplemented('Unknown import type')
+            data_interface.data = data
+            data_interface.update_info()
+            self.add_interface(data_interface)
 
     def menu_export_trigger(self):
         pass
@@ -127,7 +140,6 @@ class DatasetInterface(QtWidgets.QWidget):
     def build_layout(self):
 
         btn_layout = QtWidgets.QVBoxLayout()
-        btn_layout.addWidget(self.btn_play)
         btn_layout.addStretch()
 
         info_layout = QtWidgets.QHBoxLayout()
@@ -148,8 +160,8 @@ class DatasetInterface(QtWidgets.QWidget):
         pass
 
     def update_info(self):
-
-        if self.data:
+        if self.data is not None:
+            self.graphs.clear()
             meta_data = self.data.info()
             key_string = ''
             value_string = ''
@@ -166,7 +178,13 @@ class DatasetInterface(QtWidgets.QWidget):
                             value_string += '{}\n'.format(value)
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
+
+            table = QtWidgets.QTableView()
+            table.setModel(GUI_data_widgets.TableModel(self.data.dataframe))
+            self.graphs.addTab(table, 'Table')
+
         else:
+            print('Why?')
             self.graphs.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')

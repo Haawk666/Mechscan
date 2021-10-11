@@ -4,11 +4,55 @@
 
 # standard library
 import logging
+import pathlib
 # 3rd party
-
+import pandas as pd
 # Internals
 
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class Dataset:
+
+    def __init__(self):
+        self.dataframe = None
+        self.path = None
+        self.fields = dict()
+        self.type = 'generic'
+
+    def __str__(self):
+        meta_data = self.info()
+        info_string = ''
+        for key, value in meta_data.items():
+            info_string += '{}: {}\n'.format(key, value)
+        return info_string
+
+    def info(self):
+
+        meta_data = {
+            'Datapoints': len(self.dataframe)
+        }
+
+        return meta_data
+
+    def name(self):
+        if self.path is None:
+            return 'New'
+        else:
+            return self.path.name
+
+    @staticmethod
+    def import_panda(path_string):
+        pass
+
+    @staticmethod
+    def import_csv(path_string):
+        data = pd.read_csv(path_string)
+        container = Dataset()
+        container.dataframe = data
+        return container
+
+
 

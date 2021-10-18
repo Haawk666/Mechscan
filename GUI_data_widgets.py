@@ -5,13 +5,9 @@
 # standard library
 import logging
 # 3rd party
-from PyQt5 import QtWidgets, QtCore, QtGui
-import numpy as np
-import pyqtgraph as pg
+from PyQt5 import QtCore
 # Internals
-import GUI_base_widgets
-import GUI_data_dialogs
-from MechSys import Data, Data_processing
+
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

@@ -38,7 +38,6 @@ class DatasetsInterface(QtWidgets.QWidget):
     def populate_menu(self):
 
         self.menu.addAction(GUI_base_widgets.Action('New', self, trigger_func=self.menu_new_trigger))
-
         self.menu.addAction(GUI_base_widgets.Action('Save', self, trigger_func=self.menu_save_trigger))
         self.menu.addAction(GUI_base_widgets.Action('Load', self, trigger_func=self.menu_load_trigger))
         self.menu.addAction(GUI_base_widgets.Action('Close', self, trigger_func=self.menu_close_trigger))
@@ -48,6 +47,23 @@ class DatasetsInterface(QtWidgets.QWidget):
 
         self.menu.addAction(GUI_base_widgets.Action('Import', self, trigger_func=self.menu_import_trigger))
         self.menu.addAction(GUI_base_widgets.Action('Export', self, trigger_func=self.menu_export_trigger))
+
+        self.menu.addSeparator()
+
+        frames = self.menu.addMenu('Frames')
+        frames.addAction(GUI_base_widgets.Action('New', self, trigger_func=self.menu_frames_new_trigger))
+        frames.addAction(GUI_base_widgets.Action('Subset', self, trigger_func=self.menu_frames_subset_trigger))
+        frames.addAction(GUI_base_widgets.Action('Combine', self, trigger_func=self.menu_frames_combine_trigger))
+        frames.addAction(GUI_base_widgets.Action('Delete', self, trigger_func=self.menu_frames_delete_trigger))
+
+        plots = self.menu.addMenu('Plots')
+        plots.addAction(GUI_base_widgets.Action('Wizard', self, trigger_func=self.menu_plots_wizard_trigger))
+
+        self.menu.addSeparator()
+
+        methods = self.menu.addMenu('Methods')
+        methods.addAction(GUI_base_widgets.Action('PCA', self, trigger_func=self.menu_methods_pca_trigger))
+
 
     def build_layout(self):
 
@@ -79,10 +95,9 @@ class DatasetsInterface(QtWidgets.QWidget):
 
     def menu_new_trigger(self):
         data_interface = DatasetInterface(config=self.config)
-        wizard = GUI_data_dialogs.NewDataset(ui_object=data_interface)
-        if wizard.complete:
-            data_interface.update_info()
-            self.add_interface(data_interface)
+        data_interface.data = Data.Dataset()
+        data_interface.update_info()
+        self.add_interface(data_interface)
 
     def menu_save_trigger(self):
         pass
@@ -101,21 +116,44 @@ class DatasetsInterface(QtWidgets.QWidget):
         self.tabs.clear()
 
     def menu_import_trigger(self):
-        data_interface = DatasetInterface(config=self.config)
-        wizard = GUI_data_dialogs.Import(ui_object=data_interface)
-        if wizard.complete:
-            if wizard.params['type'] == 'CSV':
-                print('type: {}'.format(wizard.params['type']))
-                data = Data.Dataset.import_csv(wizard.params['path'])
-            elif wizard.params['type'] == 'Pandas':
-                data = Data.Dataset.import_panda(wizard.params['path'])
-            else:
-                raise NotImplemented('Unknown import type')
-            data_interface.data = data
+        if len(self.tabs) > 0:
+            index = self.tabs.currentIndex()
+            data_interface = self.dataset_interfaces[index]
+            if data_interface.data is None:
+                self.dataset_interfaces[index].data = Data.Dataset()
+        else:
+            data_interface = DatasetInterface(config=self.config)
+            data_interface.data = Data.Dataset()
             data_interface.update_info()
             self.add_interface(data_interface)
 
+        wizard = GUI_data_dialogs.Import(ui_object=data_interface)
+        if wizard.complete:
+            if wizard.params['type'] == 'CSV':
+                data_interface.data.import_csv(wizard.params['path'])
+            else:
+                raise NotImplemented('Unknown import type')
+            data_interface.update_info()
+
     def menu_export_trigger(self):
+        pass
+
+    def menu_frames_new_trigger(self):
+        pass
+
+    def menu_frames_subset_trigger(self):
+        pass
+
+    def menu_frames_combine_trigger(self):
+        pass
+
+    def menu_frames_delete_trigger(self):
+        pass
+
+    def menu_plots_wizard_trigger(self):
+        pass
+
+    def menu_methods_pca_trigger(self):
         pass
 
 
@@ -179,12 +217,15 @@ class DatasetInterface(QtWidgets.QWidget):
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
 
-            table = QtWidgets.QTableView()
-            table.setModel(GUI_data_widgets.TableModel(self.data.dataframe))
-            self.graphs.addTab(table, 'Table')
+            for f, frame in enumerate(self.data.dataframes):
+                table = QtWidgets.QTableView()
+                table.setModel(GUI_data_widgets.TableModel(frame))
+                self.graphs.addTab(table, 'Frame {}'.format(f))
+                print(frame.head())
+                print(frame.describe())
+                print(frame.info())
 
         else:
-            print('Why?')
             self.graphs.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')

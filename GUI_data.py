@@ -115,24 +115,15 @@ class DatasetsInterface(QtWidgets.QWidget):
         self.tabs.clear()
 
     def menu_import_trigger(self):
-        if len(self.tabs) > 0:
-            index = self.tabs.currentIndex()
-            data_interface = self.dataset_interfaces[index]
-            if data_interface.data is None:
-                self.dataset_interfaces[index].data = Data.Dataset()
-        else:
-            data_interface = DatasetInterface(config=self.config)
-            data_interface.data = Data.Dataset()
-            data_interface.update_info()
-            self.add_interface(data_interface)
-
+        data_interface = DatasetInterface(config=self.config)
         wizard = GUI_data_dialogs.Import(ui_object=data_interface)
         if wizard.complete:
             if wizard.params['type'] == 'CSV':
-                data_interface.data.import_csv(wizard.params['path'])
+                data_interface.data = Data.Dataset.import_csv(wizard.params['path'])
             else:
                 raise NotImplemented('Unknown import type')
             data_interface.update_info()
+            self.add_interface(data_interface)
 
     def menu_export_trigger(self):
         pass
@@ -193,6 +184,24 @@ class DatasetInterface(QtWidgets.QWidget):
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
+    def build_summary_grid(self):
+        grid = QtWidgets.QGridLayout()
+
+        grid.addWidget(QtWidgets.QLabel('#'), 0, 0)
+        grid.addWidget(QtWidgets.QLabel('Column name'), 0, 1)
+        grid.addWidget(QtWidgets.QLabel('Type'), 0, 2)
+
+        grid.addWidget(QtWidgets.QLabel('----'), 1, 0)
+        grid.addWidget(QtWidgets.QLabel('----'), 1, 1)
+        grid.addWidget(QtWidgets.QLabel('----'), 1, 2)
+
+        for c, column in enumerate(self.data.frame):
+            grid.addWidget(QtWidgets.QLabel('{}'.format(c)), c + 2, 0)
+            grid.addWidget(QtWidgets.QLabel('{}'.format(column)), c + 2, 1)
+            grid.addWidget(QtWidgets.QLabel('{}'.format(self.data.frame[column].dtype)), c + 2, 2)
+
+        return grid
+
     def plot_data(self):
         pass
 
@@ -216,13 +225,13 @@ class DatasetInterface(QtWidgets.QWidget):
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
 
-            for f, frame in enumerate(self.data.dataframes):
-                table = QtWidgets.QTableView()
-                table.setModel(GUI_data_widgets.TableModel(frame))
-                self.graphs.addTab(table, 'Frame {}'.format(f))
-                print(frame.head())
-                print(frame.describe())
-                print(frame.info())
+            table = QtWidgets.QTableView()
+            table.setModel(GUI_data_widgets.TableModel(self.data.frame))
+            self.graphs.addTab(table, 'Frame')
+
+            description = QtWidgets.QWidget()
+            description.setLayout(self.build_summary_grid())
+            self.graphs.addTab(description, 'Summary')
 
         else:
             self.graphs.clear()

@@ -17,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 class Dataset:
 
     def __init__(self):
-        self.dataframes = []
+        self.frame = None
         self.path = None
         self.type = 'generic'
 
@@ -30,8 +30,7 @@ class Dataset:
 
     def info(self):
         meta_data = {
-            'Frames': len(self.dataframes),
-            'Datapoints': sum([len(x) for x in self.dataframes])
+            'Datapoints': len(self.frame)
         }
 
         return meta_data
@@ -42,9 +41,13 @@ class Dataset:
         else:
             return self.path.name
 
-    def import_csv(self, path_string):
-        data = pd.read_csv(path_string)
-        self.dataframes.append(data)
+    @staticmethod
+    def import_csv(path_string):
+        frame = pd.read_csv(path_string)
+        data = Dataset()
+        data.frame = frame
+        return data
+
 
 
 

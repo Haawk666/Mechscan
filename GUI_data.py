@@ -64,7 +64,6 @@ class DatasetsInterface(QtWidgets.QWidget):
         methods = self.menu.addMenu('Methods')
         methods.addAction(GUI_base_widgets.Action('PCA', self, trigger_func=self.menu_methods_pca_trigger))
 
-
     def build_layout(self):
 
         layout = QtWidgets.QVBoxLayout()

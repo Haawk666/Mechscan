@@ -18,6 +18,7 @@ class ANN:
     def __init__(self):
         self.graph = Graph.Digraph()
         self.path = None
+        self.type = 'nn'
 
     def name(self):
         if self.path is None:
@@ -52,6 +53,12 @@ class ANN:
                 if vertex.type == 'output':
                     outputs += 1
             return outputs
+        elif property == 'layers':
+            layers = 0
+            for vertex in self.graph.vertices:
+                if vertex.layer + 1 > layers:
+                    layers = vertex.layer + 1
+            return layers
         else:
             return None
 
@@ -61,10 +68,11 @@ class ANN:
         vertex.activation = 0.0
         self.graph.vertices.append(vertex)
 
-    def add_node(self, activation='sigmoid'):
+    def add_node(self, activation='sigmoid', layer=0):
         vertex = Graph.Vertex(self.graph.order())
         vertex.type = 'node'
         vertex.activation = 0.0
+        vertex.layer = layer
         self.graph.vertices.append(vertex)
 
     def add_output(self):
@@ -84,5 +92,34 @@ class ANN:
 
     def accuracy(self, test_data):
         pass
+
+    @staticmethod
+    def from_params(params):
+        ann = ANN()
+
+        # Add nodes
+        for i in range(params['inputs']):
+            ann.add_input()
+        for l in range(len(params['layers'])):
+            nodes = params['layers'][l]['nodes']
+            activation = params['layers'][l]['activation']
+            for n in range(nodes):
+                ann.add_node(activation=activation)
+                if l == 0:
+                    for vertex in ann.graph.vertices:
+                        if vertex.type == 'input':
+                            ann.connect(vertex.i, len(ann.graph.vertices) - 1)
+                else:
+                    for vertex in ann.graph.vertices:
+                        if vertex.layer == l - 1:
+                            ann.connect(vertex.i, len(ann.graph.vertices) - 1)
+        for o in range(params['outputs']):
+            ann.add_output()
+            for vertex in ann.graph.vertices:
+                if vertex.layer == ann.get_property(property='layers') - 1:
+                    ann.connect(vertex.i, len(ann.graph.vertices) - 1)
+
+        return ann
+
 
 

@@ -78,11 +78,8 @@ class ModelsInterface(QtWidgets.QWidget):
     def menu_new_ANN_trigger(self):
         wiz = GUI_model_dialogs.GetANNTopology()
         if wiz.complete:
-            model = Model.ANN()
-            for i in range(wiz.params['inputs']):
-                model.add_input()
-            for layer in wiz.params['layers']:
-                pass
+            model = Model.ANN.from_params(wiz.params)
+            self.add_model(model)
 
     def menu_save_trigger(self):
         pass
@@ -119,8 +116,9 @@ class ModelInterface(QtWidgets.QWidget):
         self.lbl_info_keys = QtWidgets.QLabel('')
         self.lbl_info_values = QtWidgets.QLabel('')
 
-        self.graphs = QtWidgets.QTabWidget()
-        self.graphs.setTabPosition(QtWidgets.QTabWidget.TabPosition(1))
+        self.model_scene = GUI_model_widgets.ModelScene(model_interface=self)
+        self.model_view = GUI_model_widgets.ModelView(model_interface=self)
+        self.model_view.setScene(self.model_scene)
 
         self.build_layout()
         self.update_info()
@@ -140,15 +138,14 @@ class ModelInterface(QtWidgets.QWidget):
         panel_layout.addLayout(info_layout)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.graphs)
+        layout.addWidget(self.model_view)
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
     def plot_signal(self):
         pass
 
-    def update_info(self):
-
+    def update_info(self)
         if self.model:
             meta_data = self.model.info()
             key_string = ''
@@ -166,6 +163,10 @@ class ModelInterface(QtWidgets.QWidget):
                             value_string += '{}\n'.format(value)
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
+
+            if self.model.type == 'nn':
+
+
         else:
             self.graphs.clear()
             self.lbl_info_keys.setText('')

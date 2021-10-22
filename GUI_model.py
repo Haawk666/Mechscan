@@ -34,7 +34,8 @@ class ModelsInterface(QtWidgets.QWidget):
 
     def populate_menu(self):
 
-        self.menu.addAction(GUI_base_widgets.Action('New', self, trigger_func=self.menu_new_trigger))
+        new = self.menu.addMenu('New')
+        new.addAction(GUI_base_widgets.Action('ANN', self, trigger_func=self.menu_new_ANN_trigger))
 
         self.menu.addAction(GUI_base_widgets.Action('Save', self, trigger_func=self.menu_save_trigger))
         self.menu.addAction(GUI_base_widgets.Action('Load', self, trigger_func=self.menu_load_trigger))
@@ -74,7 +75,7 @@ class ModelsInterface(QtWidgets.QWidget):
             interface.config = self.config
             interface.update_info()
 
-    def menu_new_trigger(self):
+    def menu_new_ANN_trigger(self):
         model_interface = ModelInterface(config=self.config)
         wizard = GUI_model_dialogs.NewModel(ui_object=model_interface)
         if wizard.complete:

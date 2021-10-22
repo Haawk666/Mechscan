@@ -76,11 +76,13 @@ class ModelsInterface(QtWidgets.QWidget):
             interface.update_info()
 
     def menu_new_ANN_trigger(self):
-        model_interface = ModelInterface(config=self.config)
-        wizard = GUI_model_dialogs.NewModel(ui_object=model_interface)
-        if wizard.complete:
-            model_interface.update_info()
-            self.add_interface(model_interface)
+        wiz = GUI_model_dialogs.GetANNTopology()
+        if wiz.complete:
+            model = Model.ANN()
+            for i in range(wiz.params['inputs']):
+                model.add_input()
+            for layer in wiz.params['layers']:
+                pass
 
     def menu_save_trigger(self):
         pass

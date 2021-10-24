@@ -10,7 +10,7 @@ from PyQt5 import QtWidgets
 import GUI_base_widgets
 import GUI_data_dialogs
 import GUI_data_widgets
-from MechSys import Data
+from MechSys import Data, Data_processing
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -61,6 +61,7 @@ class DatasetsInterface(QtWidgets.QWidget):
 
         methods = self.menu.addMenu('Methods')
         methods.addAction(GUI_base_widgets.Action('PCA', self, trigger_func=self.menu_methods_pca_trigger))
+        methods.addAction(GUI_base_widgets.Action('Replace NAN', self, trigger_func=self.menu_methods_replace_trigger))
 
     def build_layout(self):
 
@@ -143,6 +144,15 @@ class DatasetsInterface(QtWidgets.QWidget):
 
     def menu_methods_pca_trigger(self):
         pass
+
+    def menu_methods_replace_trigger(self):
+        if len(self.tabs) > 0:
+            index = self.tabs.currentIndex()
+            if self.dataset_interfaces[index].data is not None:
+                wiz = GUI_data_dialogs.GetStrategy()
+                if wiz.complete:
+                    self.dataset_interfaces[index].data = Data_processing.replace_nan(self.dataset_interfaces[index].data, strategy=wiz.params['strategy'])
+                    self.dataset_interfaces[index].update_info()
 
 
 class DatasetInterface(QtWidgets.QWidget):

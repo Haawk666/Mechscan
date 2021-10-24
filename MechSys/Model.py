@@ -56,29 +56,46 @@ class ANN:
         elif property == 'layers':
             layers = 0
             for vertex in self.graph.vertices:
-                if vertex.layer + 1 > layers:
-                    layers = vertex.layer + 1
+                if vertex.type == 'node':
+                    if vertex.layer + 1 > layers:
+                        layers = vertex.layer + 1
             return layers
         else:
             return None
 
-    def add_input(self):
+    def get_arcs(self):
+        arcs = []
+        for vertex in self.graph.vertices:
+            for j in vertex.out_neighbourhood:
+                arcs.append((vertex.i, j))
+        return arcs
+
+    def add_input(self, x=0.0, y=0.0, r=0.0):
         vertex = Graph.Vertex(self.graph.order())
         vertex.type = 'input'
         vertex.activation = 0.0
+        vertex.x = x
+        vertex.y = y
+        vertex.r = r
         self.graph.vertices.append(vertex)
 
-    def add_node(self, activation='sigmoid', layer=0):
+    def add_node(self, activation='sigmoid', layer=0, x=0.0, y=0.0, r=0.0):
         vertex = Graph.Vertex(self.graph.order())
         vertex.type = 'node'
         vertex.activation = 0.0
         vertex.layer = layer
+        vertex.x = x
+        vertex.y = y
+        vertex.r = r
         self.graph.vertices.append(vertex)
 
-    def add_output(self):
+    def add_output(self, x=0.0, y=0.0, r=0.0):
         vertex = Graph.Vertex(self.graph.order())
         vertex.type = 'output'
         vertex.activation = 0.0
+        vertex.x = x
+        vertex.y = y
+        vertex.r = r
         self.graph.vertices.append(vertex)
 
     def connect(self, i, j):
@@ -97,27 +114,42 @@ class ANN:
     def from_params(params):
         ann = ANN()
 
+        x = 0
+        y = 0
+
         # Add nodes
         for i in range(params['inputs']):
-            ann.add_input()
+            ann.add_input(x=x, y=y)
+            y += 30
+
+        x = 30
+        y = 0
+
         for l in range(len(params['layers'])):
             nodes = params['layers'][l]['nodes']
             activation = params['layers'][l]['activation']
             for n in range(nodes):
-                ann.add_node(activation=activation)
+                ann.add_node(activation=activation, x=x, y=y)
+                y += 30
                 if l == 0:
                     for vertex in ann.graph.vertices:
                         if vertex.type == 'input':
                             ann.connect(vertex.i, len(ann.graph.vertices) - 1)
                 else:
                     for vertex in ann.graph.vertices:
-                        if vertex.layer == l - 1:
-                            ann.connect(vertex.i, len(ann.graph.vertices) - 1)
+                        if vertex.type == 'node':
+                            if vertex.layer == l - 1:
+                                ann.connect(vertex.i, len(ann.graph.vertices) - 1)
+            x += 30
+            y = 0
+
         for o in range(params['outputs']):
-            ann.add_output()
+            ann.add_output(x=x, y=y)
+            y += 30
             for vertex in ann.graph.vertices:
-                if vertex.layer == ann.get_property(property='layers') - 1:
-                    ann.connect(vertex.i, len(ann.graph.vertices) - 1)
+                if vertex.type == 'node':
+                    if vertex.layer == ann.get_property(property='layers') - 1:
+                        ann.connect(vertex.i, len(ann.graph.vertices) - 1)
 
         return ann
 

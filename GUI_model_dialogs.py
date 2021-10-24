@@ -13,6 +13,131 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+class ComponentProperties(QtWidgets.QDialog):
+
+    def __init__(self, *args, model_component=None, scene_component=None, scene=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Component properties')
+
+        self.model_component = model_component
+        self.scene_component = scene_component
+        self.scene = scene
+        self.complete = False
+        self.params = dict()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Apply')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.btn_change_signal = QtWidgets.QPushButton('Change')
+        self.btn_change_signal.clicked.connect(self.btn_change_signal_trigger)
+        self.btn_change_function = QtWidgets.QPushButton('Change')
+        self.btn_change_function.clicked.connect(self.btn_change_function_trigger)
+        self.btn_change_coefficient = QtWidgets.QPushButton('Change')
+        self.btn_change_coefficient.clicked.connect(self.btn_change_coefficient_trigger)
+
+        self.lbl_id = QtWidgets.QLabel('{}'.format(self.scene_component.component_id))
+        self.lbl_type = QtWidgets.QLabel('{}'.format(sys_component.type))
+        self.lbl_inputs = QtWidgets.QLabel('{}'.format(len(sys_component.in_nodes)))
+        self.lbl_outputs = QtWidgets.QLabel('{}'.format(len(sys_component.out_nodes)))
+
+        self.lin_designation = QtWidgets.QLineEdit()
+        self.lin_designation.setText(self.scene_component.designation)
+
+        self.lbl_signal_path = QtWidgets.QLabel('')
+        self.lbl_n = QtWidgets.QLabel('')
+        self.lbl_coefficient = QtWidgets.QLabel('')
+        self.lbl_function = QtWidgets.QLabel('')
+
+        if self.sys_component.type == 'input':
+            self.lbl_signal_path = QtWidgets.QLabel('{}'.format(sys_component.signal.path))
+        if self.sys_component.type == 'gain':
+            self.lbl_coefficient = QtWidgets.QLabel('{}'.format(sys_component.coefficient))
+        if self.sys_component.type == 'function':
+            self.lbl_function = QtWidgets.QLabel('{}'.format(sys_component.function_string))
+
+        self.build_layout()
+
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        grid = QtWidgets.QGridLayout()
+        grid.addWidget(QtWidgets.QLabel('Component id: '), 0, 0)
+        grid.addWidget(self.lbl_id, 0, 1)
+        grid.addWidget(QtWidgets.QLabel('Component type: '), 1, 0)
+        grid.addWidget(self.lbl_type, 1, 1)
+        grid.addWidget(QtWidgets.QLabel('Inputs: '), 2, 0)
+        grid.addWidget(self.lbl_inputs, 2, 1)
+        grid.addWidget(QtWidgets.QLabel('Outputs: '), 3, 0)
+        grid.addWidget(self.lbl_outputs, 3, 1)
+        grid.addWidget(QtWidgets.QLabel('Designation: '), 4, 0)
+        grid.addWidget(self.lin_designation, 4, 1)
+
+        if self.sys_component.type == 'input':
+            grid.addWidget(QtWidgets.QLabel('Signal: '), 5, 0)
+            grid.addWidget(self.lbl_signal_path, 5, 1)
+            grid.addWidget(self.btn_change_signal, 5, 2)
+        elif self.sys_component.type == 'gain':
+            grid.addWidget(QtWidgets.QLabel('Gain: '), 5, 0)
+            grid.addWidget(self.lbl_coefficient, 5, 1)
+            grid.addWidget(self.btn_change_coefficient, 5, 2)
+        elif self.sys_component.type == 'function':
+            grid.addWidget(QtWidgets.QLabel('Function: '), 5, 0)
+            grid.addWidget(self.lbl_function, 5, 1)
+            grid.addWidget(self.btn_change_function, 5, 2)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(grid)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_change_signal_trigger(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load signal", '', "")
+        if filename[0]:
+            self.lbl_signal_path.setText(filename[0])
+
+    def btn_change_function_trigger(self):
+        wiz = GetFunctionString()
+        if wiz.complete:
+            self.lbl_function.setText(wiz.params['function_string'])
+
+    def btn_change_coefficient_trigger(self):
+        wiz = GetCoefficient()
+        if wiz.complete:
+            self.lbl_coefficient.setText(str(wiz.params['coefficient']))
+
+    def btn_next_trigger(self):
+        designation = self.lin_designation.text()
+        for component in self.scene.components:
+            if component.designation == designation and not component.component_id == self.scene_component.component_id:
+                msg = QtWidgets.QMessageBox()
+                msg.setText('Invalid designation!')
+                msg.exec()
+                break
+        else:
+            self.params['designation'] = designation
+            if self.sys_component.type == 'input':
+                self.params['signal_path'] = self.lbl_signal_path.text()
+            if self.sys_component.type == 'gain':
+                self.params['coefficient'] = float(self.lbl_coefficient.text())
+            if self.sys_component.type == 'function':
+                self.params['function_string'] = self.lbl_function.text()
+            self.complete = True
+            self.close()
+
+
 class GetANNTopology(QtWidgets.QDialog):
 
     def __init__(self, *args):
@@ -79,7 +204,7 @@ class GetANNTopology(QtWidgets.QDialog):
         base_grid.addWidget(QtWidgets.QLabel('Outputs: '), 2, 0)
         base_grid.addWidget(self.box_inputs, 0, 1)
         base_grid.addLayout(lst_layout, 1, 1)
-        base_grid.addWidget(self.box_outputs, 2, 0)
+        base_grid.addWidget(self.box_outputs, 2, 1)
 
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(base_grid)
@@ -114,7 +239,7 @@ class GetANNTopology(QtWidgets.QDialog):
         self.params['outputs'] = self.box_outputs.value()
         self.params['layers'] = []
         for i in range(self.lst_layers.count()):
-            index, activation, nodes = self.lst_layers.itemFromIndex(i).text().split(' ')
+            index, activation, nodes = self.lst_layers.item(i).text().split(' ')
             self.params['layers'].append({
                 'index': int(index),
                 'activation': activation,

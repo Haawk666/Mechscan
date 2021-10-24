@@ -9,6 +9,7 @@ from PyQt5 import QtWidgets
 # Internals
 import GUI_base_widgets
 import GUI_model_dialogs
+import GUI_model_widgets
 from MechSys import Model, Model_processing
 # Instantiate logger:
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ class ModelsInterface(QtWidgets.QWidget):
     def add_model(self, model):
         interface = ModelInterface(config=self.config)
         interface.model = model
+        interface.plot_model()
         interface.update_info()
         self.add_interface(interface)
 
@@ -142,10 +144,27 @@ class ModelInterface(QtWidgets.QWidget):
         layout.addLayout(panel_layout)
         self.setLayout(layout)
 
-    def plot_signal(self):
-        pass
+    def plot_model(self):
+        self.model_scene.clear()
+        for component in self.model.graph.vertices:
+            if component.type == 'input':
+                self.model_scene.add_component_input()
+            elif component.type == 'output':
+                self.model_scene.add_component_output()
+            elif component.type == 'node':
+                self.model_scene.add_component_node()
+            else:
+                raise TypeError('Unknown component type!')
+            self.model_scene.components[-1].setPos(component.x, component.y)
+            self.model_scene.components[-1].setRotation(component.r)
+        for connector in self.model.get_arcs():
+            i = connector[0]
+            j = connector[1]
+            node_1 = self.model_scene.components[i]
+            node_2 = self.model_scene.components[j]
+            self.model_scene.add_connector(node_1, node_2)
 
-    def update_info(self)
+    def update_info(self):
         if self.model:
             meta_data = self.model.info()
             key_string = ''
@@ -164,11 +183,8 @@ class ModelInterface(QtWidgets.QWidget):
             self.lbl_info_keys.setText(key_string)
             self.lbl_info_values.setText(value_string)
 
-            if self.model.type == 'nn':
-
-
         else:
-            self.graphs.clear()
+            self.model_scene.clear()
             self.lbl_info_keys.setText('')
             self.lbl_info_values.setText('')
 

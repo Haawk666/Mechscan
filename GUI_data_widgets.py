@@ -14,6 +14,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class TableModel(QtCore.QAbstractTableModel):
+
     def __init__(self, data):
         super(TableModel, self).__init__()
         self._data = data

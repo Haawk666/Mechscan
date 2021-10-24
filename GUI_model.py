@@ -84,10 +84,23 @@ class ModelsInterface(QtWidgets.QWidget):
             self.add_model(model)
 
     def menu_save_trigger(self):
-        pass
+        if len(self.model_interfaces) > 0:
+            index = self.tabs.currentIndex()
+            model_interface = self.model_interfaces[index]
+            if model_interface.model:
+                filename = QtWidgets.QFileDialog.getSaveFileName(self, "Save model", '', "")
+                if filename[0]:
+                    model_interface.model.save(filename[0])
+                    self.tabs.setTabText(index, model_interface.model.name())
 
     def menu_load_trigger(self):
-        pass
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load model", '', "")
+        if filename[0]:
+            model_interface = ModelInterface(config=self.config)
+            model_interface.model = Model.ANN.static_load(filename[0])
+            model_interface.plot_model()
+            model_interface.update_info()
+            self.add_interface(model_interface)
 
     def menu_close_trigger(self):
         if len(self.tabs) > 0:

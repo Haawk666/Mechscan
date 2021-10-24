@@ -129,6 +129,9 @@ class System:
         self.system_axis = copy.deepcopy(self.get_input_components(get_index=False)[0].signal.X)
         return self.system_axis
 
+    def add_ANN(self, model):
+        self.components.append(SysANN(model))
+
     def add_system(self, system):
         self.components.append(SysSystem(system))
 
@@ -284,6 +287,26 @@ class SysComponent(ABC):
         self.x = 0
         self.y = 0
         self.r = 0
+
+
+class SysANN(SysComponent):
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self.type = 'ann'
+        for input_component in range(self.model.get_property(property='inputs')):
+            self.in_nodes.append(Node())
+        for output_component in range(self.model.get_property(property='outputs')):
+            self.out_nodes.append(Node())
+
+    def transfer(self):
+        in_data = []
+        for node in self.in_nodes:
+            in_data.append(node.value)
+        out = self.model.evaluate(in_data)
+        for i, out_data in enumerate(out):
+            self.out_nodes[i].value = out_data
 
 
 class SysSystem(SysComponent):

@@ -61,6 +61,52 @@ class SystemComponent(QtWidgets.QGraphicsItemGroup):
         pass
 
 
+class SystemComponentModel(SystemComponent):
+
+    def __init__(self, *args, scene=None, id=0, inputs=1, outputs=1):
+        super().__init__(*args, scene=scene, id=id)
+        self.designation = 'model{}'.format(id)
+        self.inputs = inputs
+        self.outputs = outputs
+        self.build_component()
+
+    def build_component(self):
+
+        for item in self.childItems():
+            self.removeFromGroup(item)
+        self.in_nodes = []
+        self.out_nodes = []
+
+        height = max([20, 10 * self.inputs, 10 * self.outputs])
+
+        box = QtWidgets.QGraphicsRectItem()
+        box.setRect(0, 0, 20, height)
+        box.setBrush(self.scene.brushes['system_brush'])
+
+        for o in range(self.outputs):
+            node = Node(17.5, 10 * o + 2.5, self.scene.brushes['node_brush'])
+            self.out_nodes.append(node)
+
+        for i in range(self.inputs):
+            node = Node(-2.5, 10 * i + 2.5, self.scene.brushes['node_brush'])
+            self.in_nodes.append(node)
+
+        label = QtWidgets.QGraphicsSimpleTextItem()
+        label.setText('{}'.format(self.designation))
+        label.setFont(self.scene.fonts['label_font'])
+        rect = label.boundingRect()
+        label.setX(10 - rect.width() / 2)
+        label.setY(10 - rect.height() / 2)
+
+        self.addToGroup(box)
+        for node in self.in_nodes:
+            self.addToGroup(node)
+        for node in self.out_nodes:
+            self.addToGroup(node)
+        self.addToGroup(label)
+        self.setZValue(1)
+
+
 class SystemComponentSystem(SystemComponent):
 
     def __init__(self, *args, scene=None, id=0, inputs=1, outputs=1):
@@ -620,6 +666,10 @@ class SystemScene(QtWidgets.QGraphicsScene):
 
         self.components = []
         self.connectors = []
+
+    def add_component_model(self, inputs, outputs):
+        component = SystemComponentModel(scene=self, id=len(self.components), inputs=inputs, outputs=outputs)
+        self.add_component(component)
 
     def add_component_system(self, inputs, outputs):
         component = SystemComponentSystem(scene=self, id=len(self.components), inputs=inputs, outputs=outputs)

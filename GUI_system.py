@@ -10,7 +10,7 @@ from PyQt5 import QtWidgets
 import GUI_base_widgets
 import GUI_system_dialogs
 import GUI_system_widgets
-from MechSys import System_processing, Signal, System
+from MechSys import System_processing, Signal, System, Model
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -50,6 +50,7 @@ class SystemsInterface(QtWidgets.QWidget):
         components.addAction(GUI_base_widgets.Action('Input', self, trigger_func=self.menu_components_input))
         components.addAction(GUI_base_widgets.Action('Output', self, trigger_func=self.menu_components_output))
         components.addAction(GUI_base_widgets.Action('System', self, trigger_func=self.menu_components_system))
+        components.addAction(GUI_base_widgets.Action('Model', self, trigger_func=self.menu_components_model))
         components.addSeparator()
         components.addAction(GUI_base_widgets.Action('Add', self, trigger_func=self.menu_components_add))
         components.addAction(GUI_base_widgets.Action('Add multiple', self, trigger_func=self.menu_components_addn))
@@ -187,6 +188,18 @@ class SystemsInterface(QtWidgets.QWidget):
                         outputs += 1
                 self.system_interfaces[index].system_scene.add_component_system(inputs, outputs)
                 self.system_interfaces[index].system.add_system(system)
+                self.system_interfaces[index].update_info()
+
+    def menu_components_model(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            filename = QtWidgets.QFileDialog.getOpenFileName(self, "Load model", '', "")
+            if filename[0]:
+                model = Model.ANN.static_load(filename[0])
+                inputs = model.get_property(property='inputs')
+                outputs = model.get_property(property='outputs')
+                self.system_interfaces[index].system_scene.add_component_model(inputs, outputs)
+                self.system_interfaces[index].system.add_ANN(model)
                 self.system_interfaces[index].update_info()
 
     def menu_components_add(self):

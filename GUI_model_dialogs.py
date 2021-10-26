@@ -6,11 +6,92 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
+import pandas as pd
 # Internals
 
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class SetFit(QtWidgets.QDialog):
+
+    def __init__(self, *args, model=None):
+        super().__init__(*args)
+
+        self.setWindowTitle('Fit model')
+
+        self.model = model
+
+        self.complete = False
+        self.params = dict()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Ok')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.btn_set_train_data = QtWidgets.QPushButton('Set')
+        self.btn_set_train_data.clicked.connect(self.btn_set_train_trigger)
+        self.btn_set_test_data = QtWidgets.QPushButton('Set')
+        self.btn_set_test_data.clicked.connect(self.btn_set_test_trigger)
+
+        self.lin_train = QtWidgets.QLineEdit()
+        self.lin_test = QtWidgets.QLineEdit()
+        self.cmb_target = QtWidgets.QComboBox()
+
+        self.build_layout()
+
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        base_grid = QtWidgets.QGridLayout()
+        base_grid.addWidget(QtWidgets.QLabel('Training data: '), 0, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Target column: '), 1, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Test data: '), 2, 0)
+        base_grid.addWidget(self.lin_train, 0, 1)
+        base_grid.addWidget(self.cmb_target, 1, 1)
+        base_grid.addWidget(self.lin_test, 2, 1)
+        base_grid.addWidget(self.btn_set_train_data, 0, 2)
+        base_grid.addWidget(self.btn_set_test_data, 2, 2)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(base_grid)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_set_train_trigger(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Set training data", '', "")
+        if filename[0]:
+            self.lin_train.setText(filename[0])
+            self.cmb_target.clear()
+            for column in pd.read_csv(filename[0]):
+                self.cmb_target.addItem(column)
+
+    def btn_set_test_trigger(self):
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Set test data", '', "")
+        if filename[0]:
+            self.lin_test.setText(filename[0])
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        self.gen_params()
+        self.close()
+        self.complete = True
+
+    def gen_params(self):
+        self.params['train'] = self.lin_train.text()
+        self.params['target'] = self.cmb_target.currentText()
+        self.params['test'] = self.lin_test.text()
 
 
 class ComponentProperties(QtWidgets.QDialog):
@@ -245,6 +326,78 @@ class GetANNTopology(QtWidgets.QDialog):
                 'activation': activation,
                 'nodes': int(nodes)
             })
+
+
+class GetRandomForestParams(QtWidgets.QDialog):
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.setWindowTitle('New random forest')
+
+        self.complete = False
+        self.params = dict()
+
+        self.btn_cancel = QtWidgets.QPushButton('Cancel')
+        self.btn_cancel.clicked.connect(self.btn_cancel_trigger)
+        self.btn_next = QtWidgets.QPushButton('Ok')
+        self.btn_next.clicked.connect(self.btn_next_trigger)
+
+        self.box_inputs = QtWidgets.QSpinBox()
+        self.box_inputs.setMinimum(1)
+        self.box_inputs.setMaximum(10000)
+        self.box_inputs.setSingleStep(10)
+        self.box_inputs.setValue(10)
+
+        self.box_outputs = QtWidgets.QSpinBox()
+        self.box_outputs.setMinimum(1)
+        self.box_outputs.setMaximum(10000)
+        self.box_outputs.setSingleStep(10)
+        self.box_outputs.setValue(10)
+
+        self.box_estimators = QtWidgets.QSpinBox()
+        self.box_estimators.setMinimum(1)
+        self.box_estimators.setMaximum(10000)
+        self.box_estimators.setSingleStep(10)
+        self.box_estimators.setValue(100)
+
+        self.build_layout()
+
+        self.exec_()
+
+    def build_layout(self):
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        btn_layout.addWidget(self.btn_cancel)
+        btn_layout.addWidget(self.btn_next)
+        btn_layout.addStretch()
+
+        base_grid = QtWidgets.QGridLayout()
+        base_grid.addWidget(QtWidgets.QLabel('Inputs: '), 0, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Outputs: '), 1, 0)
+        base_grid.addWidget(QtWidgets.QLabel('Estimators: '), 2, 0)
+        base_grid.addWidget(self.box_inputs, 0, 1)
+        base_grid.addWidget(self.box_outputs, 1, 1)
+        base_grid.addWidget(self.box_estimators, 2, 1)
+
+        top_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(base_grid)
+        top_layout.addLayout(btn_layout)
+
+        self.setLayout(top_layout)
+
+    def btn_cancel_trigger(self):
+        self.close()
+
+    def btn_next_trigger(self):
+        self.gen_params()
+        self.close()
+        self.complete = True
+
+    def gen_params(self):
+        self.params['inputs'] = self.box_inputs.value()
+        self.params['outputs'] = self.box_outputs.value()
+        self.params['estimators'] = self.box_estimators.value()
 
 
 class GetLayer(QtWidgets.QDialog):

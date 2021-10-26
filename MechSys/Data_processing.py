@@ -17,8 +17,8 @@ def replace_nan(data, strategy='mean', update=None):
 
     if strategy == 'mean':
 
-        for c, column in enumerate(data.frame):
-            data.frame[column] = data.frame[column].fillna(data.frame[column].mean())
+        for c, column in enumerate(data):
+            data[column] = data[column].fillna(data[column].mean())
             if update is not None:
                 update.setValue(c)
 

@@ -7,11 +7,49 @@ import logging
 import pathlib
 # 3rd party
 import h5py
+from sklearn.ensemble import RandomForestRegressor
 # Internals
 from . import Graph
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+class RandomForest:
+
+    def __init__(self, n_estimators):
+        self.model = RandomForestRegressor(
+            n_estimators=n_estimators,
+            criterion='mse',
+            max_depth=None,
+            min_weight_fraction_leaf=0.0,
+            max_features='auto',
+            max_leaf_nodes=None,
+            min_impurity_decrease=0.0,
+            bootstrap=True,
+            oob_score=False,
+            n_jobs=None,
+            random_state=123,
+            verbose=0,
+            warm_start=False,
+            ccp_alpha=0.0,
+            max_samples=None
+        )
+        self.path = None
+        self.type = 'random_forest'
+
+    def name(self):
+        if self.path is None:
+            return 'New'
+        else:
+            return self.path.name
+
+    def info(self):
+        meta_data = {
+
+        }
+
+        return meta_data
 
 
 class ANN:

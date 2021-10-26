@@ -6,11 +6,12 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
+import pandas as pd
 # Internals
 import GUI_base_widgets
 import GUI_model_dialogs
 import GUI_model_widgets
-from MechSys import Model, Model_processing
+from MechSys import Model
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -37,6 +38,7 @@ class ModelsInterface(QtWidgets.QWidget):
 
         new = self.menu.addMenu('New')
         new.addAction(GUI_base_widgets.Action('ANN', self, trigger_func=self.menu_new_ANN_trigger))
+        new.addAction(GUI_base_widgets.Action('Random Forest', self, trigger_func=self.menu_new_RF_trigger))
 
         self.menu.addAction(GUI_base_widgets.Action('Save', self, trigger_func=self.menu_save_trigger))
         self.menu.addAction(GUI_base_widgets.Action('Load', self, trigger_func=self.menu_load_trigger))
@@ -47,6 +49,10 @@ class ModelsInterface(QtWidgets.QWidget):
 
         self.menu.addAction(GUI_base_widgets.Action('Import', self, trigger_func=self.menu_import_trigger))
         self.menu.addAction(GUI_base_widgets.Action('Export', self, trigger_func=self.menu_export_trigger))
+
+        self.menu.addSeparator()
+
+        self.menu.addAction(GUI_base_widgets.Action('Fit', self, trigger_func=self.menu_fit_trigger))
 
     def build_layout(self):
 
@@ -83,6 +89,12 @@ class ModelsInterface(QtWidgets.QWidget):
             model = Model.ANN.from_params(wiz.params)
             self.add_model(model)
 
+    def menu_new_RF_trigger(self):
+        wiz = GUI_model_dialogs.GetRandomForestParams()
+        if wiz.complete:
+            model = Model.RandomForest(wiz.params['estimators'])
+            self.add_model(model)
+
     def menu_save_trigger(self):
         if len(self.model_interfaces) > 0:
             index = self.tabs.currentIndex()
@@ -117,6 +129,23 @@ class ModelsInterface(QtWidgets.QWidget):
 
     def menu_export_trigger(self):
         pass
+
+    def menu_fit_trigger(self):
+        if len(self.model_interfaces) > 0:
+            index = self.tabs.currentIndex()
+            model_interface = self.model_interfaces[index]
+            if model_interface.model:
+                wiz = GUI_model_dialogs.SetFit(model=model_interface.model)
+                if wiz.complete:
+                    X_train = pd.read_csv(wiz.params['train'])
+                    target = X_train[wiz.params['target']]
+                    X_train.drop([wiz.params['target']], axis=1)
+                    X_test = pd.read_csv(wiz.params['test'])
+                    model_interface.model.model.fit(X_train, target)
+                    prediction = pd.DataFrame()
+                    prediction['id'] = X_test['id']
+                    prediction['{}_prediction'.format(wiz.params['target'])] = model_interface.model.model.predict(X_test)
+                    prediction.to_csv('submission_rf_haakon_test_1.csv', index=False)
 
 
 class ModelInterface(QtWidgets.QWidget):
@@ -159,23 +188,24 @@ class ModelInterface(QtWidgets.QWidget):
 
     def plot_model(self):
         self.model_scene.clear()
-        for component in self.model.graph.vertices:
-            if component.type == 'input':
-                self.model_scene.add_component_input()
-            elif component.type == 'output':
-                self.model_scene.add_component_output()
-            elif component.type == 'node':
-                self.model_scene.add_component_node()
-            else:
-                raise TypeError('Unknown component type!')
-            self.model_scene.components[-1].setPos(component.x, component.y)
-            self.model_scene.components[-1].setRotation(component.r)
-        for connector in self.model.get_arcs():
-            i = connector[0]
-            j = connector[1]
-            node_1 = self.model_scene.components[i]
-            node_2 = self.model_scene.components[j]
-            self.model_scene.add_connector(node_1, node_2)
+        if self.model.type == 'nn':
+            for component in self.model.graph.vertices:
+                if component.type == 'input':
+                    self.model_scene.add_component_input()
+                elif component.type == 'output':
+                    self.model_scene.add_component_output()
+                elif component.type == 'node':
+                    self.model_scene.add_component_node()
+                else:
+                    raise TypeError('Unknown component type!')
+                self.model_scene.components[-1].setPos(component.x, component.y)
+                self.model_scene.components[-1].setRotation(component.r)
+            for connector in self.model.get_arcs():
+                i = connector[0]
+                j = connector[1]
+                node_1 = self.model_scene.components[i]
+                node_2 = self.model_scene.components[j]
+                self.model_scene.add_connector(node_1, node_2)
 
     def update_info(self):
         if self.model:

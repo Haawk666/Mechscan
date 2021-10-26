@@ -17,14 +17,10 @@ def replace_nan(data, strategy='mean', update=None):
 
     if strategy == 'mean':
 
-        means = data.frame.mean()
-
-        for i in range(len(data.frame)):
-            for c, column in enumerate(data.frame):
-                if data.frame.values[i, c] == 'nan':
-                    data.frame.values[i, c] = means[c]
+        for c, column in enumerate(data.frame):
+            data.frame[column] = data.frame[column].fillna(data.frame[column].mean())
             if update is not None:
-                update.setValue(i)
+                update.setValue(c)
 
     return data
 

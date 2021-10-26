@@ -30,7 +30,8 @@ class Dataset:
 
     def info(self):
         meta_data = {
-            'Datapoints': len(self.frame)
+            'Datapoints': len(self.frame),
+            'Attributes': len(self.frame.columns)
         }
 
         return meta_data

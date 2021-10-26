@@ -151,7 +151,7 @@ class DatasetsInterface(QtWidgets.QWidget):
             if self.dataset_interfaces[index].data is not None:
                 wiz = GUI_data_dialogs.GetStrategy()
                 if wiz.complete:
-                    iterations = len(self.dataset_interfaces[index].data.frame) - 1
+                    iterations = len(self.dataset_interfaces[index].data.frame.columns) - 1
                     progress_window = GUI_base_widgets.ProgressDialog('Incurring values...', 'Cancel', 0, iterations, self)
                     self.dataset_interfaces[index].data = Data_processing.replace_nan(self.dataset_interfaces[index].data, strategy=wiz.params['strategy'], update=progress_window)
                     self.dataset_interfaces[index].update_info()

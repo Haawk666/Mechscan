@@ -33,11 +33,8 @@ class SetFit(QtWidgets.QDialog):
 
         self.btn_set_train_data = QtWidgets.QPushButton('Set')
         self.btn_set_train_data.clicked.connect(self.btn_set_train_trigger)
-        self.btn_set_test_data = QtWidgets.QPushButton('Set')
-        self.btn_set_test_data.clicked.connect(self.btn_set_test_trigger)
 
         self.lin_train = QtWidgets.QLineEdit()
-        self.lin_test = QtWidgets.QLineEdit()
         self.cmb_target = QtWidgets.QComboBox()
 
         self.build_layout()
@@ -54,12 +51,9 @@ class SetFit(QtWidgets.QDialog):
         base_grid = QtWidgets.QGridLayout()
         base_grid.addWidget(QtWidgets.QLabel('Training data: '), 0, 0)
         base_grid.addWidget(QtWidgets.QLabel('Target column: '), 1, 0)
-        base_grid.addWidget(QtWidgets.QLabel('Test data: '), 2, 0)
         base_grid.addWidget(self.lin_train, 0, 1)
         base_grid.addWidget(self.cmb_target, 1, 1)
-        base_grid.addWidget(self.lin_test, 2, 1)
         base_grid.addWidget(self.btn_set_train_data, 0, 2)
-        base_grid.addWidget(self.btn_set_test_data, 2, 2)
 
         top_layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(base_grid)
@@ -75,11 +69,6 @@ class SetFit(QtWidgets.QDialog):
             for column in pd.read_csv(filename[0]):
                 self.cmb_target.addItem(column)
 
-    def btn_set_test_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Set test data", '', "")
-        if filename[0]:
-            self.lin_test.setText(filename[0])
-
     def btn_cancel_trigger(self):
         self.close()
 
@@ -91,7 +80,6 @@ class SetFit(QtWidgets.QDialog):
     def gen_params(self):
         self.params['train'] = self.lin_train.text()
         self.params['target'] = self.cmb_target.currentText()
-        self.params['test'] = self.lin_test.text()
 
 
 class ComponentProperties(QtWidgets.QDialog):

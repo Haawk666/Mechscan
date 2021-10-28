@@ -53,6 +53,7 @@ class ModelsInterface(QtWidgets.QWidget):
         self.menu.addSeparator()
 
         self.menu.addAction(GUI_base_widgets.Action('Fit', self, trigger_func=self.menu_fit_trigger))
+        self.menu.addAction(GUI_base_widgets.Action('Predict', self, trigger_func=self.menu_predict_trigger))
 
     def build_layout(self):
 
@@ -139,13 +140,25 @@ class ModelsInterface(QtWidgets.QWidget):
                 if wiz.complete:
                     X_train = pd.read_csv(wiz.params['train'])
                     target = X_train[wiz.params['target']]
-                    X_train.drop([wiz.params['target']], axis=1)
-                    X_test = pd.read_csv(wiz.params['test'])
+                    X_train = X_train.drop([wiz.params['target']], axis=1)
                     model_interface.model.model.fit(X_train, target)
+                    model_interface.model.model.target_name = wiz.params['target']
+                    print('Fitting complete')
+
+    def menu_predict_trigger(self):
+        if len(self.model_interfaces) > 0:
+            index = self.tabs.currentIndex()
+            model_interface = self.model_interfaces[index]
+            if model_interface.model:
+                filename_test = QtWidgets.QFileDialog.getOpenFileName(self, "Set test data", '', "")
+                if filename_test[0]:
+                    X_test = pd.read_csv(filename_test[0])
                     prediction = pd.DataFrame()
                     prediction['id'] = X_test['id']
-                    prediction['{}_prediction'.format(wiz.params['target'])] = model_interface.model.model.predict(X_test)
-                    prediction.to_csv('submission_rf_haakon_test_1.csv', index=False)
+                    prediction['{}_prediction'.format(model_interface.model.model.target_name)] = model_interface.model.model.predict(X_test)
+                    filename_result = QtWidgets.QFileDialog.getSaveFileName(self, "Save result", '', "")
+                    if filename_result[0]:
+                        prediction.to_csv(filename_result[0], index=False)
 
 
 class ModelInterface(QtWidgets.QWidget):

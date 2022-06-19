@@ -64,7 +64,7 @@ def evaluate(signal, function, kwargs, method='overwrite', a=None, b=None, chann
                 if np.absolute(a[d] - x) < distance_a[d]:
                     distance_a[d] = np.absolute(a[d] - x)
                     a_index[d] = k
-                if np.absolute(b[0] - x) < distance_b[d]:
+                if np.absolute(b[d] - x) < distance_b[d]:
                     distance_b[d] = np.absolute(b[d] - x)
                     b_index[d] = k
 
@@ -131,6 +131,40 @@ def evaluate(signal, function, kwargs, method='overwrite', a=None, b=None, chann
     print(time.time() - start_time)
 
     return signal
+
+
+def noise_1f(signal, coefficient, alpha):
+
+    def pink_spectrum(f, f_min=0, f_max=np.inf, att=np.log10(2.0) * 10):
+        """
+        Define a pink (1/f) spectrum
+            f     = array of frequencies
+            f_min = minimum frequency for band pass
+            f_max = maximum frequency for band pass
+            att   = attenuation per factor two in frequency in decibel.
+                    Default is such that a factor two in frequency increase gives a factor two in power attenuation.
+        """
+        # numbers in the equation below explained:
+        #  0.5: take the square root of the power spectrum so that we get an amplitude (field) spectrum
+        # 10.0: convert attenuation from decibel to bel
+        #  2.0: frequency factor for which the attenuation is given (octave)
+        s = f ** -(0.5 * (att / 10.0) / np.log10(2.0))  # apply attenuation
+        s[np.logical_or(f < f_min, f > f_max)] = 0  # apply band pass
+        return s
+
+    def spectrum_noise(spectrum_func, samples=1024, rate=44100):
+        """
+        make noise with a certain spectral density
+        """
+        freqs = np.fft.rfftfreq(samples, 1.0 / rate)  # real-fft frequencies (not the negative ones)
+        spectrum = np.zeros_like(freqs, dtype='complex')  # make complex numbers for spectrum
+        spectrum[1:] = spectrum_func(freqs[1:])  # get spectrum amplitude for all frequencies except f=0
+        phases = np.random.uniform(0, 2 * np.pi, len(freqs) - 1)  # random phases for all frequencies except f=0
+        spectrum[1:] *= np.exp(1j * phases)  # apply random phases
+        noise = np.fft.irfft(spectrum)  # return the reverse fourier transform
+        noise = np.pad(noise, (0, samples - len(noise)), 'constant')  # add zero for odd number of input samples
+
+        return noise
 
 
 def fft(time_signal):

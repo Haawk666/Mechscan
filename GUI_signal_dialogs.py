@@ -223,8 +223,8 @@ class GetFunction(QtWidgets.QDialog):
         self.params['a'] = []
         self.params['b'] = []
         for d in range(self.signal.dimensions):
-            self.params['a'].append(self.range_widgets[0]['from'].value())
-            self.params['b'].append(self.range_widgets[0]['to'].value())
+            self.params['a'].append(self.range_widgets[d]['from'].value())
+            self.params['b'].append(self.range_widgets[d]['to'].value())
 
         self.params['method'] = self.cmb_operation.currentText()
 
@@ -263,7 +263,7 @@ class NewTimeSignal(QtWidgets.QDialog):
         self.btn_next.clicked.connect(self.btn_next_trigger)
 
         self.box_f_s = QtWidgets.QDoubleSpinBox()
-        self.box_f_s.setMaximum(88200.0)
+        self.box_f_s.setMaximum(10000000.0)
         self.box_f_s.setMinimum(1.0)
         self.box_f_s.setDecimals(1)
         self.box_f_s.setSingleStep(100.0)
@@ -282,12 +282,12 @@ class NewTimeSignal(QtWidgets.QDialog):
         self.cmb_bits.setCurrentIndex(1)
 
         self.box_t_start = QtWidgets.QDoubleSpinBox()
-        self.box_t_start.setDecimals(3)
+        self.box_t_start.setDecimals(8)
         self.box_t_start.setMaximum(100.0)
         self.box_t_start.setMinimum(-100.0)
 
         self.box_t_end = QtWidgets.QDoubleSpinBox()
-        self.box_t_end.setDecimals(3)
+        self.box_t_end.setDecimals(8)
         self.box_t_end.setMaximum(100.0)
         self.box_t_end.setMinimum(-100.0)
 

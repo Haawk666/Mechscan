@@ -4,6 +4,7 @@
 
 # standard library
 import logging
+import random
 # 3rd party
 import numpy as np
 # Internals

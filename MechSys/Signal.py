@@ -411,7 +411,7 @@ class TimeSignal(Signal):
 
     @staticmethod
     def from_wav(file_path):
-        """Does not yet support 24 bit wav."""
+        """Does not yet support 24 or 18 bit wav."""
         wav = wave.open(file_path, mode='rb')
         f_s = np.float64(wav.getframerate())
         delta_x = np.float64(1.0) / f_s

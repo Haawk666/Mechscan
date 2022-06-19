@@ -63,6 +63,7 @@ class SignalsInterface(QtWidgets.QWidget):
         filters.addAction(GUI_base_widgets.Action('Band pass', self, trigger_func=self.menu_band_pass_trigger))
         filters.addAction(GUI_base_widgets.Action('Cut-off', self, trigger_func=self.menu_cut_trigger))
         filters.addAction(GUI_base_widgets.Action('Compression', self, trigger_func=self.menu_compression_trigger))
+        filters.addAction(GUI_base_widgets.Action('Noise', self, trigger_func=self.menu_noise_trigger))
 
         edit = self.menu.addMenu('Edit')
         edit.addAction(GUI_base_widgets.Action('Scale', self, trigger_func=self.menu_scale_trigger))
@@ -222,6 +223,14 @@ class SignalsInterface(QtWidgets.QWidget):
 
     def menu_compression_trigger(self):
         pass
+
+    def menu_noise_trigger(self):
+        index = self.tabs.currentIndex()
+        if index >= 0:
+            signal = self.signal_interfaces[index].signal
+            if signal is not None:
+                if signal.signal_type == 'time':
+                    self.add_signal(Signal_processing.noise_1f(signal, 1.0, 1.0))
 
     def menu_scale_trigger(self):
         pass

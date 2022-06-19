@@ -6,6 +6,7 @@
 import logging
 # 3rd party
 from PyQt5 import QtWidgets
+import numpy as np
 # Internals
 import GUI_base_widgets
 import GUI_base_dialogs
@@ -14,7 +15,7 @@ import GUI_model
 import GUI_signal
 import GUI_system
 import Library
-from MechSys import Signal
+from MechSys import Signal, Signal_processing, Functions
 # Instantiate logger:
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -89,31 +90,33 @@ class MainUI(QtWidgets.QMainWindow):
         self.setCentralWidget(self.tabs)
 
     def menu_debug_trigger(self):
-        signal = Signal.TimeSignal.static_load('Signals/10Hz')
+        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Noise file", '', "")
+        if filename[0]:
 
-        b_0 = 0.5
-        b_1 = 0.8
-        b_2 = 1.1
-        a_1 = 0.1
-        a_2 = 0.4
-        calculation = Signal.TimeSignal(
-            x_start=signal.x_start,
-            x_end=signal.x_end,
-            delta_x=signal.delta_x,
-            bit_depth=signal.bit_depth,
-            codomain=signal.codomain,
-            channels=signal.channels,
-            units=signal.units
-        )
-        for k in range(signal.n):
-            if k == 0:
-                y = b_0 * signal.Y[k, 0]
-            elif k == 1:
-                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] - a_1 * calculation.Y[k - 1, 0]
-            else:
-                y = b_0 * signal.Y[k, 0] + b_1 * signal.Y[k - 1, 0] + b_2 * signal.Y[k - 2, 0] - a_1 * calculation.Y[k - 1, 0] - a_2 * calculation.Y[k - 2, 0]
-            calculation.Y[k, 0] = y
-        calculation.save('Signals/calculation')
+            vibration = Signal.TimeSignal(
+                x_start=0.0,
+                x_end=0.22,
+                delta_x=1.0 / 2000000.0
+            )
+            f_vibration = Signal_processing.fft(vibration)
+            f_vibration = Signal_processing.evaluate(f_vibration, Functions.gauss_RC, {
+                'A': 6000,
+                'mu': 800000,
+                'sigma': 100,
+            }, method='add')
+            vibration = Signal_processing.ifft(f_vibration)
+
+            noise_signal = Signal.TimeSignal.from_wav(filename[0])
+            AE_signal = Signal.TimeSignal(
+                x_start=0.0,
+                x_end=0.22,
+                delta_x=1.0 / 2000000.0
+            )
+            for k in range(AE_signal.n):
+                AE_signal.Y[k] += np.int16((noise_signal.Y[k, 0] + noise_signal.Y[k, 1]) / 2000)
+                AE_signal.Y[k] += np.int16(vibration.Y[k])
+
+            self.signals_interface.add_signal(AE_signal)
 
     def menu_settings_trigger(self):
         current_settings_map = self.get_current_settings_map()

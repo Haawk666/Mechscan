@@ -179,7 +179,7 @@ def get_function_map(signal):
                         'A': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
                         'mu': Parameter(signal.X[0], signal.X[-1], 1.0, 3, (signal.X[-1] - signal.X[0]) / 2),
                         'sigma': Parameter(0.0, signal.X[-1] - signal.X[0], 1.0, 3, signal.X[-1] - signal.X[0]),
-                        'f': Parameter(-1000.0, 1000.0, 10.0, 1, 666.0),
+                        'f': Parameter(-1000000.0, 1000000.0, 10.0, 1, 666.0),
                         'phi': Parameter(-2 * np.pi, 2 * np.pi, 0.5 * np.pi, 3, 0.0)
                     },
                     'function': f.morlet_wavelet_RR,

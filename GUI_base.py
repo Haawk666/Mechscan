@@ -90,33 +90,21 @@ class MainUI(QtWidgets.QMainWindow):
         self.setCentralWidget(self.tabs)
 
     def menu_debug_trigger(self):
-        filename = QtWidgets.QFileDialog.getOpenFileName(self, "Noise file", '', "")
-        if filename[0]:
 
-            vibration = Signal.TimeSignal(
-                x_start=0.0,
-                x_end=0.22,
-                delta_x=1.0 / 2000000.0
-            )
-            f_vibration = Signal_processing.fft(vibration)
-            f_vibration = Signal_processing.evaluate(f_vibration, Functions.gauss_RC, {
-                'A': 6000,
-                'mu': 800000,
-                'sigma': 100,
-            }, method='add')
-            vibration = Signal_processing.ifft(f_vibration)
+        burst_signal = Signal.TimeSignal.from_wav('C:/Users/haako/OneDrive/NTNU/PhD/Presentations/20.06.22 - Digiman/Clap.wav')
+        noise_signal = Signal.TimeSignal.from_wav('C:/Users/haako/OneDrive/NTNU/PhD/Presentations/20.06.22 - Digiman/pink-noise-16-bit-44-1khz.wav')
+        AE_signal = Signal.TimeSignal(
+            x_start=0.0,
+            x_end=0.22,
+            delta_x=1.0 / 2000000.0,
+            units=['s', 'mV']
+        )
+        for k in range(AE_signal.n):
+            AE_signal.Y[k] += np.int16((noise_signal.Y[k, 0] + noise_signal.Y[k, 1]) / 2000)
+            if k < 176767:
+                AE_signal.Y[k + 15000] += np.int16(burst_signal.Y[k, 0] / 1000)
 
-            noise_signal = Signal.TimeSignal.from_wav(filename[0])
-            AE_signal = Signal.TimeSignal(
-                x_start=0.0,
-                x_end=0.22,
-                delta_x=1.0 / 2000000.0
-            )
-            for k in range(AE_signal.n):
-                AE_signal.Y[k] += np.int16((noise_signal.Y[k, 0] + noise_signal.Y[k, 1]) / 2000)
-                AE_signal.Y[k] += np.int16(vibration.Y[k])
-
-            self.signals_interface.add_signal(AE_signal)
+        self.signals_interface.add_signal(AE_signal)
 
     def menu_settings_trigger(self):
         current_settings_map = self.get_current_settings_map()

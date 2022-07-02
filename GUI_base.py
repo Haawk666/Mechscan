@@ -91,8 +91,8 @@ class MainUI(QtWidgets.QMainWindow):
 
     def menu_debug_trigger(self):
 
-        burst_signal = Signal.TimeSignal.from_wav('C:/Users/haako/OneDrive/NTNU/PhD/Presentations/20.06.22 - Digiman/Data/Clap.wav')
-        noise_signal = Signal.TimeSignal.from_wav('C:/Users/haako/OneDrive/NTNU/PhD/Presentations/20.06.22 - Digiman/Data/pink-noise-16-bit-44-1khz.wav')
+        burst_signal = Signal.TimeSignal.from_wav('B:/OneDrive/NTNU/PhD/Presentations/20.06.22 - Digiman/Data/Clap.wav')
+        noise_signal = Signal.TimeSignal.from_wav('B:/OneDrive/NTNU/PhD/Presentations/20.06.22 - Digiman/Data/pink-noise-16-bit-44-1khz.wav')
         AE_signal = Signal.TimeSignal(
             x_start=0.0,
             x_end=0.05,
